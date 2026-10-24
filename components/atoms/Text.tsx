@@ -103,6 +103,9 @@ type TextProps = React.ComponentProps<typeof RNText> &
     variant?: TextVariantProps['variant'];
   };
 
+/** size를 줄 때 쓰는 줄 높이 비율 */
+const LINE_HEIGHT_RATIO = 1.4;
+
 function Text({
   className,
   asChild = false,
@@ -125,7 +128,15 @@ function Text({
       className={cn(textVariants({ variant }), textClass, className)}
       role={variant ? ROLE[variant] : undefined}
       aria-level={variant ? ARIA_LEVEL[variant] : undefined}
-      style={[{ fontFamily }, size !== undefined && { fontSize: size }, style]}
+      // size만 바꾸면 variant의 줄 높이(text-sm은 20px)가 남아 큰 글씨·이모지가 잘린다
+      style={[
+        { fontFamily },
+        size !== undefined && {
+          fontSize: size,
+          lineHeight: Math.round(size * LINE_HEIGHT_RATIO),
+        },
+        style,
+      ]}
       {...props}
     />
   );
