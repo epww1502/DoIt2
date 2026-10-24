@@ -1,4 +1,5 @@
 import { Directory, File, Paths } from 'expo-file-system';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
 const PHOTO_DIR = 'photos';
@@ -17,18 +18,42 @@ export async function pickPhoto({
     mediaTypes: ['images'],
     allowsEditing: true,
     aspect,
-    quality: 0.8,
+    quality: 1,
   });
   if (result.canceled) return null;
+  const asset = result.assets[0];
 
-  const source = new File(result.assets[0].uri);
+  // 저장 공간·데이터를 아끼려고 긴 쪽 1280px, JPEG 0.7로 줄인다 (장당 수 MB → 200~300KB)
+  const resized = await shrinkPhoto(asset.uri, asset.width, asset.height);
+
   const folder = new Directory(Paths.document, PHOTO_DIR);
   folder.create({ idempotent: true, intermediates: true });
-
-  const ext = source.extension || '.jpg';
-  const target = new File(folder, `${Date.now()}${ext}`);
+  const target = new File(folder, `${Date.now()}.jpg`);
+  const source = new File(resized);
   await source.copy(target, { overwrite: true });
+  // 줄이면서 만든 임시 파일은 지운다
+  if (resized !== asset.uri) deletePhoto(resized);
   return target.uri;
+}
+
+/** 사진 긴 쪽 최대 길이(px)와 JPEG 압축률 */
+const MAX_PHOTO_SIDE = 1280;
+const PHOTO_COMPRESS = 0.7;
+
+/** 긴 쪽이 MAX_PHOTO_SIDE를 넘으면 줄이고, JPEG로 압축한 임시 파일 uri */
+async function shrinkPhoto(uri: string, width: number, height: number) {
+  const context = ImageManipulator.manipulate(uri);
+  if (Math.max(width, height) > MAX_PHOTO_SIDE) {
+    context.resize(
+      width >= height ? { width: MAX_PHOTO_SIDE } : { height: MAX_PHOTO_SIDE }
+    );
+  }
+  const image = await context.renderAsync();
+  const saved = await image.saveAsync({
+    compress: PHOTO_COMPRESS,
+    format: SaveFormat.JPEG,
+  });
+  return saved.uri;
 }
 
 /** 앱 폴더에 복사해 둔 사진을 지운다. 이미 없으면 무시. */
