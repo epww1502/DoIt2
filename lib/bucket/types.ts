@@ -199,7 +199,31 @@ export type BucketItem = {
   done: DoneRecord | null;
   /** 공간 항목: 사람마다 남긴 별점·소감 ('나만 보기'에는 없다) */
   reviews?: ItemReview[];
+  /** 목표 날짜 (선택). 정하지 않았으면 없다 */
+  goal?: GoalInfo | null;
 };
+
+/** 목표 날짜 알림 시점: 일주일 전, 하루 전, 당일 아침 */
+export type GoalRemind = 'week' | 'day' | 'morning';
+
+export type GoalInfo = {
+  /** YYYY-MM-DD */
+  date: string;
+  /** 알림 받을 시점들 (없으면 알림 없이 날짜만) */
+  remind: GoalRemind[];
+};
+
+export const GOAL_REMIND_META: Record<
+  GoalRemind,
+  { label: string; daysBefore: number; hour: number }
+> = {
+  week: { label: '일주일 전', daysBefore: 7, hour: 10 },
+  day: { label: '하루 전', daysBefore: 1, hour: 20 },
+  morning: { label: '당일 아침', daysBefore: 0, hour: 9 },
+};
+
+/** 새로 목표 날짜를 켤 때 기본 알림 */
+export const DEFAULT_GOAL_REMIND: GoalRemind[] = ['day', 'morning'];
 
 /** 한 사람의 평가. rating이 null이면 평가를 건너뛰었다 */
 export type ItemReview = {
@@ -211,5 +235,12 @@ export type ItemReview = {
 
 export type BucketInput = Pick<
   BucketItem,
-  'kind' | 'title' | 'category' | 'setting' | 'location' | 'place' | 'memo'
+  | 'kind'
+  | 'title'
+  | 'category'
+  | 'setting'
+  | 'location'
+  | 'place'
+  | 'memo'
+  | 'goal'
 >;

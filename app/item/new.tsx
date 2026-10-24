@@ -14,6 +14,7 @@ import {
 import { TextArea } from '@/components/atoms/TextArea';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
+import { GoalField } from '@/components/bucket/GoalField';
 import { PlaceField } from '@/components/bucket/PlaceField';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import {
@@ -24,12 +25,14 @@ import {
   type BucketKind,
   type BucketSetting,
   type CategoryKey,
+  type GoalInfo,
   type PlaceInfo,
 } from '@/lib/bucket/types';
 import { KIND_ICON } from '@/components/bucket/kindIcons';
 import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
+import { ensureReminderPermission } from '@/lib/reminders';
 
 const KIND_OPTIONS: SegmentedOption<BucketKind>[] = [
   {
@@ -75,6 +78,8 @@ export default function BucketFormScreen() {
   const [location, setLocation] = useState(editing?.location ?? '');
   const [place, setPlace] = useState<PlaceInfo | null>(editing?.place ?? null);
   const [memo, setMemo] = useState(editing?.memo ?? '');
+  // 목표 날짜 (선택). 스위치를 켜야 보인다
+  const [goal, setGoal] = useState<GoalInfo | null>(editing?.goal ?? null);
 
   // 장소 검색 화면에서 고르고 돌아오면 받아서 채운다
   const takePicked = usePlacePickStore((state) => state.take);
@@ -128,11 +133,16 @@ export default function BucketFormScreen() {
       location: location.trim(),
       place,
       memo: memo.trim(),
+      goal,
     };
     if (editing) {
       updateItem(editing.id, input);
     } else {
       addItem(input);
+    }
+    // 목표 날짜 알림을 골랐으면 알림 권한을 물어본다 (이미 있으면 그냥 넘어간다)
+    if (goal && goal.remind.length > 0) {
+      void ensureReminderPermission(true).catch(() => {});
     }
     router.back();
   };
@@ -220,6 +230,8 @@ export default function BucketFormScreen() {
               onFocus={ensureFocusedVisible}
             />
           </View>
+
+          <GoalField value={goal} onChange={setGoal} />
         </ScrollView>
 
         <BottomBar>

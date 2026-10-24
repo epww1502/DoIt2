@@ -12,6 +12,7 @@ import {
   Text,
 } from '@/components/atoms';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
+import { InboxButton } from '@/components/space/InboxButton';
 import { ProfileCard } from '@/components/space/ProfileCard';
 import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
 import { PALETTES } from '@/constants/palettes';
@@ -19,6 +20,7 @@ import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
 import { installedVersion } from '@/lib/appVersion';
 import { showAlert } from '@/lib/dialog';
 import { showErrorAlert } from '@/lib/errors';
+import { ensureReminderPermission } from '@/lib/reminders';
 import {
   isPushSupported,
   registerForPush,
@@ -41,7 +43,11 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <ScreenHeader title="설정" subtitle="공간과 화면을 바꿀 수 있어요" />
+      <ScreenHeader
+        title="설정"
+        subtitle="공간과 화면을 바꿀 수 있어요"
+        right={<InboxButton />}
+      />
       <ScrollView contentContainerClassName="gap-4 px-5 pb-10 pt-3">
         <ProfileCard />
         <SpaceStatusCard />
@@ -84,6 +90,8 @@ export default function SettingsScreen() {
             />
             <Separator />
             <PushToggleRow />
+            <Separator />
+            <WeekendToggleRow />
           </CardContent>
         </Card>
 
@@ -229,6 +237,44 @@ function PushToggleRow() {
           : '이 앱(Expo Go)에서는 알림을 받을 수 없어요'
       }
       value={supported && pushEnabled}
+      onChange={(next) => {
+        if (supported) void change(next);
+      }}
+    />
+  );
+}
+
+/** 금요일 저녁 '이번 주말 뭐 할까?' 알림 켜고 끄기 */
+function WeekendToggleRow() {
+  const weekend = useSettingsStore((s) => s.weekendReminder);
+  const setWeekend = useSettingsStore((s) => s.setWeekendReminder);
+  const supported = isPushSupported();
+
+  const change = async (next: boolean) => {
+    setWeekend(next);
+    if (!next) return;
+    const ok = await ensureReminderPermission(true).catch(() => false);
+    if (!ok) {
+      showAlert(
+        '알림 권한이 꺼져 있어요',
+        '휴대폰 설정에서 DoIt2 알림을 허용하면 금요일 저녁에 알려드려요.',
+        [
+          { text: '닫기', style: 'cancel' },
+          { text: '설정 열기', onPress: () => void Linking.openSettings() },
+        ]
+      );
+    }
+  };
+
+  return (
+    <ToggleRow
+      title="주말 추천 알림"
+      description={
+        supported
+          ? "금요일 저녁 7시에 '이번 주말 뭐 할까?' 하나 골라 알려줘요"
+          : '이 앱(Expo Go)에서는 알림을 받을 수 없어요'
+      }
+      value={supported && weekend}
       onChange={(next) => {
         if (supported) void change(next);
       }}

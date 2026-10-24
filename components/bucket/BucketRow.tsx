@@ -10,6 +10,9 @@ import {
   type BucketItem,
 } from '@/lib/bucket/types';
 
+import { cn } from '@/lib/utils';
+
+import { goalDday, goalPassed } from './goalDday';
 import { Selectable } from './Selectable';
 
 export type SelectionProps = {
@@ -46,9 +49,17 @@ export function BucketRow({
         <Text size={22}>{category.emoji}</Text>
       </View>
       <View className="flex-1 gap-0.5 pr-6">
-        <Text weight="600" size={16} numberOfLines={1}>
-          {item.title}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <Text
+            weight="600"
+            size={16}
+            numberOfLines={1}
+            className="flex-shrink"
+          >
+            {item.title}
+          </Text>
+          <GoalBadge item={item} />
+        </View>
         <Text variant="muted" size={13} numberOfLines={1}>
           {meta}
         </Text>
@@ -76,14 +87,39 @@ export function BucketRowCompact({
       className="flex-row items-center gap-2.5 rounded-xl border px-3 py-2.5 bg-card border-border active:opacity-70"
     >
       <Text size={16}>{category.emoji}</Text>
-      <Text weight="500" size={15} numberOfLines={1} className="flex-1 pr-6">
+      <Text weight="500" size={15} numberOfLines={1} className="flex-shrink">
         {item.title}
       </Text>
+      <View className="flex-1 pr-6">
+        <GoalBadge item={item} />
+      </View>
       {!selection.selecting ? (
         <Text size={11} className="text-muted-foreground">
           {settingTag(item.setting)}
         </Text>
       ) : null}
     </Selectable>
+  );
+}
+
+/** 목표 날짜가 있으면 제목 옆에 작은 D-day (지났으면 회색) */
+function GoalBadge({ item }: { item: BucketItem }) {
+  if (!item.goal || item.done) return null;
+  const passed = goalPassed(item.goal.date);
+  return (
+    <View
+      className={cn(
+        'rounded-full px-2 py-0.5',
+        passed ? 'bg-muted' : 'bg-accent'
+      )}
+    >
+      <Text
+        weight="700"
+        size={11}
+        className={passed ? 'text-muted-foreground' : 'text-primary'}
+      >
+        {goalDday(item.goal.date)}
+      </Text>
+    </View>
   );
 }

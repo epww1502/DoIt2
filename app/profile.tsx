@@ -27,6 +27,8 @@ import { deletePhoto } from '@/lib/bucket/photo';
 import { issueAccountCode } from '@/lib/supabase/account';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useRecentPlacesStore } from '@/store/useRecentPlacesStore';
+import { useInboxStore } from '@/store/useInboxStore';
+import { useLocalInboxStore } from '@/store/useLocalInboxStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
@@ -259,6 +261,8 @@ function DeleteAccountLink() {
       useProfileStore.setState({ profile: null });
       useSettingsStore.getState().setAccountCode(null);
       useRecentPlacesStore.getState().clear();
+      useInboxStore.getState().clear();
+      useLocalInboxStore.getState().clear();
       router.dismissAll();
       showAlert('계정을 지웠어요', '새로 시작할 수 있어요.');
     } catch (e) {

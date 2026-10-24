@@ -26,7 +26,8 @@ export function isPushSupported() {
   );
 }
 
-async function loadNotifications() {
+/** expo-notifications (isPushSupported()일 때만 부른다) */
+export async function loadNotifications() {
   return import('expo-notifications');
 }
 
@@ -112,7 +113,8 @@ export function notifySpace(
 }
 
 /** 알림을 눌렀을 때 넘어온 값 */
-export type PushData = { spaceId?: string; itemId?: string | null };
+/** spaceId: null이면 '나만 보기' 항목 (폰 안 알림) */
+export type PushData = { spaceId?: string | null; itemId?: string | null };
 
 /**
  * 알림을 누르면 부를 함수를 건다. 앱이 꺼져 있다가 알림으로 켜진 경우도 처리한다.

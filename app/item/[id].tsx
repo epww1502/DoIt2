@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { router, useLocalSearchParams } from 'expo-router';
-import { MapPin, Pencil, Trash2 } from 'lucide-react-native';
+import { Flag, MapPin, Pencil, Trash2 } from 'lucide-react-native';
 import { Pressable, ScrollView, View } from 'react-native';
 import {
   SafeAreaView,
@@ -18,7 +18,13 @@ import { MapAppButtons } from '@/components/bucket/MapAppButtons';
 import { ReviewsSection } from '@/components/bucket/ReviewsSection';
 import { StarRating } from '@/components/bucket/StarRating';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
-import { getCategory, KIND_META, SETTING_META } from '@/lib/bucket/types';
+import { goalDday } from '@/components/bucket/goalDday';
+import {
+  getCategory,
+  GOAL_REMIND_META,
+  KIND_META,
+  SETTING_META,
+} from '@/lib/bucket/types';
 import { openInMap } from '@/lib/mapLinks';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 
@@ -166,6 +172,30 @@ export default function BucketDetailScreen() {
             {dayjs(item.createdAt).format('YYYY년 M월 D일')}에 담았어요
           </Text>
         </View>
+
+        {item.goal ? (
+          <View className="flex-row items-center gap-3 rounded-2xl p-4 bg-accent">
+            <Icon as={Flag} size={18} className="text-primary" />
+            <View className="flex-1 gap-0.5">
+              <Text weight="600" size={13} className="text-muted-foreground">
+                목표 날짜
+              </Text>
+              <Text weight="600" size={15}>
+                {dayjs(item.goal.date).format('YYYY년 M월 D일 (dd)')}
+              </Text>
+              <Text variant="muted" size={12}>
+                {item.goal.remind.length > 0
+                  ? `알림: ${item.goal.remind.map((k) => GOAL_REMIND_META[k].label).join(', ')}`
+                  : '알림 없음'}
+              </Text>
+            </View>
+            {!done ? (
+              <Text weight="700" size={16} className="text-primary">
+                {goalDday(item.goal.date)}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
 
         {mapTarget ? (
           <View className="gap-3 rounded-2xl p-4 bg-accent">

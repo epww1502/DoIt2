@@ -8,6 +8,7 @@
 // - { spaceId, event: 'reviewed', itemIds: [string] }  다른 사람이 남긴 기록에 내 평가를 더함
 //
 // 막 바뀐 항목(최근 10분)만 알린다. 예전 항목으로 알림을 계속 보내는 걸 막으려고.
+// 받는 사람마다 notifications(알림함)에도 한 줄씩 남긴다 (푸시를 꺼둔 사람도 앱에서 볼 수 있게).
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -122,8 +123,6 @@ Deno.serve(async (req) => {
     displayName(spaceId, actor),
     admin.from('push_tokens').select('token').in('user_id', others),
   ]);
-  if (!tokens?.length) return json({ sent: 0 });
-
   const first = fresh[0];
   let message: string;
   const rating = reviewOf.get(first.id)?.rating ?? 0;
@@ -139,14 +138,36 @@ Deno.serve(async (req) => {
         : `${name}님이 ${quote(first.title)} 외 ${fresh.length - 1}개를 담았어요`;
   }
 
+  const title = space ? `${space.emoji} ${space.name}` : 'DoIt2';
+  const itemId = fresh.length === 1 ? first.id : null;
+
+  // 알림함 (실패해도 푸시는 보낸다)
+  await admin
+    .from('notifications')
+    .insert(
+      others.map((userId) => ({
+        user_id: userId,
+        space_id: spaceId,
+        item_id: itemId,
+        kind: event,
+        title,
+        body: message,
+      }))
+    )
+    .then(({ error }) => {
+      if (error) console.error('inbox insert failed', error.message);
+    });
+
+  if (!tokens?.length) return json({ sent: 0 });
+
   const messages = tokens.map((t) => ({
     to: t.token,
-    title: space ? `${space.emoji} ${space.name}` : 'DoIt2',
+    title,
     body: message,
     sound: 'default',
     channelId: 'default',
     // 누르면 이 공간의 그 항목으로
-    data: { spaceId, itemId: fresh.length === 1 ? first.id : null },
+    data: { spaceId, itemId },
   }));
 
   // Expo는 한 번에 100개까지 받는다

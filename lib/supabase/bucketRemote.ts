@@ -13,6 +13,7 @@ import {
   type BucketSetting,
   type CategoryKey,
   type DoneRecord,
+  type GoalInfo,
   type ItemReview,
   type PlaceInfo,
 } from '@/lib/bucket/types';
@@ -107,6 +108,7 @@ export function fromRow(
     memo: row.memo,
     createdAt: row.created_at,
     done,
+    goal: (row.goal as GoalInfo | null) ?? null,
     reviews: row.item_reviews
       ? row.item_reviews.map(reviewFromRow)
       : (local?.reviews ?? []),
@@ -125,6 +127,7 @@ function toRow(item: BucketItem, spaceId: string): ItemInsert {
     place: (item.place ?? null) as Json,
     memo: item.memo,
     done: toRemoteDone(item.done) as Json,
+    goal: (item.goal ?? null) as Json,
     created_at: item.createdAt,
   };
 }

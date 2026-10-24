@@ -10,8 +10,10 @@ import '@/lib/date';
 
 import { DialogHost } from '@/components/atoms/DialogHost';
 import { ConnectionSync } from '@/components/sync/ConnectionSync';
+import { InboxSync } from '@/components/sync/InboxSync';
 import { OfflineBanner } from '@/components/sync/OfflineBanner';
 import { PushSync } from '@/components/sync/PushSync';
+import { ReminderSync } from '@/components/sync/ReminderSync';
 import { SpaceSync } from '@/components/sync/SpaceSync';
 import { VersionGate } from '@/components/sync/VersionGate';
 import { hexToRgbTriple } from '@/constants/palettes';
@@ -58,6 +60,10 @@ function RootLayoutInner() {
       <ConnectionSync />
       {/* 알림 등록·알림 눌러 열기 (화면 없음) */}
       <PushSync />
+      {/* 목표 날짜·주말 추천 알림을 폰 안에서 예약 (화면 없음) */}
+      <ReminderSync />
+      {/* 알림센터: 같은 공간 소식 받기 (화면 없음) */}
+      <InboxSync />
       {/* showAlert 팝업 (기본 Alert 대신) */}
       <DialogHost />
       {/* 설치된 빌드가 너무 오래됐으면 스토어 업데이트 안내 */}
@@ -106,6 +112,7 @@ function RootLayoutInner() {
             options={{ animation: 'slide_from_bottom' }}
           />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="notifications" />
           <Stack.Screen name="account/restore" />
           <Stack.Screen
             name="space/new"

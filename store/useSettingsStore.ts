@@ -34,6 +34,9 @@ type SettingsState = {
   /** 버킷리스트 보기: list(목록), compact(간단히), category(카테고리별), map(지도) */
   bucketView: BucketView;
   setBucketView: (value: BucketView) => void;
+  /** 금요일 저녁 '이번 주말 뭐 할까?' 알림 */
+  weekendReminder: boolean;
+  setWeekendReminder: (value: boolean) => void;
   /** 같은 공간 사람이 담거나 기록하면 알림 받기 */
   pushEnabled: boolean;
   setPushEnabled: (value: boolean) => void;
@@ -56,6 +59,8 @@ export const useSettingsStore = create<SettingsState>()(
       setDoneView: (doneView) => set({ doneView }),
       bucketView: 'list',
       setBucketView: (bucketView) => set({ bucketView }),
+      weekendReminder: true,
+      setWeekendReminder: (weekendReminder) => set({ weekendReminder }),
       pushEnabled: true,
       setPushEnabled: (pushEnabled) => set({ pushEnabled }),
     }),
@@ -71,6 +76,7 @@ export const useSettingsStore = create<SettingsState>()(
         accountCode: state.accountCode,
         doneView: state.doneView,
         bucketView: state.bucketView,
+        weekendReminder: state.weekendReminder,
         pushEnabled: state.pushEnabled,
       }),
     }

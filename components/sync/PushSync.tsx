@@ -7,7 +7,7 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
 /** 알림을 누르면 그 공간으로 바꾸고 (하나면) 그 항목을 연다 */
-async function openFromNotification(data: PushData) {
+export async function openFromNotification(data: PushData) {
   const { spaceId, itemId } = data;
   if (
     spaceId &&
@@ -19,6 +19,16 @@ async function openFromNotification(data: PushData) {
         .switchSpace(spaceId)
         .catch(() => {});
     }
+  } else if (
+    spaceId === null &&
+    itemId &&
+    useBucketStore.getState().spaceId !== null
+  ) {
+    // '나만 보기' 항목의 알림 (목표 날짜·주말 추천)
+    await useBucketStore
+      .getState()
+      .switchSpace(null)
+      .catch(() => {});
   }
   if (itemId) {
     router.push({ pathname: '/item/[id]', params: { id: itemId } });

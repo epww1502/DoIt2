@@ -45,6 +45,7 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           done: Json | null;
+          goal: Json | null;
           id: string;
           kind: string;
           location: string;
@@ -60,6 +61,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           done?: Json | null;
+          goal?: Json | null;
           id: string;
           kind: string;
           location?: string;
@@ -75,6 +77,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           done?: Json | null;
+          goal?: Json | null;
           id?: string;
           kind?: string;
           location?: string;
@@ -139,6 +142,42 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      notifications: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          item_id: string | null;
+          kind: string;
+          read_at: string | null;
+          space_id: string | null;
+          title: string;
+          user_id: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          item_id?: string | null;
+          kind: string;
+          read_at?: string | null;
+          space_id?: string | null;
+          title: string;
+          user_id: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          item_id?: string | null;
+          kind?: string;
+          read_at?: string | null;
+          space_id?: string | null;
+          title?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       profiles: {
         Row: {
@@ -360,5 +399,7 @@ export type BucketItemRow = Database['public']['Tables']['bucket_items']['Row'];
 export type SpaceRow = Database['public']['Tables']['spaces']['Row'];
 export type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 export type ItemReviewRow = Database['public']['Tables']['item_reviews']['Row'];
+export type NotificationRow =
+  Database['public']['Tables']['notifications']['Row'];
 export type MemberProfile =
   Database['public']['Functions']['space_member_profiles']['Returns'][number];
