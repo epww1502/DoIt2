@@ -13,6 +13,8 @@ import {
   type BucketFilter,
 } from '@/components/bucket/CategoryFilter';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { useReviewCtx } from '@/hooks/useReviewCtx';
+import { shownRating } from '@/lib/bucket/reviews';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { PickReel } from '@/components/bucket/PickReel';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
@@ -81,6 +83,7 @@ function buildReel(candidates: BucketItem[], picked: BucketItem): Reel {
 
 export default function PickScreen() {
   const items = useBucketStore((state) => state.items);
+  const reviewCtx = useReviewCtx();
   // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
   const sync = useListSync();
   const pickAnimation = useSettingsStore((s) => s.pickAnimation);
@@ -108,11 +111,23 @@ export default function PickScreen() {
       items.filter(
         (it) =>
           // 해본 것은 '이미 해본 것도 포함'을 켜고, 설정한 별점 이상일 때만
-          (!it.done || (includeDone && it.done.rating >= redoMinRating)) &&
+          (!it.done ||
+            (includeDone &&
+              (redoMinRating <= 1 ||
+                (shownRating(it, reviewCtx) ?? 0) >= redoMinRating))) &&
           (settingFilter === 'all' || it.setting === settingFilter) &&
           matchesFilter(it, filter)
       ),
-    [items, filter, includeDone, redoMinRating, settingFilter]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      items,
+      filter,
+      includeDone,
+      redoMinRating,
+      settingFilter,
+      reviewCtx.userId,
+      reviewCtx.inSpace,
+    ]
   );
 
   // 장소 좌표가 있는 실외 항목은 그 장소의 날씨를 따로 본다

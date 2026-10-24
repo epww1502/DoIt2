@@ -49,7 +49,7 @@ export function matchesDoneFilter(item: BucketItem, f: DoneFilter) {
     return false;
   }
   if (f.setting !== 'all' && item.setting !== f.setting) return false;
-  return done.rating >= f.minRating;
+  return f.minRating <= 1 || done.rating >= f.minRating;
 }
 
 const SETTING_OPTIONS: { value: DoneFilter['setting']; label: string }[] = [

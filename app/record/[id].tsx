@@ -35,6 +35,11 @@ import {
   type RecordPhoto,
 } from '@/lib/bucket/types';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
+import { useMemberLookup } from '@/store/useMembersStore';
+import { PersonAvatar } from '@/components/space/PersonAvatar';
+import { useReviewCtx } from '@/hooks/useReviewCtx';
+import { myReview, visibleReviews } from '@/lib/bucket/reviews';
+import { showErrorAlert } from '@/lib/errors';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
 
 const RATING_LABELS = [
@@ -52,13 +57,28 @@ export default function RecordFormScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = useBucketItem(id);
   const recordDone = useBucketStore((state) => state.recordDone);
+  const saveMyReview = useBucketStore((state) => state.saveMyReview);
   const saved = item?.done;
   const { keyboardHeight, scrollRef, onScroll, ensureFocusedVisible } =
     useKeyboardAwareForm();
+  // 공간에서는 날짜·사진은 함께, 별점·소감은 내 것만 고친다
+  const reviewCtx = useReviewCtx();
+  const inSpace = reviewCtx.inSpace;
+  const mine = item ? myReview(item, reviewCtx.userId) : null;
+  /** 다른 사람이 먼저 기록했고 나는 아직 평가 전 */
+  const awaitingMine = inSpace && Boolean(saved) && !mine;
+  const others = item
+    ? visibleReviews(item).filter((r) => r.userId !== reviewCtx.userId)
+    : [];
+  const member = useMemberLookup(useBucketStore((s) => s.spaceId));
 
   const [date, setDate] = useState(saved?.date ?? todayKey());
-  const [rating, setRating] = useState(saved?.rating ?? 5);
-  const [review, setReview] = useState(saved?.review ?? '');
+  const [rating, setRating] = useState(
+    (inSpace ? mine?.rating : saved?.rating) ?? 5
+  );
+  const [review, setReview] = useState(
+    (inSpace ? mine?.review : saved?.review) ?? ''
+  );
   // 사진들. uri: 이 휴대폰의 사진 파일, path: 서버에 올라간 사진 (상대가 올린 사진이면 path만 있다)
   const [photos, setPhotos] = useState<RecordPhoto[]>(() =>
     recordPhotos(saved)
@@ -155,20 +175,32 @@ export default function RecordFormScreen() {
         )
       );
       router.back();
-    } catch {
-      showAlert(
-        '저장하지 못했어요',
-        '인터넷 연결을 확인하고 다시 시도해주세요.'
-      );
+    } catch (e) {
+      showErrorAlert('저장하지 못했어요', e, save);
     } finally {
       setSaving(false);
     }
   };
 
+  /** 다른 사람이 남긴 기록에 내 평가 없이 함께한 것으로 넘기기 */
+  const skip = () => {
+    for (const photo of photos) discardNewPhoto(photo.uri);
+    saveMyReview(item.id, { rating: null, review: '' });
+    router.back();
+  };
+
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <NavBar
-        title={saved ? '기록 수정' : together ? '함께한 기록' : '기록 남기기'}
+        title={
+          awaitingMine
+            ? '내 평가 남기기'
+            : saved
+              ? '기록 수정'
+              : together
+                ? '함께한 기록'
+                : '기록 남기기'
+        }
         onBack={cancel}
       />
       {/* 키보드 높이만큼 아래를 비워서 입력칸과 버튼을 키보드 위로 올린다 */}
@@ -242,7 +274,40 @@ export default function RecordFormScreen() {
             onFocus={ensureFocusedVisible}
           />
 
+          {others.length > 0 ? (
+            // 먼저 남긴 다른 사람들의 평가 (참고용)
+            <View className="gap-2 rounded-2xl p-4 bg-accent">
+              <Text weight="600" size={13} className="text-muted-foreground">
+                다른 사람의 평가
+              </Text>
+              {others.map((r) => {
+                const who = member(r.userId);
+                return (
+                  <View key={r.userId} className="flex-row items-start gap-2">
+                    <PersonAvatar imagePath={who.avatarPath} size={24} />
+                    <View className="flex-1 gap-0.5">
+                      <View className="flex-row items-center gap-2">
+                        <Text weight="600" size={13}>
+                          {who.name}
+                        </Text>
+                        {r.rating ? (
+                          <StarRating value={r.rating} size={12} />
+                        ) : null}
+                      </View>
+                      {r.review ? <Text size={13}>{r.review}</Text> : null}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
+
           <View className="items-center gap-2">
+            {inSpace ? (
+              <Text variant="muted" size={13}>
+                내 별점
+              </Text>
+            ) : null}
             <StarRating value={rating} onChange={setRating} size={36} />
             <Text weight="600" className="text-primary">
               {RATING_LABELS[rating]}
@@ -250,7 +315,7 @@ export default function RecordFormScreen() {
           </View>
 
           <View>
-            <FieldLabel>한 줄 후기</FieldLabel>
+            <FieldLabel>{inSpace ? '내 한 줄 소감' : '한 줄 후기'}</FieldLabel>
             <TextArea
               value={review}
               onChangeText={setReview}
@@ -304,10 +369,25 @@ export default function RecordFormScreen() {
 
         <BottomBar>
           <Button
-            label={saving ? '저장하는 중…' : '기록 저장하기'}
+            label={
+              saving
+                ? '저장하는 중…'
+                : awaitingMine
+                  ? '내 평가 저장하기'
+                  : '기록 저장하기'
+            }
             disabled={saving}
             onPress={() => void save()}
           />
+          {awaitingMine ? (
+            <Button
+              label="평가 없이 넘기기"
+              variant="ghost"
+              size="md"
+              disabled={saving}
+              onPress={skip}
+            />
+          ) : null}
         </BottomBar>
       </View>
       <DatePickerSheet

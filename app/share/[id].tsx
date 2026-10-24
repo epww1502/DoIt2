@@ -15,6 +15,8 @@ import { useTogether } from '@/hooks/useTogether';
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { usePhotoState } from '@/components/bucket/DonePhoto';
+import { useReviewCtx } from '@/hooks/useReviewCtx';
+import { viewForMe } from '@/lib/bucket/reviews';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { FONT_WEIGHTS } from '@/constants/fonts';
 import { getCategory, KIND_META, recordPhotos } from '@/lib/bucket/types';
@@ -43,7 +45,9 @@ export default function ShareCardScreen() {
   /** 공유·저장 중이면 무엇을 하는 중인지 */
   const [busy, setBusy] = useState<'share' | 'save' | null>(null);
 
-  const done = item?.done;
+  // 공간이면 별점·소감은 내 것 (없으면 모두의 평균 별점)
+  const reviewCtx = useReviewCtx();
+  const done = item ? viewForMe(item, reviewCtx).done : null;
   const photo = recordPhotos(done)[0];
   const photoState = usePhotoState(photo?.uri, photo?.path);
   const photoUri = photoState.uri;
@@ -174,17 +178,19 @@ export default function ShareCardScreen() {
             <CardText size={22} color={CARD_TEXT} weight="800" lines={2}>
               {item.title}
             </CardText>
-            <View style={{ flexDirection: 'row', gap: 3 }}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <Icon
-                  key={n}
-                  as={Star}
-                  size={16}
-                  color={n <= done.rating ? primary : '#E5E8EB'}
-                  fill={n <= done.rating ? primary : '#E5E8EB'}
-                />
-              ))}
-            </View>
+            {done.rating > 0 ? (
+              <View style={{ flexDirection: 'row', gap: 3 }}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Icon
+                    key={n}
+                    as={Star}
+                    size={16}
+                    color={n <= done.rating ? primary : '#E5E8EB'}
+                    fill={n <= done.rating ? primary : '#E5E8EB'}
+                  />
+                ))}
+              </View>
+            ) : null}
             {done.review ? (
               <CardText
                 size={14}

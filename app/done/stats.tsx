@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTogether } from '@/hooks/useTogether';
 import { NavBar, Text } from '@/components/atoms';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { useReviewCtx } from '@/hooks/useReviewCtx';
+import { itemStatus, viewForMe } from '@/lib/bucket/reviews';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { StarRating } from '@/components/bucket/StarRating';
 import { getCategory, type BucketItem } from '@/lib/bucket/types';
@@ -39,10 +41,15 @@ function buildStats(done: BucketItem[]): Stats {
   const monthIndex = new Map(months.map((m, i) => [m.key, i]));
   const categoryCount = new Map<string, number>();
   let ratingSum = 0;
+  let ratedCount = 0;
 
   for (const it of done) {
     const d = it.done!;
-    ratingSum += d.rating;
+    // 평가를 건너뛴 것(0)은 평균에서 뺀다
+    if (d.rating > 0) {
+      ratingSum += d.rating;
+      ratedCount += 1;
+    }
     const i = monthIndex.get(d.date.slice(0, 7));
     if (i !== undefined) months[i].count += 1;
     categoryCount.set(it.category, (categoryCount.get(it.category) ?? 0) + 1);
@@ -71,7 +78,7 @@ function buildStats(done: BucketItem[]): Stats {
       .length,
     places: done.filter((it) => it.kind === 'place').length,
     activities: done.filter((it) => it.kind === 'activity').length,
-    averageRating: done.length > 0 ? ratingSum / done.length : 0,
+    averageRating: ratedCount > 0 ? ratingSum / ratedCount : 0,
     firstDate: dates[0] ?? '',
     months,
     categories,
@@ -85,9 +92,16 @@ export default function DoneStatsScreen() {
   const items = useBucketStore((s) => s.items);
   // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
   const sync = useListSync();
+  const reviewCtx = useReviewCtx();
   const stats = useMemo(
-    () => buildStats(items.filter((it) => it.done)),
-    [items]
+    () =>
+      buildStats(
+        items
+          .filter((it) => itemStatus(it, reviewCtx) === 'done')
+          .map((it) => viewForMe(it, reviewCtx))
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, reviewCtx.userId, reviewCtx.inSpace]
   );
 
   if (stats.total === 0) {

@@ -4,7 +4,8 @@
 //
 // 요청 본문
 // - { spaceId, event: 'added', itemIds: string[] }  새로 담음 (여러 개면 한 번에)
-// - { spaceId, event: 'done',  itemIds: [string] }  기록을 남김
+// - { spaceId, event: 'done',  itemIds: [string] }  기록을 처음 남김 (별점은 부른 사람의 평가)
+// - { spaceId, event: 'reviewed', itemIds: [string] }  다른 사람이 남긴 기록에 내 평가를 더함
 //
 // 막 바뀐 항목(최근 10분)만 알린다. 예전 항목으로 알림을 계속 보내는 걸 막으려고.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -22,11 +23,9 @@ const admin = createClient(
 
 type Body = {
   spaceId?: string;
-  event?: 'added' | 'done';
+  event?: 'added' | 'done' | 'reviewed';
   itemIds?: string[];
 };
-
-type DoneJson = { rating?: number } | null;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -75,7 +74,11 @@ Deno.serve(async (req) => {
   }
   const { spaceId, event } = body;
   const itemIds = (body.itemIds ?? []).slice(0, MAX_ITEMS);
-  if (!spaceId || (event !== 'added' && event !== 'done') || !itemIds.length) {
+  if (
+    !spaceId ||
+    (event !== 'added' && event !== 'done' && event !== 'reviewed') ||
+    !itemIds.length
+  ) {
     return json({ error: 'invalid_body' }, 400);
   }
 
@@ -90,14 +93,27 @@ Deno.serve(async (req) => {
   const others = members.map((m) => m.user_id).filter((id) => id !== actor);
   if (others.length === 0) return json({ sent: 0 });
 
-  // 막 바뀐 이 공간 항목만
-  const { data: items } = await admin
-    .from('bucket_items')
-    .select('id, title, done, updated_at')
-    .eq('space_id', spaceId)
-    .in('id', itemIds);
-  const fresh = (items ?? []).filter(
-    (it) => Date.now() - new Date(it.updated_at).getTime() < FRESH_MS
+  // 이 공간 항목과, 부른 사람이 남긴 평가
+  const [{ data: items }, { data: reviews }] = await Promise.all([
+    admin
+      .from('bucket_items')
+      .select('id, title, updated_at')
+      .eq('space_id', spaceId)
+      .in('id', itemIds),
+    admin
+      .from('item_reviews')
+      .select('item_id, rating, updated_at')
+      .eq('user_id', actor)
+      .in('item_id', itemIds),
+  ]);
+  const reviewOf = new Map((reviews ?? []).map((r) => [r.item_id, r]));
+  // 막 바뀐 것만 (평가 알림은 평가가 막 바뀌었는지로 본다)
+  const isFresh = (at: string | undefined) =>
+    !!at && Date.now() - new Date(at).getTime() < FRESH_MS;
+  const fresh = (items ?? []).filter((it) =>
+    event === 'reviewed'
+      ? isFresh(reviewOf.get(it.id)?.updated_at)
+      : isFresh(it.updated_at)
   );
   if (fresh.length === 0) return json({ sent: 0 });
 
@@ -110,10 +126,12 @@ Deno.serve(async (req) => {
 
   const first = fresh[0];
   let message: string;
+  const rating = reviewOf.get(first.id)?.rating ?? 0;
+  const stars = rating > 0 ? ` ${'★'.repeat(rating)}` : '';
   if (event === 'done') {
-    const rating = (first.done as DoneJson)?.rating ?? 0;
-    const stars = rating > 0 ? ` ${'★'.repeat(rating)}` : '';
     message = `${name}님이 ${quote(first.title)} 기록을 남겼어요${stars}`;
+  } else if (event === 'reviewed') {
+    message = `${name}님도 ${quote(first.title)}에 평가를 남겼어요${stars}`;
   } else {
     message =
       fresh.length === 1

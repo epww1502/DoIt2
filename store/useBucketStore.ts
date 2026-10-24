@@ -12,6 +12,7 @@ import {
   type BucketInput,
   type BucketItem,
   type DoneRecord,
+  type ItemReview,
   type RecordPhoto,
 } from '@/lib/bucket/types';
 import {
@@ -21,12 +22,17 @@ import {
 } from '@/lib/connection';
 import { notifySpace } from '@/lib/push';
 import * as remote from '@/lib/supabase/bucketRemote';
-import type { BucketItemRow } from '@/lib/supabase/database.types';
+import { myReview } from '@/lib/bucket/reviews';
+import type {
+  BucketItemRow,
+  ItemReviewRow,
+} from '@/lib/supabase/database.types';
 import {
   pendingFor,
   useOutboxStore,
   type OutboxEntry,
 } from '@/store/useOutboxStore';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 /** '나만 보기'(공간 없음) 목록을 담는 캐시 키 */
 export const LOCAL_KEY = 'local';
@@ -65,7 +71,18 @@ type BucketState = {
   removeItems: (ids: string[]) => void;
   /** 사진이 새로 바뀌었으면 서버에 올린 뒤 저장한다 */
   recordDone: (id: string, record: DoneRecord) => Promise<void>;
-  /** 해낸 기록을 지우고 다시 버킷리스트로 돌린다 */
+  /**
+   * 공간: 내 평가만 따로 남기거나 건너뛴다 (rating null이면 건너뜀).
+   * 다른 사람이 먼저 기록한 항목에서 쓴다. 날짜·사진은 그대로 둔다
+   */
+  saveMyReview: (
+    id: string,
+    review: { rating: number | null; review: string }
+  ) => void;
+  /**
+   * 해낸 기록을 지운다. '나만 보기'는 버킷리스트로 돌린다.
+   * 공간은 내 평가만 지우고, 아무도 평가가 안 남으면 기록(날짜·사진)도 지워 버킷리스트로 돌린다
+   */
   clearDone: (id: string) => void;
   /** 여러 개의 기록을 한 번에 지운다 (항목은 버킷리스트로 돌아간다) */
   clearDoneMany: (ids: string[]) => void;
@@ -83,6 +100,12 @@ type BucketState = {
   /** 실시간: 다른 사람(또는 나)이 바꾼 행 반영 */
   applyRemoteRow: (row: BucketItemRow) => void;
   applyRemoteDelete: (id: string) => void;
+  /** 실시간: 누가 평가를 남기거나 고치거나 지웠다 */
+  applyRemoteReview: (row: ItemReviewRow) => void;
+  applyRemoteReviewDelete: (old: {
+    item_id?: string;
+    user_id?: string;
+  }) => void;
 };
 
 /** v1(장소만 있던 때) 데이터 모양 */
@@ -194,6 +217,7 @@ export const useBucketStore = create<BucketState>()(
         const outbox = useOutboxStore.getState();
         const deletes = entries.filter((e) => e.op === 'delete');
         const upserts = entries.filter((e) => e.op === 'upsert');
+        const reviews = entries.filter((e) => e.op === 'review');
 
         if (deletes.length > 0) {
           try {
@@ -222,26 +246,86 @@ export const useBucketStore = create<BucketState>()(
         }
         // 지금 폰에 없는 항목(공간 캐시가 지워짐 등)은 올릴 수 없다
         outbox.settle(missing);
-        if (ready.length === 0) return;
 
-        try {
-          await remote.upsertItems(
-            ready.map((r) => r.item),
-            spaceId
-          );
-        } catch (e) {
-          if (isNetworkError(e)) throw e;
-          console.warn('[outbox] upsert rejected', e);
+        if (ready.length > 0) {
+          let accepted = true;
+          try {
+            await remote.upsertItems(
+              ready.map((r) => r.item),
+              spaceId
+            );
+          } catch (e) {
+            if (isNetworkError(e)) throw e;
+            console.warn('[outbox] upsert rejected', e);
+            accepted = false;
+          }
           outbox.settle(ready.map((r) => r.entry));
-          return;
+          if (accepted) {
+            const ids = ready
+              .filter((r) => r.entry.notify === 'added')
+              .map((r) => r.item.id);
+            if (ids.length > 0) notifySpace(spaceId, 'added', ids);
+          }
         }
-        outbox.settle(ready.map((r) => r.entry));
-        for (const kind of ['added', 'done'] as const) {
-          const ids = ready
-            .filter((r) => r.entry.notify === kind)
-            .map((r) => r.item.id);
-          if (ids.length > 0) notifySpace(spaceId, kind, ids);
+
+        // 내 평가 (항목이 먼저 서버에 있어야 해서 맨 뒤에)
+        const userId = useSpaceStore.getState().userId;
+        if (!userId) return;
+        for (const entry of reviews) {
+          const item = findIn(spaceId, entry.itemId);
+          if (!item) {
+            outbox.settle([entry]);
+            continue;
+          }
+          const mine = myReview(item, userId);
+          try {
+            if (mine) {
+              await remote.upsertReview(item.id, spaceId, userId, mine);
+            } else {
+              await remote.deleteReview(item.id, userId);
+            }
+          } catch (e) {
+            if (isNetworkError(e)) throw e;
+            console.warn('[outbox] review rejected', e);
+            outbox.settle([entry]);
+            continue;
+          }
+          outbox.settle([entry]);
+          // 별점을 남겼을 때만 알린다 (건너뛰기는 조용히)
+          if (entry.notify && entry.notify !== 'added' && mine?.rating) {
+            notifySpace(spaceId, entry.notify, [item.id]);
+          }
         }
+      };
+
+      /** 공간 항목의 내 평가를 바꾸고(null이면 지우기) 서버와 맞추라고 적어둔다 */
+      const setMine = (
+        id: string,
+        review: Pick<ItemReview, 'rating' | 'review'> | null,
+        notify?: 'done' | 'reviewed'
+      ) => {
+        const { spaceId } = get();
+        const userId = useSpaceStore.getState().userId;
+        if (!spaceId || !userId) return;
+        const target = findItem(id);
+        if (!target) return;
+        const others = (target.reviews ?? []).filter(
+          (r) => r.userId !== userId
+        );
+        const reviews = review
+          ? [
+              ...others,
+              {
+                userId,
+                rating: review.rating,
+                review: review.review,
+                updatedAt: new Date().toISOString(),
+              },
+            ]
+          : others;
+        replaceItem(id, { ...target, reviews });
+        useOutboxStore.getState().queueReview(spaceId, id, notify);
+        flushSoon();
       };
 
       const runFlush = async () => {
@@ -346,8 +430,27 @@ export const useBucketStore = create<BucketState>()(
 
           const item = { ...target, done: next };
           replaceItem(id, item);
-          // 처음 남긴 기록일 때만 알린다 (고쳐 쓸 때는 조용히)
-          pushItems([item], prev ? undefined : 'done');
+          pushItems([item]);
+          if (spaceId) {
+            // 별점·소감은 내 평가로. 처음 남긴 기록이면 'done', 남이 남긴 기록에 더하면 'reviewed' 알림
+            const hadMine = Boolean(
+              myReview(target, useSpaceStore.getState().userId)
+            );
+            setMine(
+              id,
+              { rating: record.rating, review: record.review },
+              !prev ? 'done' : hadMine ? undefined : 'reviewed'
+            );
+          }
+        },
+
+        saveMyReview: (id, review) => {
+          const target = findItem(id);
+          if (!target?.done) return;
+          const hadMine = Boolean(
+            myReview(target, useSpaceStore.getState().userId)
+          );
+          setMine(id, review, hadMine ? undefined : 'reviewed');
         },
 
         clearDone: (id) => get().clearDoneMany([id]),
@@ -356,9 +459,19 @@ export const useBucketStore = create<BucketState>()(
           const idSet = new Set(ids);
           const cleared: BucketItem[] = [];
           const { spaceId } = get();
+          const userId = useSpaceStore.getState().userId;
+          const onlyMine: string[] = [];
           set({
             items: get().items.map((it) => {
               if (!idSet.has(it.id) || !it.done) return it;
+              // 공간에서 다른 사람 평가가 남아 있으면 내 평가만 지운다 (기록은 그대로)
+              const othersLeft = (it.reviews ?? []).some(
+                (r) => r.userId !== userId
+              );
+              if (spaceId && othersLeft) {
+                onlyMine.push(it.id);
+                return it;
+              }
               deleteRecordPhotos(it.done, spaceId);
               const next = { ...it, done: null };
               cleared.push(next);
@@ -366,6 +479,11 @@ export const useBucketStore = create<BucketState>()(
             }),
           });
           pushItems(cleared);
+          if (spaceId) {
+            for (const id of [...onlyMine, ...cleared.map((it) => it.id)]) {
+              setMine(id, null);
+            }
+          }
         },
 
         addItemsTo: async (target, inputs) => {
@@ -433,6 +551,17 @@ export const useBucketStore = create<BucketState>()(
             });
           }
           await remote.upsertItems(uploaded, spaceId);
+          // 해낸 기록의 별점·소감은 공간에서 내 평가가 된다
+          const userId = useSpaceStore.getState().userId;
+          if (userId) {
+            for (const it of uploaded) {
+              if (!it.done) continue;
+              await remote.upsertReview(it.id, spaceId, userId, {
+                rating: it.done.rating,
+                review: it.done.review,
+              });
+            }
+          }
 
           // 옮긴 뒤 '나만 보기'는 비운다
           set({
@@ -447,7 +576,7 @@ export const useBucketStore = create<BucketState>()(
           set({ sync: { status: 'loading', error: null } });
           // 오프라인 때 바꾼 내용을 먼저 올린다 (못 올려도 아래에서 지켜준다)
           await get().flushPending();
-          let rows: BucketItemRow[];
+          let rows: remote.ItemRowWithReviews[];
           try {
             rows = await remote.fetchItems(spaceId);
           } catch (e) {
@@ -463,16 +592,20 @@ export const useBucketStore = create<BucketState>()(
           set({ sync: { status: 'idle', error: null } });
 
           // 아직 안 올라간 변경은 서버 목록보다 폰 내용을 믿는다
-          const { upserts, deletes } = pendingFor(spaceId);
+          const { upserts, deletes, reviews } = pendingFor(spaceId);
           const local = get().items;
           const localById = new Map(local.map((it) => [it.id, it]));
           const merged = rows
             .filter((r) => !deletes.has(r.id))
-            .map((r) =>
-              upserts.has(r.id) && localById.has(r.id)
-                ? localById.get(r.id)!
-                : remote.fromRow(r, localById.get(r.id))
-            );
+            .map((r) => {
+              const mine = localById.get(r.id);
+              if (upserts.has(r.id) && mine) return mine;
+              const next = remote.fromRow(r, mine);
+              // 내 평가가 아직 안 올라갔으면 평가 목록은 폰 것을 쓴다
+              return reviews.has(r.id) && mine
+                ? { ...next, reviews: mine.reviews }
+                : next;
+            });
           const onServer = new Set(rows.map((r) => r.id));
           const notYetUp = local.filter(
             (it) => upserts.has(it.id) && !onServer.has(it.id)
@@ -525,6 +658,49 @@ export const useBucketStore = create<BucketState>()(
 
         applyRemoteDelete: (id) => {
           set({ items: get().items.filter((it) => it.id !== id) });
+        },
+
+        applyRemoteReview: (row) => {
+          const { spaceId } = get();
+          if (row.space_id !== spaceId) return;
+          // 내가 바꾸고 아직 안 올라간 평가는 폰 것을 유지한다
+          const me = useSpaceStore.getState().userId;
+          if (
+            row.user_id === me &&
+            pendingFor(spaceId).reviews.has(row.item_id)
+          ) {
+            return;
+          }
+          const target = findItem(row.item_id);
+          if (!target) return;
+          const review = remote.reviewFromRow(row);
+          replaceItem(row.item_id, {
+            ...target,
+            reviews: [
+              ...(target.reviews ?? []).filter((r) => r.userId !== row.user_id),
+              review,
+            ],
+          });
+        },
+
+        applyRemoteReviewDelete: (old) => {
+          const { spaceId } = get();
+          if (!old.item_id || !old.user_id || !spaceId) return;
+          const me = useSpaceStore.getState().userId;
+          if (
+            old.user_id === me &&
+            pendingFor(spaceId).reviews.has(old.item_id)
+          ) {
+            return;
+          }
+          const target = findItem(old.item_id);
+          if (!target) return;
+          replaceItem(old.item_id, {
+            ...target,
+            reviews: (target.reviews ?? []).filter(
+              (r) => r.userId !== old.user_id
+            ),
+          });
         },
       };
     },

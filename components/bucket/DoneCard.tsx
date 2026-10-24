@@ -45,7 +45,10 @@ export function DoneCard({
           <Text weight="700" size={17} numberOfLines={1} className="flex-1">
             {item.title}
           </Text>
-          <StarRating value={done.rating} size={14} />
+          {/* 평가를 건너뛰었으면 별을 빼고 보여준다 */}
+          {done.rating > 0 ? (
+            <StarRating value={done.rating} size={14} />
+          ) : null}
         </View>
         <Text variant="muted" size={13}>
           {dayjs(done.date).format('YYYY년 M월 D일 (dd)')}
@@ -101,7 +104,8 @@ export function DoneRow({
           {item.location ? ` · ${item.location}` : ''}
         </Text>
       </View>
-      <StarRating value={done.rating} size={12} />
+      {/* 평가를 건너뛰었으면 별을 빼고 보여준다 */}
+      {done.rating > 0 ? <StarRating value={done.rating} size={12} /> : null}
     </Selectable>
   );
 }

@@ -12,6 +12,8 @@ import { useTogether } from '@/hooks/useTogether';
 import { Icon, NavBar, Text } from '@/components/atoms';
 import { PhotoImage } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { useReviewCtx } from '@/hooks/useReviewCtx';
+import { viewForMe } from '@/lib/bucket/reviews';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { groupBySpot, ItemsMap } from '@/components/bucket/ItemsMap';
 import { StarRating } from '@/components/bucket/StarRating';
@@ -23,6 +25,7 @@ export default function DoneMapScreen() {
   const together = useTogether();
   const placesLabel = together ? '함께한 곳' : '다녀온 곳';
   const items = useBucketStore((s) => s.items);
+  const reviewCtx = useReviewCtx();
   // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
   const sync = useListSync();
   const insets = useSafeAreaInsets();
@@ -32,8 +35,10 @@ export default function DoneMapScreen() {
     () =>
       items
         .filter((it) => it.done && it.place)
+        .map((it) => viewForMe(it, reviewCtx))
         .sort((a, b) => (b.done!.date > a.done!.date ? 1 : -1)),
-    [items]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, reviewCtx.userId, reviewCtx.inSpace]
   );
   const spotCount = useMemo(() => groupBySpot(visited).length, [visited]);
 

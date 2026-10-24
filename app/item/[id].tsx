@@ -15,7 +15,9 @@ import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { MapAppButtons } from '@/components/bucket/MapAppButtons';
+import { ReviewsSection } from '@/components/bucket/ReviewsSection';
 import { StarRating } from '@/components/bucket/StarRating';
+import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { getCategory, KIND_META, SETTING_META } from '@/lib/bucket/types';
 import { openInMap } from '@/lib/mapLinks';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
@@ -28,6 +30,9 @@ export default function BucketDetailScreen() {
   const clearDone = useBucketStore((state) => state.clearDone);
   // 알림을 눌러 바로 들어왔을 때 목록을 아직 못 받았으면 '찾을 수 없어요' 대신 기다리거나 다시 시도
   const sync = useListSync();
+  // 공간이면 별점·소감은 사람마다 따로 (아래 '모두의 평가')
+  const reviewCtx = useReviewCtx();
+  const inSpace = reviewCtx.inSpace;
   const insets = useSafeAreaInsets();
 
   if (!item) {
@@ -77,15 +82,26 @@ export default function BucketDetailScreen() {
     );
   };
 
+  // 공간에서 다른 사람 평가가 남아 있으면 내 평가만 지운다
+  const othersReviewed = (item.reviews ?? []).some(
+    (r) => r.userId !== reviewCtx.userId
+  );
+  const onlyMine = inSpace && othersReviewed;
   const confirmClearDone = () => {
-    showAlert('기록을 지울까요?', '다시 버킷리스트로 돌아가요.', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '지우기',
-        style: 'destructive',
-        onPress: () => clearDone(item.id),
-      },
-    ]);
+    showAlert(
+      onlyMine ? '내 평가를 지울까요?' : '기록을 지울까요?',
+      onlyMine
+        ? '다른 사람의 평가와 날짜·사진은 그대로 남아요. 이 항목은 다시 평가를 기다려요.'
+        : '다시 버킷리스트로 돌아가요.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '지우기',
+          style: 'destructive',
+          onPress: () => clearDone(item.id),
+        },
+      ]
+    );
   };
 
   const goRecord = () =>
@@ -197,13 +213,14 @@ export default function BucketDetailScreen() {
                   <Text weight="600">
                     {dayjs(done.date).format('YYYY년 M월 D일 (dd)')}
                   </Text>
-                  <StarRating value={done.rating} />
+                  {!inSpace ? <StarRating value={done.rating} /> : null}
                 </View>
-                {done.review ? (
+                {!inSpace && done.review ? (
                   <Text variant="body">“{done.review}”</Text>
                 ) : null}
               </View>
             </View>
+            {inSpace ? <ReviewsSection item={item} /> : null}
             <Button
               label="공유 카드 만들기"
               size="md"
@@ -223,7 +240,7 @@ export default function BucketDetailScreen() {
                 onPress={goRecord}
               />
               <Button
-                label="기록 지우기"
+                label={onlyMine ? '내 평가 지우기' : '기록 지우기'}
                 variant="ghost"
                 size="md"
                 className="flex-1"

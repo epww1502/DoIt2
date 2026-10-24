@@ -95,6 +95,51 @@ export type Database = {
           },
         ];
       };
+      item_reviews: {
+        Row: {
+          created_at: string;
+          item_id: string;
+          rating: number | null;
+          review: string;
+          space_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          item_id: string;
+          rating?: number | null;
+          review?: string;
+          space_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          item_id?: string;
+          rating?: number | null;
+          review?: string;
+          space_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'item_reviews_item_id_fkey';
+            columns: ['item_id'];
+            isOneToOne: false;
+            referencedRelation: 'bucket_items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'item_reviews_space_id_fkey';
+            columns: ['space_id'];
+            isOneToOne: false;
+            referencedRelation: 'spaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_path: string | null;
@@ -314,5 +359,6 @@ export type Database = {
 export type BucketItemRow = Database['public']['Tables']['bucket_items']['Row'];
 export type SpaceRow = Database['public']['Tables']['spaces']['Row'];
 export type ProfileRow = Database['public']['Tables']['profiles']['Row'];
+export type ItemReviewRow = Database['public']['Tables']['item_reviews']['Row'];
 export type MemberProfile =
   Database['public']['Functions']['space_member_profiles']['Returns'][number];

@@ -2,7 +2,10 @@ import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase/client';
-import type { BucketItemRow } from '@/lib/supabase/database.types';
+import type {
+  BucketItemRow,
+  ItemReviewRow,
+} from '@/lib/supabase/database.types';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
@@ -49,6 +52,8 @@ export function SpaceSync() {
 
     const onRow = (payload: { new: unknown }) =>
       useBucketStore.getState().applyRemoteRow(payload.new as BucketItemRow);
+    const onReview = (payload: { new: unknown }) =>
+      useBucketStore.getState().applyRemoteReview(payload.new as ItemReviewRow);
     const refreshSpaces = () =>
       void useSpaceStore
         .getState()
@@ -96,6 +101,37 @@ export function SpaceSync() {
           filter: `space_id=eq.${spaceId}`,
         },
         refreshSpaces
+      )
+      // 사람별 평가 (남기기·고치기는 이 공간 것만, 지우기는 항목·사람 id로)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'item_reviews',
+          filter: `space_id=eq.${spaceId}`,
+        },
+        onReview
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'item_reviews',
+          filter: `space_id=eq.${spaceId}`,
+        },
+        onReview
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'item_reviews' },
+        (payload) =>
+          useBucketStore
+            .getState()
+            .applyRemoteReviewDelete(
+              payload.old as { item_id?: string; user_id?: string }
+            )
       )
       .subscribe();
 

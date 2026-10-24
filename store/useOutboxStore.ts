@@ -4,19 +4,20 @@
  * 다시 연결될 때 올린다. 앱을 꺼도 남도록 휴대폰에 저장한다.
  *
  * 항목은 내용 대신 id만 적는다. 올릴 때 그 순간의 최신 내용을 읽어서 올린다.
+ * review: 그 항목의 '내 평가'를 서버와 맞춘다 (폰에 내 평가가 있으면 저장, 없으면 지우기).
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-export type OutboxOp = 'upsert' | 'delete';
+export type OutboxOp = 'upsert' | 'delete' | 'review';
 
 export type OutboxEntry = {
   spaceId: string;
   itemId: string;
   op: OutboxOp;
   /** 올라가면 같은 공간 사람들에게 보낼 알림 */
-  notify?: 'added' | 'done';
+  notify?: 'added' | 'done' | 'reviewed';
   /** 올리는 사이에 또 바뀌었는지 알아보는 번호 */
   rev: number;
 };
@@ -33,6 +34,12 @@ type OutboxState = {
     notify?: 'added' | 'done'
   ) => void;
   queueDelete: (spaceId: string, itemIds: string[]) => void;
+  /** 내 평가를 서버와 맞추라고 적어둔다 */
+  queueReview: (
+    spaceId: string,
+    itemId: string,
+    notify?: 'done' | 'reviewed'
+  ) => void;
   queuePhotoRemoval: (paths: (string | null | undefined)[]) => void;
   /** 올라간 변경을 뺀다. 그 사이에 또 바뀌었으면(rev가 다르면) 남긴다 */
   settle: (entries: OutboxEntry[]) => void;
@@ -43,7 +50,9 @@ type OutboxState = {
 };
 
 let nextRev = 1;
-const keyOf = (spaceId: string, itemId: string) => `${spaceId}:${itemId}`;
+/** 항목 변경과 내 평가 변경은 따로 센다 (같은 항목이어도 둘 다 올려야 한다) */
+const keyOf = (spaceId: string, itemId: string, op: OutboxOp) =>
+  op === 'review' ? `${spaceId}:${itemId}:review` : `${spaceId}:${itemId}`;
 
 export const useOutboxStore = create<OutboxState>()(
   persist(
@@ -55,7 +64,7 @@ export const useOutboxStore = create<OutboxState>()(
         if (itemIds.length === 0) return;
         const entries = { ...get().entries };
         for (const itemId of itemIds) {
-          const key = keyOf(spaceId, itemId);
+          const key = keyOf(spaceId, itemId, 'upsert');
           const prev = entries[key];
           entries[key] = {
             spaceId,
@@ -73,14 +82,33 @@ export const useOutboxStore = create<OutboxState>()(
         if (itemIds.length === 0) return;
         const entries = { ...get().entries };
         for (const itemId of itemIds) {
-          entries[keyOf(spaceId, itemId)] = {
+          entries[keyOf(spaceId, itemId, 'delete')] = {
             spaceId,
             itemId,
             op: 'delete',
             rev: nextRev++,
           };
+          // 항목이 지워지면 평가도 같이 지워진다
+          delete entries[keyOf(spaceId, itemId, 'review')];
         }
         set({ entries });
+      },
+
+      queueReview: (spaceId, itemId, notify) => {
+        const key = keyOf(spaceId, itemId, 'review');
+        const prev = get().entries[key];
+        set({
+          entries: {
+            ...get().entries,
+            [key]: {
+              spaceId,
+              itemId,
+              op: 'review',
+              notify: prev?.notify ?? notify,
+              rev: nextRev++,
+            },
+          },
+        });
       },
 
       queuePhotoRemoval: (paths) => {
@@ -92,7 +120,7 @@ export const useOutboxStore = create<OutboxState>()(
       settle: (done) => {
         const entries = { ...get().entries };
         for (const e of done) {
-          const key = keyOf(e.spaceId, e.itemId);
+          const key = keyOf(e.spaceId, e.itemId, e.op);
           if (entries[key]?.rev === e.rev) delete entries[key];
         }
         set({ entries });
@@ -133,11 +161,15 @@ export const useOutboxStore = create<OutboxState>()(
 export function pendingFor(spaceId: string) {
   const upserts = new Set<string>();
   const deletes = new Set<string>();
+  /** 내 평가가 아직 안 올라간 항목 */
+  const reviews = new Set<string>();
   for (const e of Object.values(useOutboxStore.getState().entries)) {
     if (e.spaceId !== spaceId) continue;
-    (e.op === 'upsert' ? upserts : deletes).add(e.itemId);
+    if (e.op === 'upsert') upserts.add(e.itemId);
+    else if (e.op === 'delete') deletes.add(e.itemId);
+    else reviews.add(e.itemId);
   }
-  return { upserts, deletes };
+  return { upserts, deletes, reviews };
 }
 
 /** 아직 안 올라간 변경 개수 (안내 띠에 보여준다) */

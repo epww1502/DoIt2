@@ -26,6 +26,8 @@ import {
   type DoneFilter,
 } from '@/components/bucket/DoneFilterSheet';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { useReviewCtx } from '@/hooks/useReviewCtx';
+import { itemStatus, viewForMe } from '@/lib/bucket/reviews';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import {
@@ -69,12 +71,16 @@ export default function DoneScreen() {
   const placesLabel = together ? '함께한 곳' : '다녀온 곳';
 
   // 최근에 한 순
+  // 공간에서는 내가 평가했거나 건너뛴 것만 (평가 전인 건 버킷리스트 맨 위에), 별점은 내 것으로
+  const reviewCtx = useReviewCtx();
   const done = useMemo(
     () =>
       items
-        .filter((it) => it.done)
+        .filter((it) => itemStatus(it, reviewCtx) === 'done')
+        .map((it) => viewForMe(it, reviewCtx))
         .sort((a, b) => (b.done!.date > a.done!.date ? 1 : -1)),
-    [items]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, reviewCtx.userId, reviewCtx.inSpace]
   );
   // 지도에 찍을 수 있는 (장소를 골라둔) 기록 수
   const visitedCount = done.filter((it) => it.place).length;

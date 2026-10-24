@@ -25,6 +25,7 @@ import {
   matchesFilter,
   type BucketFilter,
 } from '@/components/bucket/CategoryFilter';
+import { AwaitingReviews } from '@/components/bucket/AwaitingReviews';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import {
   SyncEmpty,
@@ -49,6 +50,8 @@ import { cn } from '@/lib/utils';
 import { useSpace, useSpaceStore } from '@/store/useSpaceStore';
 import { shareBucketItems } from '@/lib/shareItems';
 import { useImportSources } from '@/hooks/useImportSources';
+import { useReviewCtx } from '@/hooks/useReviewCtx';
+import { itemStatus } from '@/lib/bucket/reviews';
 
 /** 보기 방식 이름·아이콘 */
 const BUCKET_VIEW_META: Record<
@@ -71,6 +74,11 @@ export default function BucketListScreen() {
   const [filter, setFilter] = useState<BucketFilter>(ALL_FILTER);
 
   const todo = useMemo(() => items.filter((it) => !it.done), [items]);
+  // 공간에서 다른 사람이 먼저 기록해 내 평가를 기다리는 항목 (맨 위에 따로)
+  const reviewCtx = useReviewCtx();
+  const awaiting = items.filter(
+    (it) => itemStatus(it, reviewCtx) === 'awaiting'
+  );
   const filtered = useMemo(
     () => todo.filter((it) => matchesFilter(it, filter)),
     [todo, filter]
@@ -181,6 +189,11 @@ export default function BucketListScreen() {
       />
     </View>
   ) : undefined;
+  // 평가를 기다리는 칸: 목록 맨 위에 넣어 같이 스크롤된다 (고르는 중에는 숨긴다)
+  const showAwaiting = !selection.selecting && awaiting.length > 0;
+  const awaitingHeader = showAwaiting ? (
+    <AwaitingReviews items={awaiting} className="" />
+  ) : undefined;
   const listEmpty = (
     <EmptyState
       title="여기엔 아직 없어요"
@@ -244,40 +257,45 @@ export default function BucketListScreen() {
       {items.length === 0 && sync.kind !== 'ok' ? (
         <SyncEmpty sync={sync} />
       ) : todo.length === 0 ? (
-        <EmptyState
-          title={
-            items.length === 0
-              ? '아직 담은 게 없어요'
-              : '버킷리스트를 다 해냈어요!'
-          }
-          description={
-            items.length === 0
-              ? `맛집, 여행지도 좋고\n${together ? '같이 ' : ''}요리하기, 사진 찍기도 좋아요.`
-              : `다음에 ${together ? '같이 ' : ''}할 걸 또 담아봐요.`
-          }
-          actionLabel={items.length === 0 ? '첫 버킷리스트 담기' : '새로 담기'}
-          onAction={goNew}
-          // 해본 게 있으면 여러 개 골라 한 번에 다시 담을 수 있다.
-          // 처음 깐 폰이면 대신 쓰던 계정 불러오기
-          secondaryLabel={
-            doneCount > 0
-              ? `${doneLabel} 다시 담기`
-              : canImport
-                ? '다른 공간에서 가져오기'
-                : items.length === 0 && isFreshStart
-                  ? '다른 폰에서 쓰던 계정 불러오기'
-                  : '공유받은 목록 가져오기'
-          }
-          onSecondary={
-            doneCount > 0
-              ? goRedo
-              : canImport
-                ? goImport
-                : items.length === 0 && isFreshStart
-                  ? () => router.push('/account/restore')
-                  : goShared
-          }
-        />
+        <>
+          {showAwaiting ? <AwaitingReviews items={awaiting} /> : null}
+          <EmptyState
+            title={
+              items.length === 0
+                ? '아직 담은 게 없어요'
+                : '버킷리스트를 다 해냈어요!'
+            }
+            description={
+              items.length === 0
+                ? `맛집, 여행지도 좋고\n${together ? '같이 ' : ''}요리하기, 사진 찍기도 좋아요.`
+                : `다음에 ${together ? '같이 ' : ''}할 걸 또 담아봐요.`
+            }
+            actionLabel={
+              items.length === 0 ? '첫 버킷리스트 담기' : '새로 담기'
+            }
+            onAction={goNew}
+            // 해본 게 있으면 여러 개 골라 한 번에 다시 담을 수 있다.
+            // 처음 깐 폰이면 대신 쓰던 계정 불러오기
+            secondaryLabel={
+              doneCount > 0
+                ? `${doneLabel} 다시 담기`
+                : canImport
+                  ? '다른 공간에서 가져오기'
+                  : items.length === 0 && isFreshStart
+                    ? '다른 폰에서 쓰던 계정 불러오기'
+                    : '공유받은 목록 가져오기'
+            }
+            onSecondary={
+              doneCount > 0
+                ? goRedo
+                : canImport
+                  ? goImport
+                  : items.length === 0 && isFreshStart
+                    ? () => router.push('/account/restore')
+                    : goShared
+            }
+          />
+        </>
       ) : (
         <>
           <CategoryFilter
@@ -298,6 +316,20 @@ export default function BucketListScreen() {
               </Pressable>
             }
           />
+          {bucketView === 'map' && awaiting.length > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setBucketView('list')}
+              className="mx-5 mt-3 flex-row items-center justify-between rounded-xl px-4 py-2.5 bg-accent active:opacity-70"
+            >
+              <Text weight="600" size={13}>
+                평가를 기다려요 · {awaiting.length}
+              </Text>
+              <Text weight="600" size={13} className="text-primary">
+                목록에서 보기
+              </Text>
+            </Pressable>
+          ) : null}
           {bucketView === 'map' ? (
             <View className="mt-3 flex-1">
               {filtered.some((it) => it.place) ? (
@@ -342,6 +374,11 @@ export default function BucketListScreen() {
                 </View>
               )}
               contentContainerClassName="px-5 pb-28"
+              ListHeaderComponent={
+                awaitingHeader ? (
+                  <View className="pt-4">{awaitingHeader}</View>
+                ) : undefined
+              }
               ListFooterComponent={footer}
               ListEmptyComponent={listEmpty}
             />
@@ -364,6 +401,7 @@ export default function BucketListScreen() {
                 'px-5 pb-28 pt-4',
                 bucketView === 'compact' ? 'gap-2' : 'gap-3'
               )}
+              ListHeaderComponent={awaitingHeader}
               ListFooterComponent={footer}
               ListEmptyComponent={listEmpty}
             />

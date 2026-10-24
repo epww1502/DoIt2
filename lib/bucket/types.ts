@@ -195,7 +195,18 @@ export type BucketItem = {
   place?: PlaceInfo | null;
   memo: string;
   createdAt: string;
+  /** 함께한 기록(날짜·사진). 공간에서는 별점·소감은 reviews에 사람마다 따로 있다 */
   done: DoneRecord | null;
+  /** 공간 항목: 사람마다 남긴 별점·소감 ('나만 보기'에는 없다) */
+  reviews?: ItemReview[];
+};
+
+/** 한 사람의 평가. rating이 null이면 평가를 건너뛰었다 */
+export type ItemReview = {
+  userId: string;
+  rating: number | null;
+  review: string;
+  updatedAt: string;
 };
 
 export type BucketInput = Pick<

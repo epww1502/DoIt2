@@ -13,11 +13,17 @@ import {
   type BucketSetting,
   type CategoryKey,
   type DoneRecord,
+  type ItemReview,
   type PlaceInfo,
 } from '@/lib/bucket/types';
 
 import { supabase } from './client';
-import type { BucketItemRow, Database, Json } from './database.types';
+import type {
+  BucketItemRow,
+  Database,
+  ItemReviewRow,
+  Json,
+} from './database.types';
 
 type ItemInsert = Database['public']['Tables']['bucket_items']['Insert'];
 
@@ -47,7 +53,25 @@ function toRemoteDone(done: DoneRecord | null): RemoteDone | null {
 }
 
 /** 서버 행 → 앱 항목. 이 휴대폰에 같은 사진 파일이 있으면 그대로 쓴다 */
-export function fromRow(row: BucketItemRow, local?: BucketItem): BucketItem {
+/** 서버 항목 행 + 사람별 평가 (fetchItems가 함께 받아온다. 실시간 행에는 없다) */
+export type ItemRowWithReviews = BucketItemRow & {
+  item_reviews?: ItemReviewRow[];
+};
+
+export function reviewFromRow(row: ItemReviewRow): ItemReview {
+  return {
+    userId: row.user_id,
+    rating: row.rating,
+    review: row.review,
+    updatedAt: row.updated_at,
+  };
+}
+
+/** 서버 행 → 앱 항목. 평가가 같이 안 왔으면(실시간) 폰에 있던 평가를 그대로 둔다 */
+export function fromRow(
+  row: ItemRowWithReviews,
+  local?: BucketItem
+): BucketItem {
   const remoteDone = row.done as RemoteDone | null;
   let done: DoneRecord | null = null;
   if (remoteDone) {
@@ -83,6 +107,9 @@ export function fromRow(row: BucketItemRow, local?: BucketItem): BucketItem {
     memo: row.memo,
     createdAt: row.created_at,
     done,
+    reviews: row.item_reviews
+      ? row.item_reviews.map(reviewFromRow)
+      : (local?.reviews ?? []),
   };
 }
 
@@ -114,10 +141,12 @@ export function ensureUuid(id: string) {
   return UUID_RE.test(id) ? id : randomUUID();
 }
 
-export async function fetchItems(spaceId: string): Promise<BucketItemRow[]> {
+export async function fetchItems(
+  spaceId: string
+): Promise<ItemRowWithReviews[]> {
   const { data, error } = await supabase
     .from('bucket_items')
-    .select('*')
+    .select('*, item_reviews(*)')
     .eq('space_id', spaceId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -129,6 +158,34 @@ export async function upsertItems(items: BucketItem[], spaceId: string) {
   const { error } = await supabase
     .from('bucket_items')
     .upsert(items.map((it) => toRow(it, spaceId)));
+  if (error) throw error;
+}
+
+/** 내 평가 저장 (rating null: 건너뜀) */
+export async function upsertReview(
+  itemId: string,
+  spaceId: string,
+  userId: string,
+  review: Pick<ItemReview, 'rating' | 'review'>
+) {
+  const { error } = await supabase.from('item_reviews').upsert({
+    item_id: itemId,
+    // 서버 트리거가 항목의 공간으로 다시 채운다
+    space_id: spaceId,
+    user_id: userId,
+    rating: review.rating,
+    review: review.review,
+  });
+  if (error) throw error;
+}
+
+/** 내 평가 지우기 */
+export async function deleteReview(itemId: string, userId: string) {
+  const { error } = await supabase
+    .from('item_reviews')
+    .delete()
+    .eq('item_id', itemId)
+    .eq('user_id', userId);
   if (error) throw error;
 }
 
