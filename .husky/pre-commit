@@ -1,0 +1,9 @@
+# GitHub Desktop: Windows PATH의 `C:/Program Files/nodejs/npx`는 공백 때문에 bash에서 실패함
+NODE_HOME="/c/Program Files/nodejs"
+export PATH="$NODE_HOME:$PATH"
+
+if [ -x "$NODE_HOME/node.exe" ]; then
+  "$NODE_HOME/node.exe" ./node_modules/lint-staged/bin/lint-staged.js
+else
+  node ./node_modules/lint-staged/bin/lint-staged.js
+fi

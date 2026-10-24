@@ -1,0 +1,49 @@
+/* dark 모드: 네이티브는 ThemeModeContext → react-native-css-interop colorScheme.set, 웹은 html.dark (tailwind darkMode: 'class') */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    font-family:
+      'Pretendard-Regular',
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
+      Roboto,
+      sans-serif;
+
+    background-color: #fafafc; /* gray[50] */
+    color: #191f28; /* gray[900] */
+  }
+
+  * {
+    font-family:
+      'Pretendard-Regular',
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
+      Roboto,
+      sans-serif;
+  }
+
+  .dark body {
+    background-color: #17171c; /* gray[800] */
+    color: #ffffff; /* white */
+  }
+
+  /* isMobile (pwa) 인 경우 상태바 색상을 위한 bg 변경  (layout에서 설정)*/
+  html[data-mobile='true'] body {
+    background-color: #fafafc;
+  }
+
+  html[data-mobile='true'].dark body {
+    background-color: #101013;
+  }
+}
