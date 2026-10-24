@@ -25,6 +25,9 @@ type SettingsState = {
   /** 내가 만든 계정 코드. 다른 계정으로 바꾸면 안 맞으니 누구 코드인지 같이 둔다 */
   accountCode: { userId: string; code: string } | null;
   setAccountCode: (value: { userId: string; code: string } | null) => void;
+  /** 함께한 것 보기: card(사진 크게), compact(간단히) */
+  doneView: 'card' | 'compact';
+  setDoneView: (value: 'card' | 'compact') => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -40,6 +43,8 @@ export const useSettingsStore = create<SettingsState>()(
       setRedoMinRating: (redoMinRating) => set({ redoMinRating }),
       accountCode: null,
       setAccountCode: (accountCode) => set({ accountCode }),
+      doneView: 'card',
+      setDoneView: (doneView) => set({ doneView }),
     }),
     {
       name: 'doit2-settings',
@@ -51,6 +56,7 @@ export const useSettingsStore = create<SettingsState>()(
         haptics: state.haptics,
         redoMinRating: state.redoMinRating,
         accountCode: state.accountCode,
+        doneView: state.doneView,
       }),
     }
   )

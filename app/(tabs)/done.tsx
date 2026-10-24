@@ -1,7 +1,10 @@
 import {
   ChartColumn,
   CircleCheck,
+  GalleryVertical,
+  List,
   Map as MapIcon,
+  SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -11,7 +14,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { showAlert } from '@/lib/dialog';
 import { Icon, Segmented, Text } from '@/components/atoms';
-import { DoneCard } from '@/components/bucket/DoneCard';
+import { DoneCard, DoneRow } from '@/components/bucket/DoneCard';
+import {
+  activeFilterCount,
+  DoneFilterSheet,
+  EMPTY_DONE_FILTER,
+  matchesDoneFilter,
+  type DoneFilter,
+} from '@/components/bucket/DoneFilterSheet';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import {
@@ -23,7 +33,9 @@ import type { BucketKind } from '@/lib/bucket/types';
 import { KIND_ICON } from '@/components/bucket/kindIcons';
 import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useSelection } from '@/hooks/useSelection';
+import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 type KindOption = 'all' | BucketKind;
 
@@ -49,9 +61,21 @@ export default function DoneScreen() {
   );
   // 지도에 찍을 수 있는 (장소를 골라둔) 기록 수
   const visitedCount = done.filter((it) => it.place).length;
-  const shown = useMemo(
+  // 종류만 거른 목록 (필터 시트에서 고를 수 있는 연도·카테고리를 여기서 뽑는다)
+  const byKind = useMemo(
     () => (kind === 'all' ? done : done.filter((it) => it.kind === kind)),
     [done, kind]
+  );
+  const [filter, setFilter] = useState<DoneFilter>(EMPTY_DONE_FILTER);
+  const [filterOpen, setFilterOpen] = useState(false);
+  // 보기 모드 (사진 크게 / 간단히). 이 휴대폰에 기억한다
+  const doneView = useSettingsStore((s) => s.doneView);
+  const setDoneView = useSettingsStore((s) => s.setDoneView);
+  const compact = doneView === 'compact';
+  const filterCount = activeFilterCount(filter);
+  const shown = useMemo(
+    () => byKind.filter((it) => matchesDoneFilter(it, filter)),
+    [byKind, filter]
   );
 
   // 길게 눌러 여러 개 고르기 (보이는 카드 중에서만 센다)
@@ -123,7 +147,73 @@ export default function DoneScreen() {
       ) : (
         <>
           <View className="gap-3 px-5 pb-4">
-            <Segmented options={KIND_OPTIONS} value={kind} onChange={setKind} />
+            <View className="flex-row items-center gap-2">
+              <View className="flex-1">
+                <Segmented
+                  options={KIND_OPTIONS}
+                  value={kind}
+                  onChange={setKind}
+                />
+              </View>
+              {/* 보기 모드 바꾸기: 지금 모드가 아닌 쪽 아이콘을 보여준다 */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={compact ? '사진 크게 보기' : '간단히 보기'}
+                onPress={() => setDoneView(compact ? 'card' : 'compact')}
+                className="h-10 w-10 items-center justify-center rounded-lg bg-accent active:opacity-70"
+              >
+                <Icon
+                  as={compact ? GalleryVertical : List}
+                  size={18}
+                  className="text-muted-foreground"
+                />
+              </Pressable>
+              {/* 필터: 켜진 조건 수를 배지로 */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  filterCount > 0 ? `필터 ${filterCount}개 적용 중` : '필터'
+                }
+                onPress={() => setFilterOpen(true)}
+                className={cn(
+                  'h-10 w-10 items-center justify-center rounded-lg active:opacity-70',
+                  filterCount > 0 ? 'bg-primary' : 'bg-accent'
+                )}
+              >
+                <Icon
+                  as={SlidersHorizontal}
+                  size={18}
+                  className={
+                    filterCount > 0
+                      ? 'text-primary-foreground'
+                      : 'text-muted-foreground'
+                  }
+                />
+                {filterCount > 0 ? (
+                  <View className="min-w-5 absolute -right-1.5 -top-1.5 h-5 items-center justify-center rounded-full border-2 border-primary px-1 bg-background">
+                    <Text size={10} weight="700" className="text-primary">
+                      {filterCount}
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            </View>
+            {filterCount > 0 ? (
+              <View className="flex-row items-center justify-between">
+                <Text size={12} className="text-muted-foreground">
+                  {`필터로 ${byKind.length}개 중 ${shown.length}개만 보고 있어요`}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => setFilter(EMPTY_DONE_FILTER)}
+                >
+                  <Text size={12} weight="600" className="text-primary">
+                    필터 지우기
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
             {/* 지도·추억 모아보기 (여러 개 고를 땐 숨긴다) */}
             {!selection.selecting ? (
               <View className="flex-row gap-2">
@@ -149,7 +239,8 @@ export default function DoneScreen() {
             keyExtractor={(item) => item.id}
             extraData={selection.selected}
             renderItem={({ item }) => (
-              <DoneCard
+              <DoneItem
+                compact={compact}
                 item={item}
                 selecting={selection.selecting}
                 selected={selection.selected.has(item.id)}
@@ -157,13 +248,19 @@ export default function DoneScreen() {
                 onToggle={() => selection.toggle(item.id)}
               />
             )}
-            contentContainerClassName={
-              selection.selecting ? 'gap-4 px-5 pb-28' : 'gap-4 px-5 pb-10'
-            }
+            contentContainerClassName={cn(
+              'px-5',
+              compact ? 'gap-2' : 'gap-4',
+              selection.selecting ? 'pb-28' : 'pb-10'
+            )}
             ListEmptyComponent={
               <EmptyState
                 title="여기엔 아직 없어요"
-                description="다른 종류를 골라봐요."
+                description={
+                  filterCount > 0
+                    ? '필터 조건을 바꿔봐요.'
+                    : '다른 종류를 골라봐요.'
+                }
               />
             }
           />
@@ -175,6 +272,16 @@ export default function DoneScreen() {
           ) : null}
         </>
       )}
+      <DoneFilterSheet
+        visible={filterOpen}
+        items={byKind}
+        value={filter}
+        onApply={(next) => {
+          selection.clear();
+          setFilter(next);
+        }}
+        onClose={() => setFilterOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -201,4 +308,12 @@ function ViewLink({
       </Text>
     </Pressable>
   );
+}
+
+/** 보기 모드에 맞는 기록 한 칸 */
+function DoneItem({
+  compact,
+  ...props
+}: { compact: boolean } & React.ComponentProps<typeof DoneCard>) {
+  return compact ? <DoneRow {...props} /> : <DoneCard {...props} />;
 }

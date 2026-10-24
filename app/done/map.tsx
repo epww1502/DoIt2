@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { router } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -42,7 +42,8 @@ export default function DoneMapScreen() {
   const lastMarkerPress = useRef(0);
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState(false);
-  const [selected, setSelected] = useState<BucketItem | null>(null);
+  /** 누른 핀의 기록들 (같은 위치면 여러 개) */
+  const [selected, setSelected] = useState<BucketItem[] | null>(null);
 
   // 장소 좌표가 있는 함께한 기록 (최근 순)
   const visited = useMemo(
@@ -52,6 +53,16 @@ export default function DoneMapScreen() {
         .sort((a, b) => (b.done!.date > a.done!.date ? 1 : -1)),
     [items]
   );
+
+  // 같은 위치(약 1m 이내)의 기록은 핀 하나로 묶는다
+  const spots = useMemo(() => {
+    const byKey = new Map<string, BucketItem[]>();
+    for (const it of visited) {
+      const key = `${it.place!.latitude.toFixed(5)},${it.place!.longitude.toFixed(5)}`;
+      byKey.set(key, [...(byKey.get(key) ?? []), it]);
+    }
+    return [...byKey.values()];
+  }, [visited]);
 
   const html = useMemo(
     () =>
@@ -68,14 +79,14 @@ export default function DoneMapScreen() {
 
   useEffect(() => {
     if (!ready) return;
-    const places = visited.map((it) => ({
-      latitude: it.place!.latitude,
-      longitude: it.place!.longitude,
+    const places = spots.map((group) => ({
+      latitude: group[0].place!.latitude,
+      longitude: group[0].place!.longitude,
     }));
     webRef.current?.injectJavaScript(
       `window.DoIt2.setMarkers(${JSON.stringify(places)}); true;`
     );
-  }, [ready, visited]);
+  }, [ready, spots]);
 
   const onMessage = (e: WebViewMessageEvent) => {
     let message: MapMessage;
@@ -89,10 +100,10 @@ export default function DoneMapScreen() {
         setReady(true);
         break;
       case 'select': {
-        const item = visited[message.index];
-        if (!item) return;
+        const group = spots[message.index];
+        if (!group) return;
         lastMarkerPress.current = Date.now();
-        setSelected(item);
+        setSelected(group);
         run(`window.DoIt2.highlight(${message.index})`);
         break;
       }
@@ -137,7 +148,7 @@ export default function DoneMapScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <NavBar title={`함께한 곳 ${visited.length}곳`} />
+      <NavBar title={`함께한 곳 ${spots.length}곳`} />
       <View className="flex-1">
         <MapWebView
           ref={webRef}
@@ -154,7 +165,23 @@ export default function DoneMapScreen() {
           style={{ paddingBottom: insets.bottom + 12 }}
         >
           {selected ? (
-            <VisitedCard item={selected} />
+            <>
+              {selected.length > 1 ? (
+                <Text weight="700" size={14} className="mb-2">
+                  {`${selected[0].place?.name ?? '이곳'}에서 ${selected.length}번 함께했어요`}
+                </Text>
+              ) : null}
+              {/* 여러 개면 목록으로 (많으면 스크롤) */}
+              <ScrollView
+                style={{ maxHeight: 260 }}
+                contentContainerClassName="gap-3"
+                showsVerticalScrollIndicator={selected.length > 3}
+              >
+                {selected.map((item) => (
+                  <VisitedCard key={item.id} item={item} />
+                ))}
+              </ScrollView>
+            </>
           ) : (
             <Text variant="muted" size={13} className="py-3 text-center">
               핀을 누르면 그날의 기록을 볼 수 있어요
