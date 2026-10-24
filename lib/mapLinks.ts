@@ -48,10 +48,16 @@ function links(app: MapApp, target: Target): [string, string] {
   const name = enc(place.name);
   switch (app) {
     case 'kakao':
-      return [
-        `kakaomap://place?id=${place.kakaoId}`,
-        `https://map.kakao.com/link/map/${place.kakaoId}`,
-      ];
+      // 카카오 장소면 장소 상세로, 지도에서 직접 찍은 곳이면 그 좌표로 연다
+      return place.kakaoId
+        ? [
+            `kakaomap://place?id=${place.kakaoId}`,
+            `https://map.kakao.com/link/map/${place.kakaoId}`,
+          ]
+        : [
+            `kakaomap://look?p=${lat},${lng}`,
+            `https://map.kakao.com/link/map/${name},${lat},${lng}`,
+          ];
     case 'naver':
       return [
         `nmap://place?lat=${lat}&lng=${lng}&name=${name}&appname=${NAVER_APP_NAME}`,

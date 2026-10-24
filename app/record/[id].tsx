@@ -11,6 +11,7 @@ import { TextArea } from '@/components/atoms/TextArea';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
+import { usePhotoSource } from '@/components/bucket/DonePhoto';
 import { StarRating } from '@/components/bucket/StarRating';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { DATE_FORMAT, todayKey } from '@/lib/date';
@@ -39,9 +40,14 @@ export default function RecordFormScreen() {
   const [date, setDate] = useState(saved?.date ?? todayKey());
   const [rating, setRating] = useState(saved?.rating ?? 5);
   const [review, setReview] = useState(saved?.review ?? '');
-  const [photoUri, setPhotoUri] = useState<string | null>(
-    saved?.photoUri ?? null
-  );
+  // uri: 이 휴대폰의 사진 파일, path: 서버에 올라간 사진 (상대가 올린 사진이면 path만 있다)
+  const [photo, setPhoto] = useState<{
+    uri: string | null;
+    path: string | null;
+  }>({ uri: saved?.photoUri ?? null, path: saved?.photoPath ?? null });
+  const photoSource = usePhotoSource(photo.uri, photo.path);
+  const hasPhoto = Boolean(photo.uri || photo.path);
+  const [saving, setSaving] = useState(false);
 
   if (!item) {
     return (
@@ -69,26 +75,43 @@ export default function RecordFormScreen() {
     try {
       const uri = await pickPhoto();
       if (!uri) return;
-      discardNewPhoto(photoUri);
-      setPhotoUri(uri);
+      discardNewPhoto(photo.uri);
+      // 새 사진은 아직 서버 경로가 없다 (저장할 때 올린다)
+      setPhoto({ uri, path: null });
     } catch {
       Alert.alert('사진을 불러오지 못했어요', '잠시 후 다시 시도해주세요.');
     }
   };
 
   const removePhoto = () => {
-    discardNewPhoto(photoUri);
-    setPhotoUri(null);
+    discardNewPhoto(photo.uri);
+    setPhoto({ uri: null, path: null });
   };
 
   const cancel = () => {
-    discardNewPhoto(photoUri);
+    discardNewPhoto(photo.uri);
     router.back();
   };
 
-  const save = () => {
-    recordDone(item.id, { date, rating, review: review.trim(), photoUri });
-    router.back();
+  const save = async () => {
+    setSaving(true);
+    try {
+      await recordDone(item.id, {
+        date,
+        rating,
+        review: review.trim(),
+        photoUri: photo.uri,
+        photoPath: photo.path,
+      });
+      router.back();
+    } catch {
+      Alert.alert(
+        '저장하지 못했어요',
+        '인터넷 연결을 확인하고 다시 시도해주세요.'
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -160,15 +183,15 @@ export default function RecordFormScreen() {
 
           <View>
             <FieldLabel>사진 (선택)</FieldLabel>
-            {photoUri ? (
-              <View className="overflow-hidden rounded-2xl">
+            {hasPhoto ? (
+              <View className="overflow-hidden rounded-2xl bg-accent">
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="사진 바꾸기"
                   onPress={choosePhoto}
                 >
                   <Image
-                    source={{ uri: photoUri }}
+                    source={photoSource ? { uri: photoSource } : undefined}
                     style={{ width: '100%', aspectRatio: 4 / 3 }}
                     contentFit="cover"
                   />
@@ -200,7 +223,11 @@ export default function RecordFormScreen() {
         </ScrollView>
 
         <BottomBar>
-          <Button label="기록 저장하기" onPress={save} />
+          <Button
+            label={saving ? '저장하는 중…' : '기록 저장하기'}
+            disabled={saving}
+            onPress={() => void save()}
+          />
         </BottomBar>
       </View>
     </SafeAreaView>

@@ -5,6 +5,7 @@ import 'react-native-reanimated';
 import '../global.css';
 import '@/lib/date';
 
+import { CoupleSync } from '@/components/sync/CoupleSync';
 import { NAV_THEME } from '@/constants/theme';
 import { ThemeModeProvider, useThemeMode } from '@/contexts/ThemeModeContext';
 import { useFontsLoader } from '@/hooks/useFontsLoader';
@@ -29,6 +30,8 @@ function RootLayoutInner() {
 
   return (
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+      {/* 로그인·커플 확인·실시간 동기화 (화면 없음) */}
+      <CoupleSync />
       <View className="flex-1 bg-background">
         <Stack
           screenOptions={{
@@ -49,6 +52,7 @@ function RootLayoutInner() {
             name="item/search-place"
             options={{ animation: 'slide_from_bottom' }}
           />
+          <Stack.Screen name="couple" />
         </Stack>
       </View>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />

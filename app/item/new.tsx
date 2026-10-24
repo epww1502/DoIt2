@@ -227,7 +227,7 @@ export default function BucketFormScreen() {
                 >
                   <Icon as={Search} size={18} className="text-primary" />
                   <Text weight="600" size={15} className="text-primary">
-                    카카오에서 장소 찾기
+                    장소 찾기 · 지도에서 고르기
                   </Text>
                 </Pressable>
                 <TextField

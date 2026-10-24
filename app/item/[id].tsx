@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { MapPin, Pencil, Trash2 } from 'lucide-react-native';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
@@ -10,6 +9,7 @@ import {
 
 import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
+import { DonePhoto } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { StarRating } from '@/components/bucket/StarRating';
 import { getCategory, KIND_META, SETTING_META } from '@/lib/bucket/types';
@@ -189,13 +189,7 @@ export default function BucketDetailScreen() {
               우리의 기록 💕
             </Text>
             <View className="overflow-hidden rounded-2xl border bg-card border-border">
-              {done.photoUri ? (
-                <Image
-                  source={{ uri: done.photoUri }}
-                  style={{ width: '100%', aspectRatio: 4 / 3 }}
-                  contentFit="cover"
-                />
-              ) : null}
+              <DonePhoto done={done} />
               <View className="gap-2 p-4">
                 <View className="flex-row items-center justify-between">
                   <Text weight="600">

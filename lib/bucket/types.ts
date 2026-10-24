@@ -96,7 +96,10 @@ export type DoneRecord = {
   /** 1~5 */
   rating: number;
   review: string;
+  /** 이 휴대폰에 있는 사진 파일 (내가 올린 사진이면 있다) */
   photoUri: string | null;
+  /** 서버 사진 저장소 경로 {couple_id}/{파일 이름}. 커플 연결 전이면 없다 */
+  photoPath?: string | null;
 };
 
 /** 실내 / 실외. 비 오는 날 뽑기에서 실외를 뺄 때 쓴다 */
@@ -125,9 +128,10 @@ export const DEFAULT_SETTING: Record<CategoryKey, BucketSetting> = {
   etc: 'indoor',
 };
 
-/** 카카오 장소 검색으로 고른 장소 */
+/** 카카오 장소 검색이나 지도에서 고른 장소 */
 export type PlaceInfo = {
-  kakaoId: string;
+  /** 카카오 장소 id. 지도에서 직접 찍은 곳은 없다 */
+  kakaoId: string | null;
   name: string;
   /** "이탈리안", "카페" 같은 카카오 카테고리 마지막 단계 */
   category: string;

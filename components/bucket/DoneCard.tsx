@@ -1,11 +1,11 @@
 import dayjs from 'dayjs';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import { Text } from '@/components/atoms';
 import { getCategory, KIND_META, type BucketItem } from '@/lib/bucket/types';
 
+import { DonePhoto } from './DonePhoto';
 import { StarRating } from './StarRating';
 
 /** '함께한 것' 목록의 카드. done이 있는 항목만 넘긴다. */
@@ -22,13 +22,8 @@ export function DoneCard({ item }: { item: BucketItem }) {
       }
       className="overflow-hidden rounded-2xl border bg-card border-border active:opacity-80"
     >
-      {done.photoUri ? (
-        <Image
-          source={{ uri: done.photoUri }}
-          style={{ width: '100%', aspectRatio: 4 / 3 }}
-          contentFit="cover"
-          transition={150}
-        />
+      {done.photoUri || done.photoPath ? (
+        <DonePhoto done={done} />
       ) : (
         <View className="h-24 items-center justify-center bg-accent">
           <Text size={36}>{category.emoji}</Text>
