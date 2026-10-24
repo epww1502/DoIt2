@@ -10,8 +10,6 @@ import { Selectable } from './Selectable';
 export type SelectionProps = {
   selecting: boolean;
   selected: boolean;
-  /** 목록에서의 순서 (고르기 모드가 켜질 때 차례로 튀게) */
-  index: number;
   onLongPress: () => void;
   onToggle: () => void;
 };

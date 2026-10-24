@@ -139,10 +139,9 @@ export default function BucketListScreen() {
             data={filtered}
             keyExtractor={(item) => item.id}
             extraData={selection.selected}
-            renderItem={({ item, index }) => (
+            renderItem={({ item }) => (
               <BucketRow
                 item={item}
-                index={index}
                 selecting={selection.selecting}
                 selected={selection.selected.has(item.id)}
                 onLongPress={() => selection.start(item.id)}

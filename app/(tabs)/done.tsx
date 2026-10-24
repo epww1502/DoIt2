@@ -119,10 +119,9 @@ export default function DoneScreen() {
             data={shown}
             keyExtractor={(item) => item.id}
             extraData={selection.selected}
-            renderItem={({ item, index }) => (
+            renderItem={({ item }) => (
               <DoneCard
                 item={item}
-                index={index}
                 selecting={selection.selecting}
                 selected={selection.selected.has(item.id)}
                 onLongPress={() => selection.start(item.id)}

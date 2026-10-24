@@ -1,10 +1,4 @@
 import { Pressable, View } from 'react-native';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  SlideInDown,
-  SlideOutDown,
-} from 'react-native-reanimated';
 
 import { Button, Text } from '@/components/atoms';
 
@@ -23,11 +17,7 @@ export function SelectionHeader({
   onToggleAll,
 }: SelectionHeaderProps) {
   return (
-    <Animated.View
-      entering={FadeIn.duration(150)}
-      exiting={FadeOut.duration(120)}
-      className="h-[52px] flex-row items-center justify-between px-5"
-    >
+    <View className="h-[52px] flex-row items-center justify-between px-5">
       <Pressable accessibilityRole="button" hitSlop={8} onPress={onCancel}>
         <Text weight="600" size={15} className="text-muted-foreground">
           취소
@@ -41,7 +31,7 @@ export function SelectionHeader({
           {allSelected ? '선택 해제' : '전체 선택'}
         </Text>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -54,11 +44,7 @@ export function SelectionDeleteBar({
   onDelete: () => void;
 }) {
   return (
-    <Animated.View
-      entering={SlideInDown.springify().damping(14)}
-      exiting={SlideOutDown.duration(150)}
-      className="absolute bottom-0 left-0 right-0 border-t px-5 pb-4 pt-3 bg-background border-border"
-    >
+    <View className="absolute bottom-0 left-0 right-0 border-t px-5 pb-4 pt-3 bg-background border-border">
       <View>
         <Button
           label={`${count}개 지우기`}
@@ -66,6 +52,6 @@ export function SelectionDeleteBar({
           onPress={onDelete}
         />
       </View>
-    </Animated.View>
+    </View>
   );
 }
