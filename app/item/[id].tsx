@@ -6,64 +6,65 @@ import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
-import { EmptyState } from '@/components/place/EmptyState';
-import { StarRating } from '@/components/place/StarRating';
-import { getCategory } from '@/lib/place/types';
-import { usePlace, usePlaceStore } from '@/store/usePlaceStore';
+import { EmptyState } from '@/components/bucket/EmptyState';
+import { StarRating } from '@/components/bucket/StarRating';
+import { getCategory, KIND_META } from '@/lib/bucket/types';
+import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 
-export default function PlaceDetailScreen() {
+export default function BucketDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const place = usePlace(id);
-  const removePlace = usePlaceStore((state) => state.removePlace);
-  const clearVisit = usePlaceStore((state) => state.clearVisit);
+  const item = useBucketItem(id);
+  const removeItem = useBucketStore((state) => state.removeItem);
+  const clearDone = useBucketStore((state) => state.clearDone);
 
-  if (!place) {
+  if (!item) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <NavBar />
         <EmptyState
           emoji="🫥"
-          title="장소를 찾을 수 없어요"
-          description="이미 지운 장소일 수 있어요."
+          title="찾을 수 없어요"
+          description="이미 지운 항목일 수 있어요."
         />
       </SafeAreaView>
     );
   }
 
-  const category = getCategory(place.category);
-  const visit = place.visit;
+  const category = getCategory(item.category);
+  const meta = KIND_META[item.kind];
+  const done = item.done;
 
   const confirmRemove = () => {
-    Alert.alert('이 장소를 지울까요?', '다녀온 기록과 사진도 함께 지워져요.', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '지우기',
-        style: 'destructive',
-        onPress: () => {
-          router.back();
-          removePlace(place.id);
-        },
-      },
-    ]);
-  };
-
-  const confirmClearVisit = () => {
     Alert.alert(
-      '다녀온 기록을 지울까요?',
-      "장소는 다시 '갈 곳'으로 돌아가요.",
+      '버킷리스트에서 지울까요?',
+      '함께한 기록과 사진도 같이 지워져요.',
       [
         { text: '취소', style: 'cancel' },
         {
           text: '지우기',
           style: 'destructive',
-          onPress: () => clearVisit(place.id),
+          onPress: () => {
+            router.back();
+            removeItem(item.id);
+          },
         },
       ]
     );
   };
 
-  const goVisit = () =>
-    router.push({ pathname: '/visit/[id]', params: { id: place.id } });
+  const confirmClearDone = () => {
+    Alert.alert('기록을 지울까요?', '다시 버킷리스트로 돌아가요.', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '지우기',
+        style: 'destructive',
+        onPress: () => clearDone(item.id),
+      },
+    ]);
+  };
+
+  const goRecord = () =>
+    router.push({ pathname: '/record/[id]', params: { id: item.id } });
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -75,10 +76,7 @@ export default function PlaceDetailScreen() {
               accessibilityLabel="수정"
               hitSlop={6}
               onPress={() =>
-                router.push({
-                  pathname: '/place/new',
-                  params: { id: place.id },
-                })
+                router.push({ pathname: '/item/new', params: { id: item.id } })
               }
               className="h-10 w-10 items-center justify-center"
             >
@@ -103,40 +101,42 @@ export default function PlaceDetailScreen() {
             <Text size={40}>{category.emoji}</Text>
           </View>
           <Badge variant="primary">
-            <Text>{category.label}</Text>
+            <Text>
+              {meta.emoji} {meta.label} · {category.label}
+            </Text>
           </Badge>
           <Text weight="700" size={24} className="text-center">
-            {place.title}
+            {item.title}
           </Text>
-          {place.location ? (
+          {item.location ? (
             <View className="flex-row items-center gap-1">
               <Icon as={MapPin} size={14} className="text-muted-foreground" />
-              <Text variant="muted">{place.location}</Text>
+              <Text variant="muted">{item.location}</Text>
             </View>
           ) : null}
           <Text variant="muted" size={12}>
-            {dayjs(place.createdAt).format('YYYY년 M월 D일')}에 담았어요
+            {dayjs(item.createdAt).format('YYYY년 M월 D일')}에 담았어요
           </Text>
         </View>
 
-        {place.memo ? (
+        {item.memo ? (
           <View className="gap-1 rounded-2xl p-4 bg-accent">
             <Text weight="600" size={13} className="text-muted-foreground">
               메모
             </Text>
-            <Text variant="body">{place.memo}</Text>
+            <Text variant="body">{item.memo}</Text>
           </View>
         ) : null}
 
-        {visit ? (
+        {done ? (
           <View className="gap-3">
             <Text weight="700" size={18}>
               우리의 기록 💕
             </Text>
             <View className="overflow-hidden rounded-2xl border bg-card border-border">
-              {visit.photoUri ? (
+              {done.photoUri ? (
                 <Image
-                  source={{ uri: visit.photoUri }}
+                  source={{ uri: done.photoUri }}
                   style={{ width: '100%', aspectRatio: 4 / 3 }}
                   contentFit="cover"
                 />
@@ -144,12 +144,12 @@ export default function PlaceDetailScreen() {
               <View className="gap-2 p-4">
                 <View className="flex-row items-center justify-between">
                   <Text weight="600">
-                    {dayjs(visit.date).format('YYYY년 M월 D일 (dd)')}
+                    {dayjs(done.date).format('YYYY년 M월 D일 (dd)')}
                   </Text>
-                  <StarRating value={visit.rating} />
+                  <StarRating value={done.rating} />
                 </View>
-                {visit.review ? (
-                  <Text variant="body">“{visit.review}”</Text>
+                {done.review ? (
+                  <Text variant="body">“{done.review}”</Text>
                 ) : null}
               </View>
             </View>
@@ -159,23 +159,23 @@ export default function PlaceDetailScreen() {
                 variant="outline"
                 size="md"
                 className="flex-1"
-                onPress={goVisit}
+                onPress={goRecord}
               />
               <Button
                 label="기록 지우기"
                 variant="ghost"
                 size="md"
                 className="flex-1"
-                onPress={confirmClearVisit}
+                onPress={confirmClearDone}
               />
             </View>
           </View>
         ) : null}
       </ScrollView>
 
-      {!visit ? (
+      {!done ? (
         <View className="px-5 pb-4 pt-2">
-          <Button label="다녀왔어요! 기록 남기기" onPress={goVisit} />
+          <Button label={`${meta.doneLabel} 기록 남기기`} onPress={goRecord} />
         </View>
       ) : null}
     </SafeAreaView>

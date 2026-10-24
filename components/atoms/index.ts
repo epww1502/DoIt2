@@ -17,3 +17,4 @@ export { Separator } from './Separator';
 export { Skeleton } from './Skeleton';
 export { Text } from './Text';
 export { TextField } from './TextField';
+export { ProgressBar } from './ProgressBar';

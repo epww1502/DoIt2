@@ -15,12 +15,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { TextArea } from '@/components/atoms/TextArea';
-import { EmptyState } from '@/components/place/EmptyState';
-import { FieldLabel } from '@/components/place/FieldLabel';
-import { StarRating } from '@/components/place/StarRating';
+import { EmptyState } from '@/components/bucket/EmptyState';
+import { FieldLabel } from '@/components/bucket/FieldLabel';
+import { StarRating } from '@/components/bucket/StarRating';
 import { DATE_FORMAT, todayKey } from '@/lib/date';
-import { deletePhoto, pickPhoto } from '@/lib/place/photo';
-import { usePlace, usePlaceStore } from '@/store/usePlaceStore';
+import { deletePhoto, pickPhoto } from '@/lib/bucket/photo';
+import { KIND_META } from '@/lib/bucket/types';
+import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 
 const RATING_LABELS = [
   '',
@@ -31,12 +32,12 @@ const RATING_LABELS = [
   '최고였어요!',
 ];
 
-/** 다녀온 기록 남기기 / 수정 */
-export default function VisitFormScreen() {
+/** 함께한 기록 남기기 / 수정 */
+export default function RecordFormScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const place = usePlace(id);
-  const recordVisit = usePlaceStore((state) => state.recordVisit);
-  const saved = place?.visit;
+  const item = useBucketItem(id);
+  const recordDone = useBucketStore((state) => state.recordDone);
+  const saved = item?.done;
 
   const [date, setDate] = useState(saved?.date ?? todayKey());
   const [rating, setRating] = useState(saved?.rating ?? 5);
@@ -45,14 +46,14 @@ export default function VisitFormScreen() {
     saved?.photoUri ?? null
   );
 
-  if (!place) {
+  if (!item) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <NavBar />
         <EmptyState
           emoji="🫥"
-          title="장소를 찾을 수 없어요"
-          description="이미 지운 장소일 수 있어요."
+          title="찾을 수 없어요"
+          description="이미 지운 항목일 수 있어요."
         />
       </SafeAreaView>
     );
@@ -89,13 +90,13 @@ export default function VisitFormScreen() {
   };
 
   const save = () => {
-    recordVisit(place.id, { date, rating, review: review.trim(), photoUri });
+    recordDone(item.id, { date, rating, review: review.trim(), photoUri });
     router.back();
   };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <NavBar title={saved ? '기록 수정' : '다녀온 기록'} onBack={cancel} />
+      <NavBar title={saved ? '기록 수정' : '함께한 기록'} onBack={cancel} />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -105,11 +106,11 @@ export default function VisitFormScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <Text weight="700" size={22}>
-            {place.title}, 어땠어요?
+            {item.title}, 어땠어요?
           </Text>
 
           <View>
-            <FieldLabel>언제 다녀왔어요?</FieldLabel>
+            <FieldLabel>{KIND_META[item.kind].whenQuestion}</FieldLabel>
             <View className="h-12 flex-row items-center justify-between rounded-xl border-[1.5px] px-2 border-border">
               <Pressable
                 accessibilityRole="button"

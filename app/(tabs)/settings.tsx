@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, CardContent, Segmented, Text } from '@/components/atoms';
-import { ScreenHeader } from '@/components/place/ScreenHeader';
+import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
 
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [

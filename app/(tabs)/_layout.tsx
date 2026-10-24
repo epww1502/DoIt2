@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
 import {
   Dices,
-  Footprints,
+  ListChecks,
   Heart,
   Settings,
   type LucideIcon,
@@ -40,11 +40,11 @@ export default function TabLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ title: '갈 곳', tabBarIcon: tabIcon(Heart) }}
+        options={{ title: '버킷리스트', tabBarIcon: tabIcon(ListChecks) }}
       />
       <Tabs.Screen
-        name="memories"
-        options={{ title: '다녀온 곳', tabBarIcon: tabIcon(Footprints) }}
+        name="done"
+        options={{ title: '함께한 것', tabBarIcon: tabIcon(Heart) }}
       />
       <Tabs.Screen
         name="pick"

@@ -3,18 +3,20 @@ import { ChevronRight } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
-import { getCategory, type Place } from '@/lib/place/types';
+import { getCategory, KIND_META, type BucketItem } from '@/lib/bucket/types';
 
-/** '갈 곳' 목록의 한 줄 */
-export function PlaceRow({ place }: { place: Place }) {
-  const category = getCategory(place.category);
-  const meta = [category.label, place.location].filter(Boolean).join(' · ');
+/** 버킷리스트 목록의 한 줄 */
+export function BucketRow({ item }: { item: BucketItem }) {
+  const category = getCategory(item.category);
+  const meta = [KIND_META[item.kind].label, category.label, item.location]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <Pressable
       accessibilityRole="button"
       onPress={() =>
-        router.push({ pathname: '/place/[id]', params: { id: place.id } })
+        router.push({ pathname: '/item/[id]', params: { id: item.id } })
       }
       className="flex-row items-center gap-3 rounded-2xl border p-4 bg-card border-border active:opacity-70"
     >
@@ -23,7 +25,7 @@ export function PlaceRow({ place }: { place: Place }) {
       </View>
       <View className="flex-1 gap-0.5">
         <Text weight="600" size={16} numberOfLines={1}>
-          {place.title}
+          {item.title}
         </Text>
         <Text variant="muted" size={13} numberOfLines={1}>
           {meta}

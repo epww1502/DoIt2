@@ -8,7 +8,7 @@ import '@/lib/date';
 import { NAV_THEME } from '@/constants/theme';
 import { ThemeModeProvider, useThemeMode } from '@/contexts/ThemeModeContext';
 import { useFontsLoader } from '@/hooks/useFontsLoader';
-import { usePlaceStoreHydrated } from '@/store/usePlaceStore';
+import { useBucketStoreHydrated } from '@/store/useBucketStore';
 
 export default function RootLayout() {
   return (
@@ -21,7 +21,7 @@ export default function RootLayout() {
 function RootLayoutInner() {
   const { fontsLoaded, fontError } = useFontsLoader();
   const { colorScheme } = useThemeMode();
-  const hydrated = usePlaceStoreHydrated();
+  const hydrated = useBucketStoreHydrated();
 
   if ((!fontsLoaded && !fontError) || !hydrated) {
     return null;
@@ -38,11 +38,11 @@ function RootLayoutInner() {
         >
           <Stack.Screen name="(tabs)" />
           <Stack.Screen
-            name="place/new"
+            name="item/new"
             options={{ animation: 'slide_from_bottom' }}
           />
           <Stack.Screen
-            name="visit/[id]"
+            name="record/[id]"
             options={{ animation: 'slide_from_bottom' }}
           />
         </Stack>
