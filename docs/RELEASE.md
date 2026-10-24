@@ -57,6 +57,26 @@ set store_url = 'https://play.google.com/store/apps/details?id=com.doit2.app'
 where platform = 'android';
 ```
 
+표에는 `android`, `ios` 두 줄이 있다. 위 SQL에서 `platform`만 바꾸면 iOS도 같은 방법으로 관리한다.
+iOS는 아직 App Store에 없어서 `store_url`에 소개 페이지(https://doit2app.github.io)를 넣어뒀다.
+
+## iOS 출시할 때 할 일
+
+코드는 iOS도 같이 고려해서 만든다. 아래만 채우면 된다.
+
+1. Apple 개발자 계정 가입 (연 99달러)
+2. `npx eas-cli@latest build --platform ios --profile production` (인증서·푸시 키는 EAS가 만들어 준다. iOS 알림은 Firebase가 필요 없다)
+3. 카카오 개발자 콘솔에 iOS 플랫폼(번들 ID `com.doit2.app`) 등록
+4. 실제 아이폰에서 지도, 사진 올리기·앨범 저장, 공유 카드, 알림 확인
+5. App Store Connect에 올리고 심사 (계정 삭제·개인정보처리방침은 이미 있다)
+6. 출시되면 버전 표의 iOS 주소를 App Store 주소로 바꾼다
+
+```sql
+update public.app_versions
+set store_url = 'https://apps.apple.com/app/id<앱 번호>'
+where platform = 'ios';
+```
+
 ## 주의
 
 - `min_version`은 **스토어에 새 버전이 실제로 보인 뒤에** 올린다. 먼저 올리면 사람들이 업데이트할 게 없는데 앱을 못 쓰게 된다.

@@ -18,9 +18,8 @@ create policy "app_versions are readable"
 
 grant select on public.app_versions to anon, authenticated;
 
+-- iOS는 아직 App Store에 없어서 소개 페이지를 넣어둔다. 출시하면 App Store 주소로 바꾼다.
 insert into public.app_versions (platform, min_version, store_url)
-values (
-  'android',
-  '0.2.0',
-  'https://play.google.com/store/apps/details?id=com.doit2.app'
-);
+values
+  ('android', '0.2.0', 'https://play.google.com/store/apps/details?id=com.doit2.app'),
+  ('ios', '0.2.0', 'https://doit2app.github.io');
