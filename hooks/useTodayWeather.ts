@@ -8,6 +8,17 @@ import { fetchTodayWeather, type TodayWeather } from '@/lib/weather';
 const LAST_POSITION_MAX_AGE_MS = 30 * 60 * 1000;
 /** 앱으로 돌아왔을 때 날씨를 받은 지 이만큼 지났으면 새로 받는다 */
 const WEATHER_STALE_MS = 30 * 60 * 1000;
+/** 위치 찾기·날씨 받기가 이보다 오래 걸리면 실패로 본다 ('확인하고 있어요'에 멈춰 있지 않게) */
+const WEATHER_TIMEOUT_MS = 15000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number) {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), ms)
+    ),
+  ]);
+}
 
 export type WeatherState =
   | { status: 'loading' }
@@ -21,18 +32,23 @@ async function loadWeather(): Promise<WeatherState> {
     const { granted } = await Location.requestForegroundPermissionsAsync();
     if (!granted) return { status: 'denied' };
 
-    const position =
-      (await Location.getLastKnownPositionAsync({
-        maxAge: LAST_POSITION_MAX_AGE_MS,
-      })) ??
-      // 날씨용이라 대략적인 위치면 충분하다
-      (await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Low,
-      }));
-
-    const weather = await fetchTodayWeather(
-      position.coords.latitude,
-      position.coords.longitude
+    // 권한을 묻는 동안은 기다리고, 그 뒤 위치·날씨는 시간을 정해둔다
+    const weather = await withTimeout(
+      (async () => {
+        const position =
+          (await Location.getLastKnownPositionAsync({
+            maxAge: LAST_POSITION_MAX_AGE_MS,
+          })) ??
+          // 날씨용이라 대략적인 위치면 충분하다
+          (await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Low,
+          }));
+        return fetchTodayWeather(
+          position.coords.latitude,
+          position.coords.longitude
+        );
+      })(),
+      WEATHER_TIMEOUT_MS
     );
     return { status: 'ready', weather };
   } catch {

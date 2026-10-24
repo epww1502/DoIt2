@@ -12,6 +12,7 @@ import { useTogether } from '@/hooks/useTogether';
 import { Icon, NavBar, Text } from '@/components/atoms';
 import { PhotoImage } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { groupBySpot, ItemsMap } from '@/components/bucket/ItemsMap';
 import { StarRating } from '@/components/bucket/StarRating';
 import { recordPhotos, type BucketItem } from '@/lib/bucket/types';
@@ -22,6 +23,8 @@ export default function DoneMapScreen() {
   const together = useTogether();
   const placesLabel = together ? '함께한 곳' : '다녀온 곳';
   const items = useBucketStore((s) => s.items);
+  // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
+  const sync = useListSync();
   const insets = useSafeAreaInsets();
 
   // 장소 좌표가 있는 함께한 기록 (최근 순)
@@ -38,12 +41,16 @@ export default function DoneMapScreen() {
     return (
       <SafeAreaView edges={['top']} className="flex-1 bg-background">
         <NavBar title={`${placesLabel} 지도`} />
-        <EmptyState
-          title="지도에 찍을 곳이 아직 없어요"
-          description={
-            '장소를 골라둔 항목에 기록을 남기면\n여기에 핀으로 모여요.'
-          }
-        />
+        {sync.kind !== 'ok' ? (
+          <SyncEmpty sync={sync} />
+        ) : (
+          <EmptyState
+            title="지도에 찍을 곳이 아직 없어요"
+            description={
+              '장소를 골라둔 항목에 기록을 남기면\n여기에 핀으로 모여요.'
+            }
+          />
+        )}
       </SafeAreaView>
     );
   }

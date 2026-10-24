@@ -13,6 +13,7 @@ import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { MapAppButtons } from '@/components/bucket/MapAppButtons';
 import { StarRating } from '@/components/bucket/StarRating';
 import { getCategory, KIND_META, SETTING_META } from '@/lib/bucket/types';
@@ -25,17 +26,23 @@ export default function BucketDetailScreen() {
   const item = useBucketItem(id);
   const removeItems = useBucketStore((state) => state.removeItems);
   const clearDone = useBucketStore((state) => state.clearDone);
+  // 알림을 눌러 바로 들어왔을 때 목록을 아직 못 받았으면 '찾을 수 없어요' 대신 기다리거나 다시 시도
+  const sync = useListSync();
   const insets = useSafeAreaInsets();
 
   if (!item) {
     return (
       <SafeAreaView edges={['top']} className="flex-1 bg-background">
         <NavBar />
-        <EmptyState
-          emoji="🫥"
-          title="찾을 수 없어요"
-          description="이미 지운 항목일 수 있어요."
-        />
+        {sync.kind !== 'ok' ? (
+          <SyncEmpty sync={sync} />
+        ) : (
+          <EmptyState
+            emoji="🫥"
+            title="찾을 수 없어요"
+            description="이미 지운 항목일 수 있어요."
+          />
+        )}
       </SafeAreaView>
     );
   }

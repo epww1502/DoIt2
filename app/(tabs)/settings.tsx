@@ -18,6 +18,7 @@ import { PALETTES } from '@/constants/palettes';
 import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
 import { installedVersion } from '@/lib/appVersion';
 import { showAlert } from '@/lib/dialog';
+import { showErrorAlert } from '@/lib/errors';
 import {
   isPushSupported,
   registerForPush,
@@ -212,8 +213,10 @@ function PushToggleRow() {
           ]
         );
       }
-    } catch {
-      showAlert('알림 설정을 바꾸지 못했어요', '잠시 후 다시 시도해주세요.');
+    } catch (e) {
+      // 실패했으면 스위치를 원래대로 돌린다 (켜진 것처럼 보이지 않게)
+      setPushEnabled(!next);
+      showErrorAlert('알림 설정을 바꾸지 못했어요', e, () => change(next));
     }
   };
 

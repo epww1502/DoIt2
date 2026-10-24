@@ -1,7 +1,8 @@
 import { Image, type ImageStyle } from 'expo-image';
-import { Images } from 'lucide-react-native';
+import { ImageOff, Images } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
+  Pressable,
   ScrollView,
   View,
   type NativeScrollEvent,
@@ -15,6 +16,7 @@ import {
   type DoneRecord,
   type RecordPhoto,
 } from '@/lib/bucket/types';
+import { noteFailure } from '@/lib/connection';
 import { cn } from '@/lib/utils';
 import { getPhotoUrl } from '@/lib/supabase/bucketRemote';
 
@@ -33,8 +35,9 @@ async function loadPhotoUrl(path: string) {
 /**
  * 함께한 기록 사진의 주소. 이 휴대폰에 파일이 있으면 그 파일을,
  * 없으면(상대가 올린 사진) 서버 임시 링크를 쓴다.
+ * failed: 링크를 받지 못했다 (retry로 다시 받는다)
  */
-export function usePhotoSource(
+export function usePhotoState(
   photoUri: string | null | undefined,
   photoPath: string | null | undefined
 ) {
@@ -42,22 +45,46 @@ export function usePhotoSource(
   const [remote, setRemote] = useState<{ path: string; url: string } | null>(
     null
   );
+  const [failedPath, setFailedPath] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (photoUri || !photoPath) return;
     let cancelled = false;
     loadPhotoUrl(photoPath)
       .then((url) => {
-        if (!cancelled) setRemote({ path: photoPath, url });
+        if (cancelled) return;
+        setRemote({ path: photoPath, url });
+        setFailedPath(null);
       })
-      .catch(() => {});
+      .catch((e: unknown) => {
+        noteFailure(e);
+        if (!cancelled) setFailedPath(photoPath);
+      });
     return () => {
       cancelled = true;
     };
-  }, [photoUri, photoPath]);
+  }, [photoUri, photoPath, attempt]);
 
-  if (photoUri) return photoUri;
-  return remote && remote.path === photoPath ? remote.url : null;
+  const retry = () => {
+    setFailedPath(null);
+    setAttempt((n) => n + 1);
+  };
+
+  if (photoUri) return { uri: photoUri, failed: false, retry };
+  return {
+    uri: remote && remote.path === photoPath ? remote.url : null,
+    failed: Boolean(photoPath) && failedPath === photoPath,
+    retry,
+  };
+}
+
+/** 사진 주소만 필요할 때 (못 받으면 null) */
+export function usePhotoSource(
+  photoUri: string | null | undefined,
+  photoPath: string | null | undefined
+) {
+  return usePhotoState(photoUri, photoPath).uri;
 }
 
 type DonePhotoProps = {
@@ -137,13 +164,37 @@ export function PhotoImage({
   photo: RecordPhoto;
   style?: StyleProp<ImageStyle>;
 }) {
-  const uri = usePhotoSource(photo.uri, photo.path);
+  const { uri, failed, retry } = usePhotoState(photo.uri, photo.path);
+  // 링크는 받았는데 사진 파일을 못 내려받은 경우
+  const [brokenUri, setBrokenUri] = useState<string | null>(null);
+
+  if (failed || (uri && brokenUri === uri)) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="사진 다시 불러오기"
+        onPress={() => {
+          setBrokenUri(null);
+          retry();
+        }}
+        className="items-center justify-center gap-1.5 bg-accent active:opacity-70"
+        style={[{ width: '100%', aspectRatio: 4 / 3 }, style as object]}
+      >
+        <Icon as={ImageOff} size={24} className="text-muted-foreground" />
+        <Text size={12} className="text-muted-foreground">
+          사진을 불러오지 못했어요 · 눌러서 다시 시도
+        </Text>
+      </Pressable>
+    );
+  }
+
   return (
     <Image
       source={uri ? { uri } : undefined}
       style={[{ width: '100%', aspectRatio: 4 / 3 }, style]}
       contentFit="cover"
       transition={150}
+      onError={() => setBrokenUri(uri)}
     />
   );
 }

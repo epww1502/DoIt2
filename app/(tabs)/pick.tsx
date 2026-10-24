@@ -13,6 +13,7 @@ import {
   type BucketFilter,
 } from '@/components/bucket/CategoryFilter';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { PickReel } from '@/components/bucket/PickReel';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import {
@@ -80,6 +81,8 @@ function buildReel(candidates: BucketItem[], picked: BucketItem): Reel {
 
 export default function PickScreen() {
   const items = useBucketStore((state) => state.items);
+  // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
+  const sync = useListSync();
   const pickAnimation = useSettingsStore((s) => s.pickAnimation);
   const redoMinRating = useSettingsStore((s) => s.redoMinRating);
   const setRedoMinRating = useSettingsStore((s) => s.setRedoMinRating);
@@ -217,7 +220,9 @@ export default function PickScreen() {
         subtitle="고민될 땐 버킷리스트에서 하나 뽑아봐요"
       />
 
-      {items.length === 0 ? (
+      {items.length === 0 && sync.kind !== 'ok' ? (
+        <SyncEmpty sync={sync} />
+      ) : items.length === 0 ? (
         <EmptyState
           title="뽑을 게 없어요"
           description="버킷리스트를 먼저 담아주세요."

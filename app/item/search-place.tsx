@@ -1,14 +1,30 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Clock, MapPin, Search } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { FlatList, Keyboard, Pressable, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Keyboard,
+  Pressable,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Icon, NavBar, Segmented, Text, TextField } from '@/components/atoms';
+import {
+  ErrorState,
+  Icon,
+  InlineError,
+  NavBar,
+  Segmented,
+  Text,
+  TextField,
+} from '@/components/atoms';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { PlaceMapPicker } from '@/components/bucket/PlaceMapPicker';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import type { PlaceInfo } from '@/lib/bucket/types';
+import { noteFailure, useConnectionStore } from '@/lib/connection';
+import { describeError } from '@/lib/errors';
 import { KakaoKeyMissingError, searchKakaoPlaces } from '@/lib/kakao';
 import { useSpaceStore } from '@/store/useSpaceStore';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
@@ -23,7 +39,7 @@ const SEARCH_DELAY_MS = 350;
 type SearchState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'error' }
+  | { status: 'error'; error: unknown }
   /** 서버(Edge Function)에 카카오 키가 아직 없다 */
   | { status: 'no-key' }
   | { status: 'done'; results: PlaceInfo[] };
@@ -41,7 +57,11 @@ export default function SearchPlaceScreen() {
   const { q } = useLocalSearchParams<{ q?: string }>();
   const pick = usePlacePickStore((state) => state.pick);
   // 검색은 서버를 거치므로 로그인(익명)이 끝나야 한다
-  const signedIn = useSpaceStore((s) => s.status === 'ready');
+  const spaceStatus = useSpaceStore((s) => s.status);
+  const signedIn = spaceStatus === 'ready';
+  /** '다시 시도'를 누를 때마다 올려서 같은 검색어로 다시 검색한다 */
+  const [attempt, setAttempt] = useState(0);
+  const retry = () => setAttempt((n) => n + 1);
   const keyboardHeight = useKeyboardHeight();
   // 검색창은 비워서 시작한다 (바로 검색하지 않고 최근 장소를 먼저 보여준다).
   // 넘겨받은 이름(q)은 '검색하기' 버튼으로 한 번에 검색할 수 있게 둔다
@@ -65,18 +85,30 @@ export default function SearchPlaceScreen() {
       setState({ status: 'loading' });
       searchKakaoPlaces(trimmed, controller.signal)
         .then((results) => setState({ status: 'done', results }))
-        .catch((e) => {
+        .catch((e: unknown) => {
           if (controller.signal.aborted) return;
-          setState({
-            status: e instanceof KakaoKeyMissingError ? 'no-key' : 'error',
-          });
+          if (e instanceof KakaoKeyMissingError) {
+            setState({ status: 'no-key' });
+            return;
+          }
+          noteFailure(e);
+          setState({ status: 'error', error: e });
         });
     }, SEARCH_DELAY_MS);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [trimmed, signedIn]);
+  }, [trimmed, signedIn, attempt]);
+
+  // 인터넷 문제로 실패했다가 다시 연결되면 저절로 다시 검색한다
+  const online = useConnectionStore((s) => s.online);
+  const failed = state.status === 'error';
+  useEffect(() => {
+    if (!online || !failed) return;
+    const timer = setTimeout(retry, 0);
+    return () => clearTimeout(timer);
+  }, [online, failed]);
 
   // 검색어가 없을 때 보여줄 최근 장소 (고른 장소 + 항목·기록에 붙은 장소)
   const recent = useRecentPlaces();
@@ -93,21 +125,29 @@ export default function SearchPlaceScreen() {
 
   let empty: React.ReactNode = null;
   if (!signedIn) {
-    empty = (
-      <EmptyState
-        emoji="📡"
-        title="서버에 연결해야 검색할 수 있어요"
-        description="인터넷 연결을 확인해주세요. 설정 → 공간에서 상태를 볼 수 있어요."
-      />
-    );
+    empty =
+      spaceStatus === 'error' ? (
+        <ErrorState
+          title="서버에 연결하지 못했어요"
+          description="장소 검색은 서버에 연결돼야 할 수 있어요."
+          onRetry={() => void useSpaceStore.getState().init()}
+        />
+      ) : (
+        <View className="flex-1 items-center justify-center gap-3 py-16">
+          <ActivityIndicator />
+          <Text variant="muted">서버에 연결하는 중이에요</Text>
+        </View>
+      );
   } else if (state.status === 'no-key' && trimmed) {
     empty = (
-      <EmptyState
-        emoji="🔑"
-        title="카카오 API 키가 필요해요"
+      <ErrorState
+        title="지금은 장소 검색을 쓸 수 없어요"
         description={
-          'Supabase 대시보드 → Edge Functions → Secrets에\nKAKAO_REST_API_KEY를 넣어주세요.'
+          __DEV__
+            ? 'Supabase 대시보드 → Edge Functions → Secrets에\nKAKAO_REST_API_KEY를 넣어주세요.'
+            : '잠시 후 다시 시도해주세요. 계속 안 되면 doit2team@gmail.com으로 알려주세요.'
         }
+        onRetry={retry}
       />
     );
   } else if (!trimmed || state.status === 'idle') {
@@ -119,13 +159,18 @@ export default function SearchPlaceScreen() {
       />
     );
   } else if (state.status === 'loading') {
-    empty = <EmptyState emoji="⏳" title="찾고 있어요" description="" />;
+    empty = (
+      <View className="flex-1 items-center justify-center gap-3 py-16">
+        <ActivityIndicator />
+        <Text variant="muted">찾고 있어요</Text>
+      </View>
+    );
   } else if (state.status === 'error') {
     empty = (
-      <EmptyState
-        emoji="😢"
+      <ErrorState
+        error={state.error}
         title="검색하지 못했어요"
-        description="인터넷 연결을 확인하고 다시 시도해주세요."
+        onRetry={retry}
       />
     );
   } else {
@@ -179,7 +224,11 @@ export default function SearchPlaceScreen() {
       {view === 'map' ? (
         // 지도: 검색 결과는 핀으로, 검색 없이도 가운데 핀으로 직접 고를 수 있다
         signedIn ? (
-          <PlaceMapPicker results={results} onPick={choose} />
+          <View className="flex-1">
+            <PlaceMapPicker results={results} onPick={choose} />
+            {/* 지도 위에 검색 상태를 띄운다 (실패를 '결과 없음'처럼 보이지 않게) */}
+            {trimmed ? <MapSearchStatus state={state} onRetry={retry} /> : null}
+          </View>
         ) : (
           empty
         )
@@ -236,5 +285,52 @@ export default function SearchPlaceScreen() {
         />
       )}
     </SafeAreaView>
+  );
+}
+
+/** 지도 보기에서 검색 중·실패·결과 없음을 지도 위 작은 띠로 보여준다 */
+function MapSearchStatus({
+  state,
+  onRetry,
+}: {
+  state: SearchState;
+  onRetry: () => void;
+}) {
+  let content: React.ReactNode = null;
+  if (state.status === 'loading') {
+    content = (
+      <View className="flex-row items-center gap-2 self-center rounded-full px-4 py-2 bg-background">
+        <ActivityIndicator size="small" />
+        <Text size={13}>찾고 있어요</Text>
+      </View>
+    );
+  } else if (state.status === 'error' || state.status === 'no-key') {
+    content = (
+      <InlineError
+        className="bg-background"
+        message={
+          state.status === 'error'
+            ? describeError(state.error).message
+            : '지금은 장소 검색을 쓸 수 없어요'
+        }
+        onRetry={onRetry}
+      />
+    );
+  } else if (state.status === 'done' && state.results.length === 0) {
+    content = (
+      <View className="self-center rounded-full px-4 py-2 bg-background">
+        <Text size={13}>검색 결과가 없어요 · 다른 이름으로 검색해봐요</Text>
+      </View>
+    );
+  }
+  if (!content) return null;
+  return (
+    <View
+      pointerEvents="box-none"
+      className="absolute left-4 right-4 top-3"
+      style={{ elevation: 4 }}
+    >
+      {content}
+    </View>
   );
 }

@@ -1,12 +1,20 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, Share, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Share,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { showAlert } from '@/lib/dialog';
+import { showErrorAlert } from '@/lib/errors';
 import {
   Button,
   CopyableCode,
+  ErrorState,
   NavBar,
   Text,
   TextField,
@@ -23,8 +31,55 @@ import { useProfileStore } from '@/store/useProfileStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
-/** 내 기본 프로필(모든 공간에 기본으로 보임)과 계정 코드 */
+/**
+ * 내 기본 프로필(모든 공간에 기본으로 보임)과 계정 코드.
+ * 프로필을 서버에서 불러온 뒤에만 고칠 수 있게 한다 (모르는 채로 저장하면 덮어쓴다).
+ */
 export default function ProfileScreen() {
+  const loadStatus = useProfileStore((s) => s.loadStatus);
+  const loadError = useProfileStore((s) => s.loadError);
+  const spaceStatus = useSpaceStore((s) => s.status);
+
+  // 아직 안 불러왔거나 실패했으면 들어올 때 다시 불러온다
+  useEffect(() => {
+    if (spaceStatus !== 'ready') return;
+    const { loadStatus: now, load } = useProfileStore.getState();
+    if (now === 'idle' || now === 'error') void load().catch(() => {});
+  }, [spaceStatus]);
+
+  if (loadStatus === 'ready') return <ProfileForm />;
+
+  const retry = () => {
+    const space = useSpaceStore.getState();
+    if (space.status === 'error') {
+      void space.init();
+      return;
+    }
+    void useProfileStore
+      .getState()
+      .load()
+      .catch(() => {});
+  };
+
+  return (
+    <SafeAreaView edges={['top']} className="flex-1 bg-background">
+      <NavBar title="내 프로필" />
+      {loadStatus === 'error' || spaceStatus === 'error' ? (
+        <ErrorState
+          error={loadError}
+          title="프로필을 불러오지 못했어요"
+          onRetry={retry}
+        />
+      ) : (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator />
+        </View>
+      )}
+    </SafeAreaView>
+  );
+}
+
+function ProfileForm() {
   const profile = useProfileStore((s) => s.profile);
   const save = useProfileStore((s) => s.save);
   const keyboardHeight = useKeyboardHeight();
@@ -58,7 +113,7 @@ export default function ProfileScreen() {
       setAvatarUri(undefined);
       router.back();
     } catch (e) {
-      showAlert(e instanceof Error ? e.message : '저장하지 못했어요');
+      showErrorAlert('저장하지 못했어요', e, submit);
     } finally {
       setBusy(false);
     }

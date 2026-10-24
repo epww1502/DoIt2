@@ -7,6 +7,7 @@ import type { BucketItem } from '@/lib/bucket/types';
 import { KAKAO_MAP_BASE_URL, kakaoMapHtml } from '@/lib/kakaoMapHtml';
 
 import { EmptyState } from './EmptyState';
+import { MapError, MapLoading, useMapLoad } from './MapLoad';
 
 const KAKAO_JS_KEY = process.env.EXPO_PUBLIC_KAKAO_JS_KEY ?? '';
 const MapWebView = WebView<object>;
@@ -59,8 +60,8 @@ export function ItemsMap({
 }: ItemsMapProps) {
   const webRef = useRef<WebView<object>>(null);
   const lastMarkerPress = useRef(0);
-  const [ready, setReady] = useState(false);
-  const [mapError, setMapError] = useState(false);
+  const map = useMapLoad();
+  const ready = map.ready;
   /** 누른 핀의 항목들 */
   const [selected, setSelected] = useState<BucketItem[] | null>(null);
 
@@ -99,7 +100,7 @@ export function ItemsMap({
     }
     switch (message.type) {
       case 'ready':
-        setReady(true);
+        map.onReady();
         break;
       case 'select': {
         const group = spots[message.index];
@@ -117,31 +118,35 @@ export function ItemsMap({
         break;
       case 'error':
         console.warn('[kakao-map]', message.message);
-        setMapError(true);
+        map.fail();
         break;
     }
   };
 
-  if (!KAKAO_JS_KEY || mapError) {
+  if (!KAKAO_JS_KEY) {
     return (
       <EmptyState
         title="지도를 열지 못했어요"
-        description="인터넷 연결을 확인하고 다시 열어주세요."
+        description="잠시 후 다시 시도해주세요."
       />
     );
   }
+  if (map.failed) return <MapError onRetry={map.retry} />;
 
   return (
     <View className="flex-1">
       <MapWebView
+        key={map.key}
         ref={webRef}
         source={{ html, baseUrl: KAKAO_MAP_BASE_URL }}
         originWhitelist={['*']}
         onMessage={onMessage}
+        onError={map.fail}
         overScrollMode="never"
         bounces={false}
         style={{ flex: 1 }}
       />
+      {!ready ? <MapLoading /> : null}
 
       <View
         className="absolute bottom-0 left-0 right-0 rounded-t-3xl px-5 pt-4 bg-background"

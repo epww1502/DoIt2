@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTogether } from '@/hooks/useTogether';
 import { NavBar, Text } from '@/components/atoms';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { StarRating } from '@/components/bucket/StarRating';
 import { getCategory, type BucketItem } from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
@@ -82,6 +83,8 @@ function buildStats(done: BucketItem[]): Stats {
 export default function DoneStatsScreen() {
   const together = useTogether();
   const items = useBucketStore((s) => s.items);
+  // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
+  const sync = useListSync();
   const stats = useMemo(
     () => buildStats(items.filter((it) => it.done)),
     [items]
@@ -91,10 +94,14 @@ export default function DoneStatsScreen() {
     return (
       <SafeAreaView edges={['top']} className="flex-1 bg-background">
         <NavBar title="추억 모아보기" />
-        <EmptyState
-          title="아직 모아볼 기록이 없어요"
-          description={`${together ? '함께한 ' : ''}기록이 생기면 여기서 돌아볼 수 있어요.`}
-        />
+        {sync.kind !== 'ok' ? (
+          <SyncEmpty sync={sync} />
+        ) : (
+          <EmptyState
+            title="아직 모아볼 기록이 없어요"
+            description={`${together ? '함께한 ' : ''}기록이 생기면 여기서 돌아볼 수 있어요.`}
+          />
+        )}
       </SafeAreaView>
     );
   }

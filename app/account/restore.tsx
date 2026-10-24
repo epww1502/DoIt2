@@ -36,6 +36,16 @@ export default function RestoreAccountScreen() {
     setError(null);
     try {
       await restoreAccount(code);
+      if (useSpaceStore.getState().status === 'error') {
+        // 계정은 불러왔지만 공간 목록을 아직 못 받았다
+        await useBucketStore.getState().switchSpace(null);
+        router.dismissAll();
+        showAlert(
+          '계정을 불러왔어요',
+          '공간 목록은 아직 받지 못했어요. 인터넷이 연결되면 저절로 다시 받아요. 설정의 공간 카드에서 다시 시도할 수도 있어요.'
+        );
+        return;
+      }
       // 불러온 계정의 첫 공간으로 (없으면 '나만 보기')
       const first = useSpaceStore.getState().spaces[0];
       await useBucketStore

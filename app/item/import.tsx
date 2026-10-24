@@ -1,14 +1,21 @@
 import { router } from 'expo-router';
 import { Check, ChevronRight } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Icon, NavBar, Text } from '@/components/atoms';
+import { Button, ErrorState, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
 import { getCategory, type BucketItem } from '@/lib/bucket/types';
+import { noteFailure } from '@/lib/connection';
 import { showAlert } from '@/lib/dialog';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
 import { fetchItems, fromRow } from '@/lib/supabase/bucketRemote';
@@ -83,6 +90,8 @@ function PickItems({
   const current = useBucketStore((s) => s.items);
   const addItems = useBucketStore((s) => s.addItems);
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  /** '다시 시도'를 누를 때마다 올려서 다시 불러온다 */
+  const [attempt, setAttempt] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
   // 지금 공간에 이미 같은 게 있으면 또 담지 않게 막는다
@@ -113,7 +122,8 @@ function PickItems({
           )
         );
       })
-      .catch(() => {
+      .catch((e: unknown) => {
+        noteFailure(e);
         if (!cancelled) setState({ status: 'error' });
       });
     return () => {
@@ -121,7 +131,7 @@ function PickItems({
     };
     // 공간을 고를 때 한 번만 불러온다
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [source.id]);
+  }, [source.id, attempt]);
 
   const items = state.status === 'ready' ? state.items : [];
   const selectable = items.filter((it) => !currentKeys.has(sameKey(it)));
@@ -182,13 +192,17 @@ function PickItems({
         }
       />
       {state.status === 'loading' ? (
-        <Text variant="muted" className="py-10 text-center">
-          불러오는 중…
-        </Text>
+        <View className="items-center gap-3 py-10">
+          <ActivityIndicator />
+          <Text variant="muted">불러오는 중이에요</Text>
+        </View>
       ) : state.status === 'error' ? (
-        <EmptyState
+        <ErrorState
           title="불러오지 못했어요"
-          description="인터넷 연결을 확인하고 다시 시도해주세요."
+          onRetry={() => {
+            setState({ status: 'loading' });
+            setAttempt((n) => n + 1);
+          }}
         />
       ) : items.length === 0 ? (
         <EmptyState

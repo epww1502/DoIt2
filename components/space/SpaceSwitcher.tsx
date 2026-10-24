@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Icon, Text } from '@/components/atoms';
+import { Icon, InlineError, Text } from '@/components/atoms';
 import { cn } from '@/lib/utils';
 import { SpaceAvatar } from './SpaceAvatar';
 import { useBucketStore } from '@/store/useBucketStore';
@@ -150,12 +150,16 @@ function SpaceSheet({
                   />
                 ) : null}
               </>
-            ) : (
+            ) : status === 'loading' ? (
               <Text variant="muted" size={13} className="px-2 py-2">
-                {status === 'loading'
-                  ? '서버에 연결하는 중이에요…'
-                  : '서버에 연결해야 공간을 만들거나 들어갈 수 있어요.'}
+                서버에 연결하는 중이에요…
               </Text>
+            ) : (
+              // 연결에 실패했으면 여기서 바로 다시 시도한다
+              <InlineError
+                message="서버에 연결해야 공간을 만들거나 들어갈 수 있어요."
+                onRetry={() => void useSpaceStore.getState().init()}
+              />
             )}
           </View>
         </View>

@@ -26,6 +26,11 @@ import {
   type BucketFilter,
 } from '@/components/bucket/CategoryFilter';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import {
+  SyncEmpty,
+  SyncStaleNotice,
+  useListSync,
+} from '@/components/bucket/SyncNotice';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import {
   SelectionDeleteBar,
@@ -60,6 +65,8 @@ export default function BucketListScreen() {
   const together = useTogether();
   const doneLabel = together ? '함께한 것' : '해낸 것';
   const items = useBucketStore((state) => state.items);
+  // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
+  const sync = useListSync();
   const removeItems = useBucketStore((state) => state.removeItems);
   const [filter, setFilter] = useState<BucketFilter>(ALL_FILTER);
 
@@ -206,6 +213,8 @@ export default function BucketListScreen() {
         />
       )}
 
+      <SyncStaleNotice sync={sync} />
+
       {items.length > 0 ? (
         <View className="mx-5 mb-4 gap-2 rounded-2xl p-4 bg-accent">
           <View className="flex-row items-center justify-between">
@@ -232,7 +241,9 @@ export default function BucketListScreen() {
         </View>
       ) : null}
 
-      {todo.length === 0 ? (
+      {items.length === 0 && sync.kind !== 'ok' ? (
+        <SyncEmpty sync={sync} />
+      ) : todo.length === 0 ? (
         <EmptyState
           title={
             items.length === 0

@@ -1,4 +1,5 @@
 import { showAlert } from '@/lib/dialog';
+import { errorMessage } from '@/lib/errors';
 import { LOCAL_KEY, useBucketStore } from '@/store/useBucketStore';
 import { type Space, useSpaceStore } from '@/store/useSpaceStore';
 
@@ -47,10 +48,10 @@ export async function enterSpace(spaceId: string, spaceName: string) {
     if (move) {
       try {
         await useBucketStore.getState().moveLocalTo(spaceId);
-      } catch {
+      } catch (e) {
         showAlert(
           '옮기지 못했어요',
-          "인터넷 연결을 확인해주세요. '나만 보기'에 그대로 남아 있어요."
+          `${errorMessage(e)} '나만 보기'에 그대로 남아 있어요.`
         );
       }
     }

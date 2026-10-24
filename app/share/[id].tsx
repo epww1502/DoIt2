@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTogether } from '@/hooks/useTogether';
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
-import { usePhotoSource } from '@/components/bucket/DonePhoto';
+import { usePhotoState } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { FONT_WEIGHTS } from '@/constants/fonts';
 import { getCategory, KIND_META, recordPhotos } from '@/lib/bucket/types';
@@ -45,10 +45,14 @@ export default function ShareCardScreen() {
 
   const done = item?.done;
   const photo = recordPhotos(done)[0];
-  const photoUri = usePhotoSource(photo?.uri, photo?.path);
+  const photoState = usePhotoState(photo?.uri, photo?.path);
+  const photoUri = photoState.uri;
   // 사진이 있으면 다 그려진 뒤에 찍어야 빈칸이 안 나온다
   const [photoLoaded, setPhotoLoaded] = useState(false);
-  const ready = !photo || photoLoaded;
+  // 사진을 못 불러왔으면 사진 없이 만든다 (버튼이 계속 막혀 있지 않게)
+  const [photoBroken, setPhotoBroken] = useState(false);
+  const photoFailed = photoState.failed || photoBroken;
+  const ready = !photo || photoLoaded || photoFailed;
 
   if (!item || !done) {
     return (
@@ -141,12 +145,13 @@ export default function ShareCardScreen() {
             overflow: 'hidden',
           }}
         >
-          {photo ? (
+          {photo && !photoFailed ? (
             <Image
               source={photoUri ? { uri: photoUri } : undefined}
               style={{ width: CARD_WIDTH, height: 210 }}
               contentFit="cover"
               onLoad={() => setPhotoLoaded(true)}
+              onError={() => setPhotoBroken(true)}
             />
           ) : (
             <View

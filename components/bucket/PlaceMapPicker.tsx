@@ -12,6 +12,8 @@ import type { PlaceInfo } from '@/lib/bucket/types';
 import { getKakaoAddress } from '@/lib/kakao';
 import { KAKAO_MAP_BASE_URL, kakaoMapHtml } from '@/lib/kakaoMapHtml';
 
+import { MapError, MapLoading, useMapLoad } from './MapLoad';
+
 /** 카카오 웹 지도용 JavaScript 키 (웹 지도 키는 원래 페이지에 드러나는 공개용이다) */
 const KAKAO_JS_KEY = process.env.EXPO_PUBLIC_KAKAO_JS_KEY ?? '';
 
@@ -48,8 +50,8 @@ export function PlaceMapPicker({ results, onPick }: PlaceMapPickerProps) {
   const webRef = useRef<WebView<object>>(null);
   const lastMarkerPress = useRef(0);
 
-  const [ready, setReady] = useState(false);
-  const [mapError, setMapError] = useState(false);
+  const map = useMapLoad();
+  const ready = map.ready;
   const [selected, setSelected] = useState<PlaceInfo | null>(null);
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [resolving, setResolving] = useState(false);
@@ -97,7 +99,7 @@ export function PlaceMapPicker({ results, onPick }: PlaceMapPickerProps) {
     }
     switch (message.type) {
       case 'ready':
-        setReady(true);
+        map.onReady();
         break;
       case 'center':
         setCenter({ latitude: message.latitude, longitude: message.longitude });
@@ -118,7 +120,7 @@ export function PlaceMapPicker({ results, onPick }: PlaceMapPickerProps) {
         break;
       case 'error':
         console.warn('[kakao-map]', message.message);
-        setMapError(true);
+        map.fail();
         break;
     }
   };
@@ -148,36 +150,49 @@ export function PlaceMapPicker({ results, onPick }: PlaceMapPickerProps) {
     }
   };
 
-  if (!KAKAO_JS_KEY || mapError) {
+  if (!KAKAO_JS_KEY) {
     return (
       <View className="flex-1 items-center justify-center gap-2 px-8">
         <Text weight="700" size={17}>
           카카오 지도를 열지 못했어요
         </Text>
         <Text variant="muted" className="text-center">
-          {!KAKAO_JS_KEY
+          {__DEV__
             ? '.env에 EXPO_PUBLIC_KAKAO_JS_KEY(카카오 JavaScript 키)를 넣어주세요.'
-            : `카카오 개발자 콘솔 → 플랫폼 → Web에\n${KAKAO_MAP_BASE_URL} 이 등록돼 있는지 확인해주세요.`}
-        </Text>
-        <Text variant="muted" size={12} className="text-center">
-          목록에서 고르는 건 그대로 쓸 수 있어요.
+            : '목록에서 고르는 건 그대로 쓸 수 있어요.'}
         </Text>
       </View>
+    );
+  }
+  if (map.failed) {
+    if (__DEV__) {
+      console.warn(
+        `[kakao-map] 카카오 개발자 콘솔 → 플랫폼 → Web에 ${KAKAO_MAP_BASE_URL} 이 등록돼 있는지 확인`
+      );
+    }
+    return (
+      <MapError
+        onRetry={map.retry}
+        note="목록에서 고르는 건 그대로 쓸 수 있어요."
+      />
     );
   }
 
   return (
     <View className="flex-1">
       <MapWebView
+        key={map.key}
         ref={webRef}
         source={{ html, baseUrl: KAKAO_MAP_BASE_URL }}
         originWhitelist={['*']}
         onMessage={onMessage}
+        onError={map.fail}
         // 지도 안에서 움직일 때 바깥 화면이 같이 끌려가지 않게
         overScrollMode="never"
         bounces={false}
         style={{ flex: 1 }}
       />
+      {!ready ? <MapLoading /> : null}
 
       {/* 가운데 핀: 핀 끝이 정확히 지도 가운데를 가리키도록 아이콘 높이만큼 올린다 */}
       {!selected ? (

@@ -1,10 +1,12 @@
 import { router, useFocusEffect } from 'expo-router';
 import { ChevronRight, Ellipsis } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 
 import { showAlert } from '@/lib/dialog';
-import { ActionSheet, Icon, Text } from '@/components/atoms';
+import { ActionSheet, Icon, InlineError, Text } from '@/components/atoms';
+import { noteFailure } from '@/lib/connection';
+import { showErrorAlert } from '@/lib/errors';
 import {
   fetchSpaceMembers,
   kickSpaceMember,
@@ -28,6 +30,8 @@ type SpaceMembersProps = {
  */
 export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
   const [members, setMembers] = useState<MemberProfile[] | null>(null);
+  /** 처음 받아오기가 실패했는지 (이미 받은 목록이 있으면 그걸 계속 보여준다) */
+  const [loadFailed, setLoadFailed] = useState(false);
   /** 선택지 시트를 연 멤버 */
   const [sheetFor, setSheetFor] = useState<MemberProfile | null>(null);
 
@@ -36,9 +40,14 @@ export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
     let cancelled = false;
     fetchSpaceMembers(spaceId)
       .then((list) => {
-        if (!cancelled) setMembers(list);
+        if (cancelled) return;
+        setMembers(list);
+        setLoadFailed(false);
       })
-      .catch(() => {});
+      .catch((e: unknown) => {
+        noteFailure(e);
+        if (!cancelled) setLoadFailed(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -52,7 +61,21 @@ export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
     if (memberCount > 0) return load();
   }, [memberCount, load]);
 
-  if (!members) return null;
+  if (!members) {
+    return loadFailed ? (
+      <InlineError
+        message="멤버를 불러오지 못했어요"
+        onRetry={() => {
+          setLoadFailed(false);
+          load();
+        }}
+      />
+    ) : (
+      <View className="items-center py-4">
+        <ActivityIndicator />
+      </View>
+    );
+  }
   const iAmOwner = members.some((m) => m.is_me && m.is_owner);
 
   /**
@@ -74,7 +97,7 @@ export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
         .catch(() => {});
     } catch (e) {
       setMembers(prev);
-      showAlert(e instanceof Error ? e.message : '하지 못했어요');
+      showErrorAlert('하지 못했어요', e);
     }
   };
 

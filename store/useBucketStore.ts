@@ -48,6 +48,8 @@ type BucketState = {
   items: BucketItem[];
   /** 다른 공간 항목 사본 (공간을 바꿀 때 바로 보여주려고) */
   cache: Record<string, BucketItem[]>;
+  /** 지금 공간 목록을 서버에서 받는 중인지, 실패했는지 (휴대폰에 저장하지 않는다) */
+  sync: { status: 'idle' | 'loading' | 'error'; error: unknown };
 
   addItem: (input: BucketInput) => string;
   /** 여러 개를 한 번에 담는다 (함께한 것 다시 담기). 입력 순서대로 맨 위에 쌓인다 */
@@ -275,6 +277,7 @@ export const useBucketStore = create<BucketState>()(
         spaceId: null,
         items: [],
         cache: {},
+        sync: { status: 'idle', error: null },
 
         addItem: (input) => get().addItems([input])[0],
 
@@ -400,6 +403,7 @@ export const useBucketStore = create<BucketState>()(
               spaceId,
               items: cache[cacheKey(spaceId)] ?? [],
               cache: { ...cache, [cacheKey(current)]: items },
+              sync: { status: 'idle', error: null },
             });
           }
           if (spaceId) await get().pull();
@@ -440,6 +444,7 @@ export const useBucketStore = create<BucketState>()(
         pull: async () => {
           const { spaceId } = get();
           if (!spaceId) return;
+          set({ sync: { status: 'loading', error: null } });
           // 오프라인 때 바꾼 내용을 먼저 올린다 (못 올려도 아래에서 지켜준다)
           await get().flushPending();
           let rows: BucketItemRow[];
@@ -447,11 +452,15 @@ export const useBucketStore = create<BucketState>()(
             rows = await remote.fetchItems(spaceId);
           } catch (e) {
             noteFailure(e);
+            if (get().spaceId === spaceId) {
+              set({ sync: { status: 'error', error: e } });
+            }
             throw e;
           }
           useConnectionStore.getState().markOnline();
           // 받는 사이에 다른 공간으로 바꿨으면 버린다
           if (get().spaceId !== spaceId) return;
+          set({ sync: { status: 'idle', error: null } });
 
           // 아직 안 올라간 변경은 서버 목록보다 폰 내용을 믿는다
           const { upserts, deletes } = pendingFor(spaceId);

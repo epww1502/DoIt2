@@ -1,15 +1,24 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { showAlert } from '@/lib/dialog';
-import { AppSwitch, Button, NavBar, Text, TextField } from '@/components/atoms';
+import {
+  AppSwitch,
+  Button,
+  ErrorState,
+  NavBar,
+  Text,
+  TextField,
+} from '@/components/atoms';
+import { EmptyState } from '@/components/bucket/EmptyState';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { AvatarField } from '@/components/space/AvatarField';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
+import { useLoad } from '@/hooks/useLoad';
 import { deletePhoto } from '@/lib/bucket/photo';
+import { showErrorAlert } from '@/lib/errors';
 import { fetchSpaceMembers, saveSpaceProfile } from '@/lib/supabase/account';
 import type { MemberProfile } from '@/lib/supabase/database.types';
 import { useBucketStore } from '@/store/useBucketStore';
@@ -22,28 +31,38 @@ export default function SpaceProfileScreen() {
   const currentId = useBucketStore((s) => s.spaceId);
   const spaceId = id ?? currentId;
   const space = useSpace(spaceId);
-  const [me, setMe] = useState<MemberProfile | null>(null);
-
-  useEffect(() => {
-    if (!spaceId) return;
-    let cancelled = false;
-    fetchSpaceMembers(spaceId)
-      .then((list) => {
-        if (!cancelled) setMe(list.find((m) => m.is_me) ?? null);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [spaceId]);
+  const { state, reload } = useLoad(
+    async () =>
+      spaceId
+        ? ((await fetchSpaceMembers(spaceId)).find((m) => m.is_me) ?? null)
+        : null,
+    [spaceId]
+  );
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <NavBar title={space ? `${space.name}에서의 나` : '공간 프로필'} />
-      {space && me ? (
+      {state.status === 'loading' ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator />
+        </View>
+      ) : state.status === 'error' ? (
+        <ErrorState
+          error={state.error}
+          title="내 프로필을 불러오지 못했어요"
+          onRetry={reload}
+          secondaryLabel="뒤로 가기"
+          onSecondary={() => router.back()}
+        />
+      ) : space && state.data ? (
         // 받아온 값으로 편집을 시작하려고 따로 둔다
-        <SpaceProfileForm spaceId={space.id} me={me} />
-      ) : null}
+        <SpaceProfileForm spaceId={space.id} me={state.data} />
+      ) : (
+        <EmptyState
+          title="이 공간에 없어요"
+          description="이미 나왔거나 내보내진 공간일 수 있어요."
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -102,11 +121,12 @@ function SpaceProfileForm({
         nickname: nickname.trim() || null,
         avatarUri: photoChanged ? avatarUri : undefined,
       });
-      router.back();
-    } catch {
-      showAlert('저장하지 못했어요', '잠시 후 다시 시도해주세요.');
-    } finally {
+      // 올렸으니 휴대폰에 복사해 둔 사진은 필요 없다 (실패하면 다시 시도할 때 그대로 쓴다)
       if (avatarUri) deletePhoto(avatarUri);
+      router.back();
+    } catch (e) {
+      showErrorAlert('저장하지 못했어요', e, submit);
+    } finally {
       setBusy(false);
     }
   };

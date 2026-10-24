@@ -26,6 +26,7 @@ import {
   type DoneFilter,
 } from '@/components/bucket/DoneFilterSheet';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import {
   SelectionDeleteBar,
@@ -59,6 +60,8 @@ const KIND_OPTIONS: SegmentedOption<KindOption>[] = [
 
 export default function DoneScreen() {
   const items = useBucketStore((state) => state.items);
+  // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
+  const sync = useListSync();
   const removeItems = useBucketStore((state) => state.removeItems);
   const clearDoneMany = useBucketStore((state) => state.clearDoneMany);
   const [kind, setKind] = useState<KindOption>('all');
@@ -171,7 +174,9 @@ export default function DoneScreen() {
         />
       )}
       {/* 빈 화면은 목록 밖에 둬야 화면 가운데에 온다 (버킷리스트 탭과 같은 구조) */}
-      {done.length === 0 ? (
+      {done.length === 0 && sync.kind !== 'ok' ? (
+        <SyncEmpty sync={sync} />
+      ) : done.length === 0 ? (
         <EmptyState
           title={together ? '아직 함께한 게 없어요' : '아직 해낸 게 없어요'}
           description={

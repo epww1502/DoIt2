@@ -13,6 +13,7 @@ import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { getCategory } from '@/lib/bucket/types';
 import { readCopiedText } from '@/lib/clipboard';
 import { showAlert } from '@/lib/dialog';
+import { showErrorAlert } from '@/lib/errors';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
 import {
   findShareCode,
@@ -176,8 +177,9 @@ function SaveShared({
             ]
           : undefined
       );
-    } catch {
-      showAlert('담지 못했어요', '인터넷 연결을 확인하고 다시 시도해주세요.');
+    } catch (e) {
+      // 고른 것은 그대로 두고 다시 시도할 수 있게
+      showErrorAlert('담지 못했어요', e, save);
     } finally {
       setSaving(false);
     }

@@ -1,12 +1,20 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Share, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Share,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { showAlert } from '@/lib/dialog';
+import { showErrorAlert } from '@/lib/errors';
 import {
   Button,
   CopyableCode,
+  ErrorState,
   NavBar,
   Text,
   TextField,
@@ -34,6 +42,25 @@ export default function SpaceScreen() {
   const currentId = useBucketStore((s) => s.spaceId);
   const spaceId = id ?? currentId;
   const space = useSpace(spaceId);
+  const spaceStatus = useSpaceStore((s) => s.status);
+
+  if (!space && spaceStatus !== 'ready' && spaceStatus !== 'unconfigured') {
+    return (
+      <SafeAreaView edges={['top']} className="flex-1 bg-background">
+        <NavBar title="공간" />
+        {spaceStatus === 'error' ? (
+          <ErrorState
+            title="공간을 불러오지 못했어요"
+            onRetry={() => void useSpaceStore.getState().init()}
+          />
+        ) : (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator />
+          </View>
+        )}
+      </SafeAreaView>
+    );
+  }
 
   if (!space) {
     return (
@@ -93,7 +120,7 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
       });
       setImageUri(undefined);
     } catch (e) {
-      showAlert(e instanceof Error ? e.message : '저장하지 못했어요');
+      showErrorAlert('저장하지 못했어요', e, save);
     } finally {
       setBusy(false);
     }
@@ -117,7 +144,7 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
             try {
               await useSpaceStore.getState().setPersonal(spaceId, next);
             } catch (e) {
-              showAlert(e instanceof Error ? e.message : '바꾸지 못했어요');
+              showErrorAlert('바꾸지 못했어요', e);
             }
           },
         },
@@ -135,9 +162,23 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
           onPress: async () => {
             try {
               await resetInviteCode(spaceId);
+            } catch (e) {
+              showErrorAlert('초대 코드를 바꾸지 못했어요', e);
+              return;
+            }
+            // 코드는 바뀌었다. 새 코드를 못 받아오면 예전 코드가 보이지 않게 알려준다
+            try {
               await useSpaceStore.getState().refreshSpaces();
             } catch (e) {
-              showAlert(e instanceof Error ? e.message : '바꾸지 못했어요');
+              showErrorAlert(
+                '새 초대 코드를 불러오지 못했어요',
+                e,
+                () =>
+                  void useSpaceStore
+                    .getState()
+                    .refreshSpaces()
+                    .catch(() => {})
+              );
             }
           },
         },

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, RefreshCw } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
@@ -22,7 +22,7 @@ export function SpaceStatusCard() {
       : status === 'loading'
         ? '서버에 연결하는 중이에요'
         : status === 'error'
-          ? '서버에 연결하지 못했어요'
+          ? '서버에 연결하지 못했어요 · 눌러서 다시 시도해요'
           : space
             ? space.is_personal
               ? '개인 공간 · 나만 볼 수 있어요'
@@ -36,8 +36,15 @@ export function SpaceStatusCard() {
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={status !== 'ready'}
-      onPress={() => router.push(spaceCount > 0 ? '/space/list' : '/space/new')}
+      // 연결에 실패했으면 눌러서 다시 연결한다
+      disabled={status !== 'ready' && status !== 'error'}
+      onPress={() => {
+        if (status === 'error') {
+          void useSpaceStore.getState().init();
+          return;
+        }
+        router.push(spaceCount > 0 ? '/space/list' : '/space/new');
+      }}
       className="flex-row items-center gap-3 rounded-2xl px-4 py-3 bg-accent active:opacity-70"
     >
       <SpaceAvatar
@@ -55,6 +62,8 @@ export function SpaceStatusCard() {
       </View>
       {status === 'ready' ? (
         <Icon as={ChevronRight} size={18} className="text-muted-foreground" />
+      ) : status === 'error' ? (
+        <Icon as={RefreshCw} size={18} className="text-primary" />
       ) : null}
     </Pressable>
   );
