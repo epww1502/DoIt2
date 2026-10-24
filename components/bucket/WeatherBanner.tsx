@@ -1,8 +1,6 @@
-import { Linking, Pressable, Switch, View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 
-import { Text } from '@/components/atoms';
-import { colors, themeColors } from '@/constants/colors';
-import { useThemeMode } from '@/contexts/ThemeModeContext';
+import { AppSwitch, Text } from '@/components/atoms';
 import type { WeatherState } from '@/hooks/useTodayWeather';
 
 type WeatherBannerProps = {
@@ -39,8 +37,6 @@ export function WeatherBanner({
   onChangeIncludeOutdoor,
   excludedCount,
 }: WeatherBannerProps) {
-  const { colorScheme } = useThemeMode();
-
   let title: string;
   let detail: string | null = null;
   let action: React.ReactNode = null;
@@ -51,7 +47,7 @@ export function WeatherBanner({
       break;
     case 'denied':
       title = '📍 위치 권한이 없어서 날씨를 못 봤어요';
-      detail = '허용하면 비 오는 날 실외 데이트를 빼고 뽑아드려요';
+      detail = '허용하면 비 오는 날 실외는 빼고 뽑아요';
       action = (
         <ActionText label="설정 열기" onPress={() => Linking.openSettings()} />
       );
@@ -62,32 +58,28 @@ export function WeatherBanner({
       break;
     case 'ready': {
       const { weather } = state;
-      title = `${weather.emoji} 오늘 ${weather.summary} · 강수확률 ${weather.rainChance}%`;
+      title = `${weather.emoji} 오늘 ${weather.summary} · 비 올 확률 ${weather.rainChance}%`;
       if (!weather.isRainy) {
-        detail = '실외 데이트하기 좋은 날이에요';
+        detail = '실외도 좋은 날이에요';
       } else if (includeOutdoor) {
-        detail = '비 소식이 있지만 실외도 같이 뽑아요';
+        detail = '실외도 같이 뽑아요';
       } else {
         detail =
           excludedCount > 0
-            ? `비 소식이 있어서 실외 ${excludedCount}개는 빼고 뽑을게요 ☔`
-            : '비 소식이 있어서 실외는 빼고 뽑을게요 ☔';
+            ? `☔ 실외 ${excludedCount}개 빼고 뽑아요`
+            : // 후보(필터·이미 해본 것 포함 여부)에 실외가 없으면 뺄 것도 없다고 알려준다
+              '☔ 지금 후보엔 실외가 없어요';
       }
       if (weather.isRainy) {
         action = (
           <View className="flex-row items-center gap-2">
             <Text size={12} className="text-muted-foreground">
-              실외도 포함
+              실외 포함
             </Text>
-            <Switch
+            <AppSwitch
               accessibilityLabel="비 와도 실외 포함해서 뽑기"
               value={includeOutdoor}
               onValueChange={onChangeIncludeOutdoor}
-              trackColor={{
-                false: themeColors[colorScheme].input,
-                true: colors.primary,
-              }}
-              thumbColor={colors.white}
             />
           </View>
         );

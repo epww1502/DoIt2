@@ -2,6 +2,11 @@ const { hairlineWidth } = require('nativewind/theme');
 const { colors, themeColors } = require('./constants/colors');
 const { MAX_WEB_WIDTH } = require('./constants/layout');
 const { TOOLTIP_Z_INDEX } = require('./constants/layers');
+const {
+  DEFAULT_PALETTE,
+  hexToRgbTriple,
+  paletteHex,
+} = require('./constants/palettes');
 const plugin = require('tailwindcss/plugin');
 
 /** @type {import('tailwindcss').Config} */
@@ -24,8 +29,9 @@ module.exports = {
           DEFAULT: themeColors.light.popover,
           foreground: themeColors.light.popoverForeground,
         },
+        // 테마색: 설정에서 바꿀 수 있게 CSS 변수로 둔다 (앱에서 vars()로 덮어쓴다)
         primary: {
-          DEFAULT: themeColors.light.primary,
+          DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
           foreground: themeColors.light.primaryForeground,
         },
         secondary: {
@@ -89,6 +95,14 @@ module.exports = {
   plugins: [
     require('tailwindcss-animate'),
     // Dark mode에서 semantic colors를 override하는 plugin
+    // 테마색 기본값 (설정을 바꾸기 전, 또는 vars()가 닿지 않는 곳)
+    plugin(function ({ addBase }) {
+      addBase({
+        ':root': {
+          '--color-primary': hexToRgbTriple(paletteHex(DEFAULT_PALETTE)),
+        },
+      });
+    }),
     plugin(function ({ addUtilities }) {
       const darkColors = themeColors.dark;
 
@@ -98,7 +112,6 @@ module.exports = {
         '.dark .bg-foreground': { backgroundColor: darkColors.foreground },
         '.dark .bg-card': { backgroundColor: darkColors.card },
         '.dark .bg-popover': { backgroundColor: darkColors.popover },
-        '.dark .bg-primary': { backgroundColor: darkColors.primary },
         '.dark .bg-secondary': { backgroundColor: darkColors.secondary },
         '.dark .bg-muted': { backgroundColor: darkColors.muted },
         '.dark .bg-accent': { backgroundColor: darkColors.accent },
@@ -122,7 +135,6 @@ module.exports = {
         '.dark .text-popover-foreground': {
           color: darkColors.popoverForeground,
         },
-        '.dark .text-primary': { color: darkColors.primary },
         '.dark .text-primary-foreground': {
           color: darkColors.primaryForeground,
         },
@@ -147,7 +159,6 @@ module.exports = {
         '.dark .border-background': { borderColor: darkColors.background },
         '.dark .border-foreground': { borderColor: darkColors.foreground },
         '.dark .border-card': { borderColor: darkColors.card },
-        '.dark .border-primary': { borderColor: darkColors.primary },
         '.dark .border-secondary': { borderColor: darkColors.secondary },
         '.dark .border-muted': { borderColor: darkColors.muted },
         '.dark .border-accent': { borderColor: darkColors.accent },
@@ -157,7 +168,6 @@ module.exports = {
         '.dark .border-input': { borderColor: darkColors.input },
         // Ring colors
         '.dark .ring-ring': { '--tw-ring-color': darkColors.ring },
-        '.dark .ring-primary': { '--tw-ring-color': darkColors.primary },
 
         // Placeholder colors
         '.dark .placeholder-muted-foreground::placeholder': {

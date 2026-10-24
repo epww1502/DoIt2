@@ -115,7 +115,7 @@ export function Selectable({
               className={cn(
                 'h-7 w-7 items-center justify-center rounded-full border-2',
                 selected
-                  ? 'bg-primary border-primary'
+                  ? 'border-primary bg-primary'
                   : 'bg-background border-muted'
               )}
             >

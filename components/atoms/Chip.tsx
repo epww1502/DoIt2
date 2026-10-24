@@ -23,7 +23,7 @@ export function Chip({ label, emoji, selected = false, onPress }: ChipProps) {
       onPress={onPress}
       className={cn(
         'h-10 flex-row items-center justify-center gap-1 rounded-full border px-4',
-        selected ? 'bg-primary border-primary' : 'bg-background border-muted'
+        selected ? 'border-primary bg-primary' : 'bg-background border-muted'
       )}
     >
       {/* 이모지와 글자를 한 Text에 넣으면, 안드로이드에서 이모지(✨ 등) 폭을 실제보다 좁게 재서

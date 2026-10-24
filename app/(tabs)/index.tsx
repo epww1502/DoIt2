@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, View } from 'react-native';
+import { Alert, FlatList, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Fab, ProgressBar, Text } from '@/components/atoms';
+import { Fab, Icon, ProgressBar, Text } from '@/components/atoms';
 import { BucketRow } from '@/components/bucket/BucketRow';
 import {
   ALL_FILTER,
@@ -87,9 +88,26 @@ export default function BucketListScreen() {
 
       {items.length > 0 ? (
         <View className="mx-5 mb-4 gap-2 rounded-2xl p-4 bg-accent">
-          <Text weight="600" size={15}>
-            {items.length}개 중 {doneCount}개 해냈어요 ✨
-          </Text>
+          <View className="flex-row items-center justify-between">
+            <Text weight="600" size={15}>
+              {items.length}개 중 {doneCount}개 해냈어요 ✨
+            </Text>
+            {/* 해낸 게 있으면 '함께한 것' 탭으로 바로 */}
+            {doneCount > 0 ? (
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="함께한 것 보러가기"
+                hitSlop={8}
+                onPress={() => router.navigate('/done')}
+                className="flex-row items-center active:opacity-60"
+              >
+                <Text weight="600" size={13} className="text-primary">
+                  보러가기
+                </Text>
+                <Icon as={ChevronRight} size={16} className="text-primary" />
+              </Pressable>
+            ) : null}
+          </View>
           <ProgressBar value={(doneCount / items.length) * 100} />
         </View>
       ) : null}

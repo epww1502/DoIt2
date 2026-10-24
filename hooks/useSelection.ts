@@ -1,6 +1,7 @@
-import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from 'react';
 import { BackHandler } from 'react-native';
+
+import { hapticPress, hapticSelect } from '@/lib/haptics';
 
 /**
  * 길게 눌러 여러 개 고르기.
@@ -13,14 +14,12 @@ export function useSelection() {
   const selecting = selected.size > 0;
 
   const start = useCallback((id: string) => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
-      () => {}
-    );
+    hapticPress();
     setSelected(new Set([id]));
   }, []);
 
   const toggle = useCallback((id: string) => {
-    void Haptics.selectionAsync().catch(() => {});
+    hapticSelect();
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);

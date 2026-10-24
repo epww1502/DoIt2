@@ -8,9 +8,10 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 
-import { colors, themeColors } from '@/constants/colors';
+import { themeColors } from '@/constants/colors';
 import { FONT_WEIGHTS } from '@/constants/fonts';
 import { useThemeMode } from '@/contexts/ThemeModeContext';
+import { usePrimaryColor } from '@/store/useSettingsStore';
 
 function tabIcon(Icon: LucideIcon) {
   function TabIcon({ color }: { color: ColorValue }) {
@@ -24,12 +25,13 @@ function tabIcon(Icon: LucideIcon) {
 export default function TabLayout() {
   const { colorScheme } = useThemeMode();
   const theme = themeColors[colorScheme];
+  const primary = usePrimaryColor();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: primary,
         tabBarInactiveTintColor: theme.mutedForeground,
         tabBarStyle: {
           backgroundColor: theme.background,

@@ -45,7 +45,7 @@ export function SpaceStatusCard() {
       />
       <View className="flex-1 gap-0.5">
         <Text weight="600" size={14}>
-          공간 · {current.name}
+          {current.name}
         </Text>
         <Text size={12} className="text-muted-foreground" numberOfLines={2}>
           {detail}

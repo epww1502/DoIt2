@@ -41,7 +41,7 @@ const textVariants = cva(
 
         // 보조 텍스트
         muted: 'text-sm text-muted-foreground', // 14px / 20px, 400
-        link: 'text-sm underline text-primary', // 14px / 20px, 400
+        link: 'text-sm text-primary underline', // 14px / 20px, 400
       },
     },
     defaultVariants: {

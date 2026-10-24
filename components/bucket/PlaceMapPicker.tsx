@@ -10,6 +10,7 @@ import { colors } from '@/constants/colors';
 import { useThemeMode } from '@/contexts/ThemeModeContext';
 import type { PlaceInfo } from '@/lib/bucket/types';
 import { getKakaoAddress } from '@/lib/kakao';
+import { usePrimaryColor } from '@/store/useSettingsStore';
 
 /** 위치를 모를 때 처음 보여줄 곳: 서울시청 */
 const DEFAULT_REGION: Region = {
@@ -38,6 +39,7 @@ type PlaceMapPickerProps = {
  */
 export function PlaceMapPicker({ results, onPick }: PlaceMapPickerProps) {
   const { colorScheme } = useThemeMode();
+  const primary = usePrimaryColor();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const lastMarkerPress = useRef(0);
@@ -127,7 +129,7 @@ export function PlaceMapPicker({ results, onPick }: PlaceMapPickerProps) {
             <Marker
               key={place.kakaoId ?? `${place.latitude},${place.longitude}`}
               coordinate={place}
-              pinColor={isSelected ? colors.primary : undefined}
+              pinColor={isSelected ? primary : undefined}
               onPress={() => {
                 lastMarkerPress.current = Date.now();
                 setSelected(place);
