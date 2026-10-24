@@ -5,7 +5,7 @@ import { Text } from '@/components/atoms';
 
 type ScreenHeaderProps = {
   title: string;
-  subtitle?: string;
+  subtitle: string;
   right?: ReactNode;
 };
 
@@ -17,7 +17,7 @@ export function ScreenHeader({ title, subtitle, right }: ScreenHeaderProps) {
         <Text weight="700" size={26}>
           {title}
         </Text>
-        {subtitle ? <Text variant="muted">{subtitle}</Text> : null}
+        <Text variant="muted">{subtitle}</Text>
       </View>
       {right}
     </View>

@@ -71,7 +71,8 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
           {CATEGORIES_BY_KIND[value.kind].map((c) => (
             <Chip
               key={c.key}
-              label={`${c.emoji} ${c.label}`}
+              emoji={c.emoji}
+              label={c.label}
               selected={value.category === c.key}
               onPress={() => onChange({ ...value, category: c.key })}
             />

@@ -3,12 +3,17 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { MapPin, Pencil, Trash2 } from 'lucide-react-native';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
 import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
+import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { StarRating } from '@/components/bucket/StarRating';
-import { getCategory, KIND_META } from '@/lib/bucket/types';
+import { getCategory, KIND_META, SETTING_META } from '@/lib/bucket/types';
+import { MAP_APPS, openInMap } from '@/lib/mapLinks';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 
 export default function BucketDetailScreen() {
@@ -16,10 +21,11 @@ export default function BucketDetailScreen() {
   const item = useBucketItem(id);
   const removeItem = useBucketStore((state) => state.removeItem);
   const clearDone = useBucketStore((state) => state.clearDone);
+  const insets = useSafeAreaInsets();
 
   if (!item) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView edges={['top']} className="flex-1 bg-background">
         <NavBar />
         <EmptyState
           emoji="🫥"
@@ -33,6 +39,12 @@ export default function BucketDetailScreen() {
   const category = getCategory(item.category);
   const meta = KIND_META[item.kind];
   const done = item.done;
+  // 카카오에서 고른 장소가 있으면 그 장소로, 없으면 적어 둔 위치 글자로 검색해서 연다
+  const mapTarget = item.place
+    ? ({ type: 'place', place: item.place } as const)
+    : item.location
+      ? ({ type: 'search', query: item.location } as const)
+      : null;
 
   const confirmRemove = () => {
     Alert.alert(
@@ -67,7 +79,7 @@ export default function BucketDetailScreen() {
     router.push({ pathname: '/record/[id]', params: { id: item.id } });
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <NavBar
         right={
           <View className="flex-row">
@@ -95,14 +107,21 @@ export default function BucketDetailScreen() {
         }
       />
 
-      <ScrollView contentContainerClassName="gap-6 px-5 pb-10">
+      <ScrollView
+        contentContainerClassName="gap-6 px-5"
+        // 아래 버튼이 없을 때(기록 있음)는 휴대폰 아래 바만큼 더 띄운다
+        contentContainerStyle={{
+          paddingBottom: (done ? insets.bottom : 0) + 40,
+        }}
+      >
         <View className="items-center gap-3 pt-4">
           <View className="h-20 w-20 items-center justify-center rounded-full bg-accent">
             <Text size={40}>{category.emoji}</Text>
           </View>
           <Badge variant="primary">
             <Text>
-              {meta.emoji} {meta.label} · {category.label}
+              {meta.emoji} {meta.label} · {category.label} ·{' '}
+              {SETTING_META[item.setting].label}
             </Text>
           </Badge>
           <Text weight="700" size={24} className="text-center">
@@ -118,6 +137,42 @@ export default function BucketDetailScreen() {
             {dayjs(item.createdAt).format('YYYY년 M월 D일')}에 담았어요
           </Text>
         </View>
+
+        {mapTarget ? (
+          <View className="gap-3 rounded-2xl p-4 bg-accent">
+            <View className="gap-0.5">
+              <Text weight="600" size={13} className="text-muted-foreground">
+                지도에서 보기
+              </Text>
+              {item.place ? (
+                <>
+                  <Text weight="600" size={15}>
+                    {item.place.name}
+                  </Text>
+                  <Text variant="muted" size={12}>
+                    {item.place.address}
+                  </Text>
+                </>
+              ) : (
+                <Text variant="muted" size={12}>
+                  &apos;{item.location}&apos;(으)로 검색해서 열어요
+                </Text>
+              )}
+            </View>
+            <View className="flex-row gap-2">
+              {MAP_APPS.map((app) => (
+                <Button
+                  key={app.key}
+                  label={app.label}
+                  variant="outline"
+                  size="md"
+                  className="flex-1 px-2"
+                  onPress={() => void openInMap(app.key, mapTarget)}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         {item.memo ? (
           <View className="gap-1 rounded-2xl p-4 bg-accent">
@@ -174,9 +229,9 @@ export default function BucketDetailScreen() {
       </ScrollView>
 
       {!done ? (
-        <View className="px-5 pb-4 pt-2">
+        <BottomBar>
           <Button label={`${meta.doneLabel} 기록 남기기`} onPress={goRecord} />
-        </View>
+        </BottomBar>
       ) : null}
     </SafeAreaView>
   );

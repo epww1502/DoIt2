@@ -35,7 +35,7 @@ export default function BucketListScreen() {
         subtitle={
           items.length === 0
             ? '같이 가고 싶은 곳, 해보고 싶은 것을 모아봐요'
-            : undefined
+            : `아직 ${todo.length}개가 우리를 기다리고 있어요`
         }
       />
 

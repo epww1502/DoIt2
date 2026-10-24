@@ -1,27 +1,56 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { MapPin, Search, X } from 'lucide-react-native';
+import { useCallback, useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Chip, NavBar, Segmented, TextField } from '@/components/atoms';
+import {
+  Button,
+  Chip,
+  Icon,
+  NavBar,
+  Segmented,
+  Text,
+  TextField,
+} from '@/components/atoms';
 import { TextArea } from '@/components/atoms/TextArea';
+import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
+import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import {
   CATEGORIES_BY_KIND,
+  DEFAULT_SETTING,
   KIND_META,
+  SETTING_META,
   type BucketKind,
+  type BucketSetting,
   type CategoryKey,
+  type PlaceInfo,
 } from '@/lib/bucket/types';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
+import { usePlacePickStore } from '@/store/usePlacePickStore';
 
 const KIND_OPTIONS: { value: BucketKind; label: string }[] = [
   { value: 'place', label: `${KIND_META.place.emoji} 갈 곳` },
   { value: 'activity', label: `${KIND_META.activity.emoji} 할 것` },
 ];
 
+const SETTING_OPTIONS: { value: BucketSetting; label: string }[] = [
+  {
+    value: 'indoor',
+    label: `${SETTING_META.indoor.emoji} ${SETTING_META.indoor.label}`,
+  },
+  {
+    value: 'outdoor',
+    label: `${SETTING_META.outdoor.emoji} ${SETTING_META.outdoor.label}`,
+  },
+];
+
 /** 버킷리스트 담기. ?id= 가 있으면 수정 */
 export default function BucketFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
+  const { keyboardHeight, scrollRef, onScroll, ensureFocusedVisible } =
+    useKeyboardAwareForm();
   const editing = useBucketItem(id);
   const addItem = useBucketStore((state) => state.addItem);
   const updateItem = useBucketStore((state) => state.updateItem);
@@ -31,18 +60,52 @@ export default function BucketFormScreen() {
   const [category, setCategory] = useState<CategoryKey>(
     editing?.category ?? CATEGORIES_BY_KIND.place[0].key
   );
+  const [setting, setSetting] = useState<BucketSetting>(
+    editing?.setting ?? DEFAULT_SETTING[CATEGORIES_BY_KIND.place[0].key]
+  );
   const [location, setLocation] = useState(editing?.location ?? '');
+  const [place, setPlace] = useState<PlaceInfo | null>(editing?.place ?? null);
   const [memo, setMemo] = useState(editing?.memo ?? '');
+
+  // 장소 검색 화면에서 고르고 돌아오면 받아서 채운다
+  const takePicked = usePlacePickStore((state) => state.take);
+  useFocusEffect(
+    useCallback(() => {
+      const picked = takePicked();
+      if (!picked) return;
+      setPlace(picked);
+      setLocation(picked.address);
+      // 이름을 아직 안 적었으면 가게 이름으로 채운다
+      setTitle((prev) => (prev.trim() ? prev : picked.name.slice(0, 40)));
+    }, [takePicked])
+  );
+
+  const openSearch = () =>
+    router.push({
+      pathname: '/item/search-place',
+      params: { q: place?.name ?? (title.trim() || location.trim()) },
+    });
+
+  const clearPlace = () => {
+    setPlace(null);
+    setLocation('');
+  };
 
   const meta = KIND_META[kind];
   const categories = CATEGORIES_BY_KIND[kind];
   const canSave = title.trim().length > 0;
 
+  /** 카테고리를 바꾸면 실내/실외도 그 카테고리 기본값으로 맞춘다 (직접 바꿀 수 있음) */
+  const changeCategory = (next: CategoryKey) => {
+    setCategory(next);
+    setSetting(DEFAULT_SETTING[next]);
+  };
+
   const changeKind = (next: BucketKind) => {
     setKind(next);
     // 고른 카테고리가 새 종류에 없으면 첫 번째로 바꾼다 ('기타'는 공통)
     if (!CATEGORIES_BY_KIND[next].some((c) => c.key === category)) {
-      setCategory(CATEGORIES_BY_KIND[next][0].key);
+      changeCategory(CATEGORIES_BY_KIND[next][0].key);
     }
   };
 
@@ -52,7 +115,9 @@ export default function BucketFormScreen() {
       kind,
       title: title.trim(),
       category,
+      setting,
       location: location.trim(),
+      place,
       memo: memo.trim(),
     };
     if (editing) {
@@ -64,13 +129,14 @@ export default function BucketFormScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <NavBar title={editing ? '버킷리스트 수정' : '버킷리스트 담기'} />
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      {/* 키보드 높이만큼 아래를 비워서 입력칸과 버튼을 키보드 위로 올린다 */}
+      <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
         <ScrollView
+          ref={scrollRef}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           contentContainerClassName="gap-6 px-5 pb-8 pt-2"
           keyboardShouldPersistTaps="handled"
         >
@@ -89,6 +155,7 @@ export default function BucketFormScreen() {
               autoFocus={!editing}
               returnKeyType="next"
               maxLength={40}
+              onFocus={ensureFocusedVisible}
             />
           </View>
 
@@ -98,22 +165,80 @@ export default function BucketFormScreen() {
               {categories.map((c) => (
                 <Chip
                   key={c.key}
-                  label={`${c.emoji} ${c.label}`}
+                  emoji={c.emoji}
+                  label={c.label}
                   selected={category === c.key}
-                  onPress={() => setCategory(c.key)}
+                  onPress={() => changeCategory(c.key)}
                 />
               ))}
             </View>
           </View>
 
           <View>
-            <FieldLabel>{meta.locationLabel}</FieldLabel>
-            <TextField
-              value={location}
-              onChangeText={setLocation}
-              placeholder={meta.locationPlaceholder}
-              maxLength={40}
+            <FieldLabel>실내에서 해요, 밖에서 해요?</FieldLabel>
+            <Segmented
+              options={SETTING_OPTIONS}
+              value={setting}
+              onChange={setSetting}
             />
+            <Text variant="muted" size={12} className="mt-2">
+              비 오는 날에는 &apos;오늘 뭐 하지&apos;에서 실외를 빼고 뽑아요
+            </Text>
+          </View>
+
+          <View>
+            <FieldLabel>{meta.locationLabel}</FieldLabel>
+            {place ? (
+              // 카카오에서 고른 장소
+              <View className="flex-row items-center gap-3 rounded-xl px-4 py-3 bg-accent">
+                <Icon as={MapPin} size={18} className="text-primary" />
+                <View className="flex-1 gap-0.5">
+                  <Text weight="600" size={15} numberOfLines={1}>
+                    {place.name}
+                  </Text>
+                  <Text variant="muted" size={12} numberOfLines={1}>
+                    {place.address}
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  hitSlop={6}
+                  onPress={openSearch}
+                >
+                  <Text weight="600" size={13} className="text-primary">
+                    바꾸기
+                  </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="장소 지우기"
+                  hitSlop={6}
+                  onPress={clearPlace}
+                >
+                  <Icon as={X} size={18} className="text-muted-foreground" />
+                </Pressable>
+              </View>
+            ) : (
+              <View className="gap-2">
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={openSearch}
+                  className="h-12 flex-row items-center gap-2 rounded-xl px-4 bg-accent active:opacity-70"
+                >
+                  <Icon as={Search} size={18} className="text-primary" />
+                  <Text weight="600" size={15} className="text-primary">
+                    카카오에서 장소 찾기
+                  </Text>
+                </Pressable>
+                <TextField
+                  value={location}
+                  onChangeText={setLocation}
+                  placeholder={`또는 직접 적기: ${meta.locationPlaceholder.replace('예) ', '')}`}
+                  maxLength={40}
+                  onFocus={ensureFocusedVisible}
+                />
+              </View>
+            )}
           </View>
 
           <View>
@@ -127,18 +252,19 @@ export default function BucketFormScreen() {
                   : '준비물, 참고할 영상 링크, 하고 싶은 이유'
               }
               maxLength={300}
+              onFocus={ensureFocusedVisible}
             />
           </View>
         </ScrollView>
 
-        <View className="px-5 pb-4 pt-2">
+        <BottomBar>
           <Button
             label={editing ? '저장하기' : '담기'}
             disabled={!canSave}
             onPress={save}
           />
-        </View>
-      </KeyboardAvoidingView>
+        </BottomBar>
+      </View>
     </SafeAreaView>
   );
 }

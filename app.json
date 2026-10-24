@@ -15,7 +15,7 @@
     "android": {
       "package": "com.doit2.app",
       "adaptiveIcon": {
-        "backgroundColor": "#FF5C8A",
+        "backgroundColor": "#5AB0FF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -30,7 +30,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#FF5C8A"
+          "backgroundColor": "#5AB0FF"
         }
       ],
       "expo-image",
@@ -40,6 +40,12 @@
           "photosPermission": "다녀온 곳의 사진을 기록에 남기려면 사진 접근 권한이 필요해요.",
           "cameraPermission": false,
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "오늘 날씨를 보고 비 오는 날 실외 데이트를 빼려면 위치 권한이 필요해요."
         }
       ]
     ],

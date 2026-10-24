@@ -16,7 +16,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <ScreenHeader title="설정" />
+      <ScreenHeader title="설정" subtitle="테마와 앱 정보를 볼 수 있어요" />
       <View className="gap-4 px-5">
         <Card className="rounded-2xl">
           <CardContent className="gap-3 p-5">

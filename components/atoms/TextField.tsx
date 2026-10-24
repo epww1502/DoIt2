@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { Icon } from './Icon';
 
 type TextFieldProps = TextInputProps & {
-  /** search: 회색 배경 + 돋보기, outline: 테두리 + 지우기 버튼 */
+  /** search: 회색 배경 + 돋보기, outline: 회색 배경(테두리 없음) + 지우기 버튼 */
   variant?: 'search' | 'outline';
   className?: string;
 };
@@ -27,9 +27,7 @@ export function TextField({
     <View
       className={cn(
         'flex-row items-center rounded-xl px-4',
-        isSearch
-          ? 'h-11 bg-accent'
-          : 'h-12 border-[1.5px] bg-background border-foreground',
+        isSearch ? 'h-11 bg-accent' : 'h-12 bg-accent',
         className
       )}
     >

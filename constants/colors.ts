@@ -1,11 +1,11 @@
 export const colors = {
   white: '#FFFFFF',
   black: '#000000',
-  primary: '#FF5C8A',
+  primary: '#5AB0FF',
   kakao: '#FEE500',
   highlightBlue: '#4285F4',
   highlightRed: '#f28b82',
-  homebg: '#FFF5F8',
+  homebg: '#F0F7FF',
   gray: {
     50: '#fafafc',
     100: '#e8e8ee',
@@ -17,16 +17,6 @@ export const colors = {
     700: '#292930',
     800: '#17171c',
     900: '#101013',
-  },
-  pink: {
-    50: '#FFF0F4',
-    100: '#FFDCE6',
-    200: '#FFB8CC',
-    300: '#FF8FAE',
-    400: '#FF7299',
-    500: '#FF5C8A',
-    600: '#E84877',
-    700: '#C93664',
   },
   blue: {
     50: '#E9F2FE',

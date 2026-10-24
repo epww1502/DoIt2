@@ -14,7 +14,7 @@ export function TextArea({ className, style, ...props }: TextAreaProps) {
       textAlignVertical="top"
       placeholderTextColor={colors.gray[400]}
       className={cn(
-        'min-h-[96px] rounded-xl border-[1.5px] px-4 py-3 bg-background text-foreground border-border',
+        'min-h-[96px] rounded-xl px-4 py-3 bg-accent text-foreground',
         className
       )}
       style={[{ fontFamily: FONT_WEIGHTS['400'], fontSize: 16 }, style]}

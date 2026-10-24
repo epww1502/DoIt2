@@ -42,39 +42,40 @@ export default function DoneScreen() {
         subtitle={
           done.length > 0
             ? `벌써 ${done.length}개나 같이 해냈어요 💕`
-            : undefined
+            : '같이 해낸 것들이 여기에 차곡차곡 쌓여요'
         }
       />
-      {done.length > 0 ? (
-        <View className="px-5 pb-4">
-          <Segmented options={KIND_OPTIONS} value={kind} onChange={setKind} />
-        </View>
-      ) : null}
-      <FlatList
-        data={shown}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <DoneCard item={item} />}
-        contentContainerClassName="grow gap-4 px-5 pb-10"
-        ListEmptyComponent={
-          done.length === 0 ? (
-            <EmptyState
-              emoji="👣"
-              title="아직 함께한 게 없어요"
-              description={
-                "버킷리스트에서 하나를 고르고\n'다녀왔어요', '해냈어요'를 누르면 여기에 쌓여요."
-              }
-              actionLabel="버킷리스트 보러 가기"
-              onAction={() => router.navigate('/')}
-            />
-          ) : (
-            <EmptyState
-              emoji="🔍"
-              title="여기엔 아직 없어요"
-              description="다른 종류를 골라봐요."
-            />
-          )
-        }
-      />
+      {/* 빈 화면은 목록 밖에 둬야 화면 가운데에 온다 (버킷리스트 탭과 같은 구조) */}
+      {done.length === 0 ? (
+        <EmptyState
+          emoji="👣"
+          title="아직 함께한 게 없어요"
+          description={
+            "버킷리스트에서 하나를 고르고\n'다녀왔어요', '해냈어요'를 누르면 여기에 쌓여요."
+          }
+          actionLabel="버킷리스트 보러 가기"
+          onAction={() => router.navigate('/')}
+        />
+      ) : (
+        <>
+          <View className="px-5 pb-4">
+            <Segmented options={KIND_OPTIONS} value={kind} onChange={setKind} />
+          </View>
+          <FlatList
+            data={shown}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <DoneCard item={item} />}
+            contentContainerClassName="gap-4 px-5 pb-10"
+            ListEmptyComponent={
+              <EmptyState
+                emoji="🔍"
+                title="여기엔 아직 없어요"
+                description="다른 종류를 골라봐요."
+              />
+            }
+          />
+        </>
+      )}
     </SafeAreaView>
   );
 }

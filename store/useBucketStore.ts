@@ -5,7 +5,12 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { deletePhoto } from '@/lib/bucket/photo';
-import type { BucketInput, BucketItem, DoneRecord } from '@/lib/bucket/types';
+import {
+  DEFAULT_SETTING,
+  type BucketInput,
+  type BucketItem,
+  type DoneRecord,
+} from '@/lib/bucket/types';
 
 type BucketState = {
   items: BucketItem[];
@@ -22,9 +27,12 @@ function createId() {
 }
 
 /** v1(장소만 있던 때) 데이터 모양 */
-type V1Place = Omit<BucketItem, 'kind' | 'done'> & {
+type V1Place = Omit<BucketItem, 'kind' | 'done' | 'setting'> & {
   visit: DoneRecord | null;
 };
+
+/** v2(실내/실외가 없던 때) 데이터 모양 */
+type V2Item = Omit<BucketItem, 'setting'>;
 
 export const useBucketStore = create<BucketState>()(
   persist(
@@ -82,18 +90,30 @@ export const useBucketStore = create<BucketState>()(
     {
       // 이름은 처음 저장한 키를 그대로 써야 기존 데이터를 읽는다
       name: 'doit2-places',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({ items: state.items }),
       migrate: (persisted, version) => {
+        let items: V2Item[];
         if (version < 2) {
+          // v1 → v2: 장소만 있던 데이터를 '갈 곳'으로, visit → done
           const old = (persisted as { places?: V1Place[] }).places ?? [];
-          const items: BucketItem[] = old.map(({ visit, ...rest }) => ({
+          items = old.map(({ visit, ...rest }) => ({
             ...rest,
             kind: 'place',
             done: visit,
           }));
-          return { items };
+        } else {
+          items = (persisted as { items?: V2Item[] }).items ?? [];
+        }
+        if (version < 3) {
+          // v2 → v3: 실내/실외는 카테고리 기본값으로 채운다
+          return {
+            items: items.map((it): BucketItem => ({
+              ...it,
+              setting: DEFAULT_SETTING[it.category] ?? 'indoor',
+            })),
+          };
         }
         return persisted as { items: BucketItem[] };
       },

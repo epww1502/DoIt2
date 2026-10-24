@@ -12,6 +12,8 @@ import {
 } from '@/components/bucket/CategoryFilter';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
+import { WeatherBanner } from '@/components/bucket/WeatherBanner';
+import { useTodayWeather } from '@/hooks/useTodayWeather';
 import { getCategory, KIND_META, type BucketItem } from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
@@ -34,12 +36,27 @@ export default function PickScreen() {
   const [filter, setFilter] = useState<BucketFilter>(ALL_FILTER);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
+  const [includeOutdoor, setIncludeOutdoor] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { state: weatherState, reload: reloadWeather } = useTodayWeather();
 
-  const candidates = useMemo(
+  // 비 오는 날에는 실외 항목을 뺀다 ('실외도 포함'을 켜면 같이 뽑는다)
+  const isRainy =
+    weatherState.status === 'ready' && weatherState.weather.isRainy;
+  const skipOutdoor = isRainy && !includeOutdoor;
+
+  const filtered = useMemo(
     () => items.filter((it) => !it.done && matchesFilter(it, filter)),
     [items, filter]
   );
+  const candidates = useMemo(
+    () =>
+      skipOutdoor
+        ? filtered.filter((it) => it.setting !== 'outdoor')
+        : filtered,
+    [filtered, skipOutdoor]
+  );
+  const excludedCount = filtered.length - candidates.length;
   // 뽑힌 게 지워지거나 해낸 것이 되면 자연스럽게 결과가 사라진다
   const current: BucketItem | null =
     candidates.find((it) => it.id === currentId) ?? null;
@@ -50,11 +67,21 @@ export default function PickScreen() {
   };
   useEffect(() => stop, []);
 
-  const changeFilter = (next: BucketFilter) => {
+  /** 뽑는 범위가 바뀌면 지금 결과를 지운다 */
+  const resetPick = () => {
     stop();
     setIsShuffling(false);
     setCurrentId(null);
+  };
+
+  const changeFilter = (next: BucketFilter) => {
+    resetPick();
     setFilter(next);
+  };
+
+  const changeIncludeOutdoor = (next: boolean) => {
+    resetPick();
+    setIncludeOutdoor(next);
   };
 
   const shuffle = () => {
@@ -94,6 +121,13 @@ export default function PickScreen() {
         />
       ) : (
         <View className="flex-1">
+          <WeatherBanner
+            state={weatherState}
+            onReload={reloadWeather}
+            includeOutdoor={includeOutdoor}
+            onChangeIncludeOutdoor={changeIncludeOutdoor}
+            excludedCount={excludedCount}
+          />
           <CategoryFilter value={filter} onChange={changeFilter} />
 
           <View className="flex-1 justify-center px-5">
@@ -139,7 +173,9 @@ export default function PickScreen() {
                   <Text variant="muted" className="text-center">
                     {candidates.length > 0
                       ? `${candidates.length}개 중에서 하나를 골라드릴게요`
-                      : '여기엔 아직 담긴 게 없어요'}
+                      : excludedCount > 0
+                        ? "비 때문에 실외를 빼니 뽑을 게 없어요.\n'실외도 포함'을 켜보세요"
+                        : '여기엔 아직 담긴 게 없어요'}
                   </Text>
                 </>
               )}

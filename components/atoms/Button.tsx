@@ -8,7 +8,7 @@ import { Text } from './Text';
 const buttonVariants = cva('items-center justify-center rounded-xl', {
   variants: {
     variant: {
-      // 분홍 배경
+      // 메인 색 배경
       primary: 'bg-primary',
       // 테두리만
       outline: 'border bg-background border-border',

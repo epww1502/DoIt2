@@ -45,6 +45,10 @@ function RootLayoutInner() {
             name="record/[id]"
             options={{ animation: 'slide_from_bottom' }}
           />
+          <Stack.Screen
+            name="item/search-place"
+            options={{ animation: 'slide_from_bottom' }}
+          />
         </Stack>
       </View>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />

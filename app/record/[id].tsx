@@ -3,21 +3,16 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, ChevronRight, ImagePlus, X } from 'lucide-react-native';
 import { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  View,
-} from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { TextArea } from '@/components/atoms/TextArea';
+import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { StarRating } from '@/components/bucket/StarRating';
+import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { DATE_FORMAT, todayKey } from '@/lib/date';
 import { deletePhoto, pickPhoto } from '@/lib/bucket/photo';
 import { KIND_META } from '@/lib/bucket/types';
@@ -38,6 +33,8 @@ export default function RecordFormScreen() {
   const item = useBucketItem(id);
   const recordDone = useBucketStore((state) => state.recordDone);
   const saved = item?.done;
+  const { keyboardHeight, scrollRef, onScroll, ensureFocusedVisible } =
+    useKeyboardAwareForm();
 
   const [date, setDate] = useState(saved?.date ?? todayKey());
   const [rating, setRating] = useState(saved?.rating ?? 5);
@@ -48,7 +45,7 @@ export default function RecordFormScreen() {
 
   if (!item) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView edges={['top']} className="flex-1 bg-background">
         <NavBar />
         <EmptyState
           emoji="🫥"
@@ -95,13 +92,14 @@ export default function RecordFormScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <NavBar title={saved ? '기록 수정' : '함께한 기록'} onBack={cancel} />
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      {/* 키보드 높이만큼 아래를 비워서 입력칸과 버튼을 키보드 위로 올린다 */}
+      <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
         <ScrollView
+          ref={scrollRef}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           contentContainerClassName="gap-7 px-5 pb-8 pt-2"
           keyboardShouldPersistTaps="handled"
         >
@@ -111,7 +109,7 @@ export default function RecordFormScreen() {
 
           <View>
             <FieldLabel>{KIND_META[item.kind].whenQuestion}</FieldLabel>
-            <View className="h-12 flex-row items-center justify-between rounded-xl border-[1.5px] px-2 border-border">
+            <View className="h-12 flex-row items-center justify-between rounded-xl px-2 bg-accent">
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="하루 전"
@@ -156,6 +154,7 @@ export default function RecordFormScreen() {
               onChangeText={setReview}
               placeholder="오늘의 한 줄을 남겨봐요"
               maxLength={200}
+              onFocus={ensureFocusedVisible}
             />
           </View>
 
@@ -200,10 +199,10 @@ export default function RecordFormScreen() {
           </View>
         </ScrollView>
 
-        <View className="px-5 pb-4 pt-2">
+        <BottomBar>
           <Button label="기록 저장하기" onPress={save} />
-        </View>
-      </KeyboardAvoidingView>
+        </BottomBar>
+      </View>
     </SafeAreaView>
   );
 }

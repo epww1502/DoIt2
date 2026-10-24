@@ -99,13 +99,54 @@ export type DoneRecord = {
   photoUri: string | null;
 };
 
+/** 실내 / 실외. 비 오는 날 뽑기에서 실외를 뺄 때 쓴다 */
+export type BucketSetting = 'indoor' | 'outdoor';
+
+export const SETTING_META: Record<
+  BucketSetting,
+  { label: string; emoji: string }
+> = {
+  indoor: { label: '실내', emoji: '🏠' },
+  outdoor: { label: '실외', emoji: '🌳' },
+};
+
+/** 카테고리를 고르면 먼저 채워 주는 실내/실외 (담을 때 바꿀 수 있다) */
+export const DEFAULT_SETTING: Record<CategoryKey, BucketSetting> = {
+  food: 'indoor',
+  cafe: 'indoor',
+  trip: 'outdoor',
+  activity: 'outdoor',
+  culture: 'indoor',
+  cook: 'indoor',
+  exercise: 'outdoor',
+  hobby: 'indoor',
+  memory: 'outdoor',
+  event: 'indoor',
+  etc: 'indoor',
+};
+
+/** 카카오 장소 검색으로 고른 장소 */
+export type PlaceInfo = {
+  kakaoId: string;
+  name: string;
+  /** "이탈리안", "카페" 같은 카카오 카테고리 마지막 단계 */
+  category: string;
+  /** 도로명 주소 (없으면 지번 주소) */
+  address: string;
+  latitude: number;
+  longitude: number;
+};
+
 export type BucketItem = {
   id: string;
   kind: BucketKind;
   title: string;
   category: CategoryKey;
+  setting: BucketSetting;
   /** 지역, 주소, 장소 이름 (자유 입력, 선택) */
   location: string;
+  /** 카카오에서 고른 장소. 예전 데이터에는 없다 */
+  place?: PlaceInfo | null;
   memo: string;
   createdAt: string;
   done: DoneRecord | null;
@@ -113,5 +154,5 @@ export type BucketItem = {
 
 export type BucketInput = Pick<
   BucketItem,
-  'kind' | 'title' | 'category' | 'location' | 'memo'
+  'kind' | 'title' | 'category' | 'setting' | 'location' | 'place' | 'memo'
 >;
