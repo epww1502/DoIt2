@@ -64,10 +64,10 @@ export function fromRow(row: BucketItemRow, local?: BucketItem): BucketItem {
   };
 }
 
-function toRow(item: BucketItem, coupleId: string): ItemInsert {
+function toRow(item: BucketItem, spaceId: string): ItemInsert {
   return {
     id: item.id,
-    couple_id: coupleId,
+    space_id: spaceId,
     kind: item.kind,
     title: item.title,
     category: item.category,
@@ -92,35 +92,37 @@ export function ensureUuid(id: string) {
   return UUID_RE.test(id) ? id : randomUUID();
 }
 
-export async function fetchItems(): Promise<BucketItemRow[]> {
+export async function fetchItems(spaceId: string): Promise<BucketItemRow[]> {
   const { data, error } = await supabase
     .from('bucket_items')
     .select('*')
+    .eq('space_id', spaceId)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
 }
 
-export async function upsertItems(items: BucketItem[], coupleId: string) {
+export async function upsertItems(items: BucketItem[], spaceId: string) {
   if (items.length === 0) return;
   const { error } = await supabase
     .from('bucket_items')
-    .upsert(items.map((it) => toRow(it, coupleId)));
+    .upsert(items.map((it) => toRow(it, spaceId)));
   if (error) throw error;
 }
 
-export async function deleteItem(id: string) {
-  const { error } = await supabase.from('bucket_items').delete().eq('id', id);
+export async function deleteItems(ids: string[]) {
+  if (ids.length === 0) return;
+  const { error } = await supabase.from('bucket_items').delete().in('id', ids);
   if (error) throw error;
 }
 
 /** 휴대폰 사진을 서버에 올리고 저장소 경로를 돌려준다 */
-export async function uploadPhoto(localUri: string, coupleId: string) {
+export async function uploadPhoto(localUri: string, spaceId: string) {
   const file = new File(localUri);
   const ext = (file.extension || '.jpg').replace('.', '').toLowerCase();
   const contentType =
     ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-  const path = `${coupleId}/${randomUUID()}.${ext === 'jpeg' ? 'jpg' : ext}`;
+  const path = `${spaceId}/${randomUUID()}.${ext === 'jpeg' ? 'jpg' : ext}`;
 
   const { error } = await supabase.storage
     .from(PHOTO_BUCKET)

@@ -18,7 +18,6 @@ export type Database = {
       bucket_items: {
         Row: {
           category: string;
-          couple_id: string;
           created_at: string;
           created_by: string | null;
           done: Json | null;
@@ -28,12 +27,12 @@ export type Database = {
           memo: string;
           place: Json | null;
           setting: string;
+          space_id: string;
           title: string;
           updated_at: string;
         };
         Insert: {
           category: string;
-          couple_id: string;
           created_at?: string;
           created_by?: string | null;
           done?: Json | null;
@@ -43,12 +42,12 @@ export type Database = {
           memo?: string;
           place?: Json | null;
           setting: string;
+          space_id: string;
           title: string;
           updated_at?: string;
         };
         Update: {
           category?: string;
-          couple_id?: string;
           created_at?: string;
           created_by?: string | null;
           done?: Json | null;
@@ -58,63 +57,73 @@ export type Database = {
           memo?: string;
           place?: Json | null;
           setting?: string;
+          space_id?: string;
           title?: string;
           updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'bucket_items_couple_id_fkey';
-            columns: ['couple_id'];
+            foreignKeyName: 'bucket_items_space_id_fkey';
+            columns: ['space_id'];
             isOneToOne: false;
-            referencedRelation: 'couples';
+            referencedRelation: 'spaces';
             referencedColumns: ['id'];
           },
         ];
       };
-      couple_members: {
+      space_members: {
         Row: {
-          couple_id: string;
           joined_at: string;
+          space_id: string;
           user_id: string;
         };
         Insert: {
-          couple_id: string;
           joined_at?: string;
+          space_id: string;
           user_id: string;
         };
         Update: {
-          couple_id?: string;
           joined_at?: string;
+          space_id?: string;
           user_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'couple_members_couple_id_fkey';
-            columns: ['couple_id'];
+            foreignKeyName: 'space_members_space_id_fkey';
+            columns: ['space_id'];
             isOneToOne: false;
-            referencedRelation: 'couples';
+            referencedRelation: 'spaces';
             referencedColumns: ['id'];
           },
         ];
       };
-      couples: {
+      spaces: {
         Row: {
           created_at: string;
+          created_by: string | null;
+          emoji: string;
           id: string;
+          image_path: string | null;
           invite_code: string;
-          started_on: string | null;
+          name: string;
         };
         Insert: {
           created_at?: string;
+          created_by?: string | null;
+          emoji?: string;
           id?: string;
+          image_path?: string | null;
           invite_code: string;
-          started_on?: string | null;
+          name?: string;
         };
         Update: {
           created_at?: string;
+          created_by?: string | null;
+          emoji?: string;
           id?: string;
+          image_path?: string | null;
           invite_code?: string;
-          started_on?: string | null;
+          name?: string;
         };
         Relationships: [];
       };
@@ -123,39 +132,45 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      create_couple: {
-        Args: never;
+      create_space: {
+        Args: { space_emoji: string; space_name: string };
         Returns: {
           created_at: string;
+          created_by: string | null;
+          emoji: string;
           id: string;
+          image_path: string | null;
           invite_code: string;
-          started_on: string | null;
+          name: string;
         };
         SetofOptions: {
           from: '*';
-          to: 'couples';
+          to: 'spaces';
           isOneToOne: true;
           isSetofReturn: false;
         };
       };
       generate_invite_code: { Args: never; Returns: string };
-      join_couple: {
+      join_space: {
         Args: { code: string };
         Returns: {
           created_at: string;
+          created_by: string | null;
+          emoji: string;
           id: string;
+          image_path: string | null;
           invite_code: string;
-          started_on: string | null;
+          name: string;
         };
         SetofOptions: {
           from: '*';
-          to: 'couples';
+          to: 'spaces';
           isOneToOne: true;
           isSetofReturn: false;
         };
       };
-      leave_couple: { Args: never; Returns: undefined };
-      my_couple_id: { Args: never; Returns: string };
+      leave_space: { Args: { target_space: string }; Returns: undefined };
+      my_space_ids: { Args: never; Returns: string[] };
     };
     Enums: {
       [_ in never]: never;
@@ -167,4 +182,4 @@ export type Database = {
 };
 
 export type BucketItemRow = Database['public']['Tables']['bucket_items']['Row'];
-export type CoupleRow = Database['public']['Tables']['couples']['Row'];
+export type SpaceRow = Database['public']['Tables']['spaces']['Row'];

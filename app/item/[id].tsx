@@ -19,7 +19,7 @@ import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 export default function BucketDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = useBucketItem(id);
-  const removeItem = useBucketStore((state) => state.removeItem);
+  const removeItems = useBucketStore((state) => state.removeItems);
   const clearDone = useBucketStore((state) => state.clearDone);
   const insets = useSafeAreaInsets();
 
@@ -57,7 +57,7 @@ export default function BucketDetailScreen() {
           style: 'destructive',
           onPress: () => {
             router.back();
-            removeItem(item.id);
+            removeItems([item.id]);
           },
         },
       ]
@@ -186,7 +186,7 @@ export default function BucketDetailScreen() {
         {done ? (
           <View className="gap-3">
             <Text weight="700" size={18}>
-              우리의 기록 💕
+              우리의 기록 📝
             </Text>
             <View className="overflow-hidden rounded-2xl border bg-card border-border">
               <DonePhoto done={done} />

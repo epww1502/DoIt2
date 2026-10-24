@@ -98,7 +98,7 @@ export type DoneRecord = {
   review: string;
   /** 이 휴대폰에 있는 사진 파일 (내가 올린 사진이면 있다) */
   photoUri: string | null;
-  /** 서버 사진 저장소 경로 {couple_id}/{파일 이름}. 커플 연결 전이면 없다 */
+  /** 서버 사진 저장소 경로 {space_id}/{파일 이름}. 공간에 연결 전이면 없다 */
   photoPath?: string | null;
 };
 

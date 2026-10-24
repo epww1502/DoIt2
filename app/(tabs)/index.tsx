@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { Alert, FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Fab, ProgressBar, Text } from '@/components/atoms';
@@ -13,10 +13,17 @@ import {
 } from '@/components/bucket/CategoryFilter';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
+import {
+  SelectionDeleteBar,
+  SelectionHeader,
+} from '@/components/bucket/SelectionBar';
+import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
+import { useSelection } from '@/hooks/useSelection';
 import { useBucketStore } from '@/store/useBucketStore';
 
 export default function BucketListScreen() {
   const items = useBucketStore((state) => state.items);
+  const removeItems = useBucketStore((state) => state.removeItems);
   const [filter, setFilter] = useState<BucketFilter>(ALL_FILTER);
 
   const todo = useMemo(() => items.filter((it) => !it.done), [items]);
@@ -28,21 +35,60 @@ export default function BucketListScreen() {
 
   const goNew = () => router.push('/item/new');
 
+  // 길게 눌러 여러 개 고르기 (보이는 항목 중에서만 센다)
+  const selection = useSelection();
+  const selectedIds = filtered
+    .filter((it) => selection.selected.has(it.id))
+    .map((it) => it.id);
+  const allSelected =
+    filtered.length > 0 && selectedIds.length === filtered.length;
+
+  const confirmDelete = () =>
+    Alert.alert(
+      `${selectedIds.length}개를 지울까요?`,
+      '지운 항목은 되돌릴 수 없어요.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '지우기',
+          style: 'destructive',
+          onPress: () => {
+            removeItems(selectedIds);
+            selection.clear();
+          },
+        },
+      ]
+    );
+
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <ScreenHeader
-        title="우리 버킷리스트"
-        subtitle={
-          items.length === 0
-            ? '같이 가고 싶은 곳, 해보고 싶은 것을 모아봐요'
-            : `아직 ${todo.length}개가 우리를 기다리고 있어요`
-        }
-      />
+      {selection.selecting ? (
+        <SelectionHeader
+          count={selectedIds.length}
+          allSelected={allSelected}
+          onCancel={selection.clear}
+          onToggleAll={() =>
+            allSelected
+              ? selection.clear()
+              : selection.selectAll(filtered.map((it) => it.id))
+          }
+        />
+      ) : (
+        <ScreenHeader
+          right={<SpaceSwitcher />}
+          title="버킷리스트"
+          subtitle={
+            items.length === 0
+              ? '같이 가고 싶은 곳, 해보고 싶은 것을 모아봐요'
+              : `아직 ${todo.length}개가 기다리고 있어요`
+          }
+        />
+      )}
 
       {items.length > 0 ? (
         <View className="mx-5 mb-4 gap-2 rounded-2xl p-4 bg-accent">
           <Text weight="600" size={15}>
-            {items.length}개 중 {doneCount}개 해냈어요 💕
+            {items.length}개 중 {doneCount}개 해냈어요 ✨
           </Text>
           <ProgressBar value={(doneCount / items.length) * 100} />
         </View>
@@ -70,7 +116,17 @@ export default function BucketListScreen() {
           <FlatList
             data={filtered}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <BucketRow item={item} />}
+            extraData={selection.selected}
+            renderItem={({ item, index }) => (
+              <BucketRow
+                item={item}
+                index={index}
+                selecting={selection.selecting}
+                selected={selection.selected.has(item.id)}
+                onLongPress={() => selection.start(item.id)}
+                onToggle={() => selection.toggle(item.id)}
+              />
+            )}
             contentContainerClassName="gap-3 px-5 pb-28 pt-4"
             ListEmptyComponent={
               <EmptyState
@@ -80,9 +136,16 @@ export default function BucketListScreen() {
               />
             }
           />
-          <View className="absolute bottom-6 right-5">
-            <Fab accessibilityLabel="버킷리스트 담기" onPress={goNew} />
-          </View>
+          {selection.selecting ? (
+            <SelectionDeleteBar
+              count={selectedIds.length}
+              onDelete={confirmDelete}
+            />
+          ) : (
+            <View className="absolute bottom-6 right-5">
+              <Fab accessibilityLabel="버킷리스트 담기" onPress={goNew} />
+            </View>
+          )}
         </>
       )}
     </SafeAreaView>

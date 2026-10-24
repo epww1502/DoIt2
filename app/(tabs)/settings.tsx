@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, CardContent, Segmented, Text } from '@/components/atoms';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
-import { CoupleStatusCard } from '@/components/sync/CoupleStatusCard';
+import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
 import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
 
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
@@ -17,7 +17,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <ScreenHeader title="설정" subtitle="커플 연결과 테마를 바꿀 수 있어요" />
+      <ScreenHeader title="설정" subtitle="공간과 테마를 바꿀 수 있어요" />
       <View className="gap-4 px-5">
         <Card className="rounded-2xl">
           <CardContent className="gap-3 p-5">
@@ -32,7 +32,7 @@ export default function SettingsScreen() {
           </CardContent>
         </Card>
 
-        <CoupleStatusCard />
+        <SpaceStatusCard />
 
         <Text variant="muted" size={12} className="mt-4 text-center">
           DoIt2 · 두잇투 v0.1.0

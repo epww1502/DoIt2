@@ -1,7 +1,13 @@
 import dayjs from 'dayjs';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, ChevronRight, ImagePlus, X } from 'lucide-react-native';
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  X,
+} from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { TextArea } from '@/components/atoms/TextArea';
 import { BottomBar } from '@/components/bucket/BottomBar';
+import { DatePickerSheet } from '@/components/bucket/DatePickerSheet';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { usePhotoSource } from '@/components/bucket/DonePhoto';
@@ -48,6 +55,7 @@ export default function RecordFormScreen() {
   const photoSource = usePhotoSource(photo.uri, photo.path);
   const hasPhoto = Boolean(photo.uri || photo.path);
   const [saving, setSaving] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   if (!item) {
     return (
@@ -142,10 +150,24 @@ export default function RecordFormScreen() {
               >
                 <Icon as={ChevronLeft} size={20} />
               </Pressable>
-              <Text weight="600" size={16}>
-                {dayjs(date).format('YYYY년 M월 D일 (dd)')}
-                {isToday ? ' · 오늘' : ''}
-              </Text>
+              {/* 날짜를 누르면 달력이 열린다 (일 → 월 → 연으로 넓혀 고를 수 있다) */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="날짜 고르기"
+                hitSlop={6}
+                onPress={() => setPickerOpen(true)}
+                className="h-10 flex-1 flex-row items-center justify-center gap-1.5 active:opacity-60"
+              >
+                <Icon
+                  as={CalendarDays}
+                  size={16}
+                  className="text-muted-foreground"
+                />
+                <Text weight="600" size={16}>
+                  {dayjs(date).format('YYYY년 M월 D일 (dd)')}
+                  {isToday ? ' · 오늘' : ''}
+                </Text>
+              </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="하루 뒤"
@@ -230,6 +252,12 @@ export default function RecordFormScreen() {
           />
         </BottomBar>
       </View>
+      <DatePickerSheet
+        visible={pickerOpen}
+        value={date}
+        onChange={setDate}
+        onClose={() => setPickerOpen(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -1,22 +1,27 @@
 import dayjs from 'dayjs';
 import { router } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { Text } from '@/components/atoms';
 import { getCategory, KIND_META, type BucketItem } from '@/lib/bucket/types';
 
+import type { SelectionProps } from './BucketRow';
 import { DonePhoto } from './DonePhoto';
+import { Selectable } from './Selectable';
 import { StarRating } from './StarRating';
 
-/** '함께한 것' 목록의 카드. done이 있는 항목만 넘긴다. */
-export function DoneCard({ item }: { item: BucketItem }) {
+/** '함께한 것' 목록의 카드. done이 있는 항목만 넘긴다. 길게 누르면 여러 개 고르기 */
+export function DoneCard({
+  item,
+  ...selection
+}: { item: BucketItem } & SelectionProps) {
   const done = item.done;
   if (!done) return null;
   const category = getCategory(item.category);
 
   return (
-    <Pressable
-      accessibilityRole="button"
+    <Selectable
+      {...selection}
       onPress={() =>
         router.push({ pathname: '/item/[id]', params: { id: item.id } })
       }
@@ -47,6 +52,6 @@ export function DoneCard({ item }: { item: BucketItem }) {
           </Text>
         ) : null}
       </View>
-    </Pressable>
+    </Selectable>
   );
 }

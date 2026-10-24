@@ -3,7 +3,7 @@ import type { ColorValue } from 'react-native';
 import {
   Dices,
   ListChecks,
-  Heart,
+  CircleCheck,
   Settings,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -44,7 +44,7 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="done"
-        options={{ title: '함께한 것', tabBarIcon: tabIcon(Heart) }}
+        options={{ title: '함께한 것', tabBarIcon: tabIcon(CircleCheck) }}
       />
       <Tabs.Screen
         name="pick"

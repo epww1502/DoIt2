@@ -4,42 +4,55 @@ import { AppState } from 'react-native';
 import { supabase } from '@/lib/supabase/client';
 import type { BucketItemRow } from '@/lib/supabase/database.types';
 import { useBucketStore } from '@/store/useBucketStore';
-import { useCoupleStore } from '@/store/useCoupleStore';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 /**
  * 화면 없이 뒤에서 동기화만 하는 컴포넌트 (루트 레이아웃에 한 번 둔다).
- * - 앱을 켜면 익명 로그인 → 내 커플 확인
- * - 커플이 있으면 휴대폰 항목을 서버로 옮기고, 실시간으로 상대 변경을 받는다
- * - 앱으로 다시 돌아오면 서버에서 다시 받아온다 (놓친 변경 대비)
+ * - 앱을 켜면 익명 로그인 → 내 공간 목록 확인
+ * - 보고 있는 공간이 없어졌으면(나가짐) '나만 보기'로 돌아간다
+ * - 보고 있는 공간의 변경을 실시간으로 받고, 앱으로 돌아오면 다시 받아온다
  */
-export function CoupleSync() {
-  const status = useCoupleStore((s) => s.status);
-  const coupleId = useCoupleStore((s) => s.couple?.id ?? null);
+export function SpaceSync() {
+  const status = useSpaceStore((s) => s.status);
+  const spaces = useSpaceStore((s) => s.spaces);
+  const spaceId = useBucketStore((s) => s.spaceId);
 
   useEffect(() => {
-    void useCoupleStore.getState().init();
+    void useSpaceStore.getState().init();
   }, []);
 
+  // 보고 있는 공간이 내 공간 목록에 없으면 '나만 보기'로
   useEffect(() => {
-    if (status !== 'ready') return;
-    const bucket = useBucketStore.getState();
-    bucket.connect(coupleId).catch((e) => {
-      console.warn('[sync] connect failed', e);
-    });
-    if (!coupleId) return;
+    if (status !== 'ready' || !spaceId) return;
+    if (!spaces.some((s) => s.id === spaceId)) {
+      void useBucketStore.getState().switchSpace(null);
+    }
+  }, [status, spaces, spaceId]);
+
+  useEffect(() => {
+    if (status !== 'ready' || !spaceId) return;
+    void useBucketStore
+      .getState()
+      .pull()
+      .catch((e) => console.warn('[sync] pull failed', e));
 
     const onRow = (payload: { new: unknown }) =>
       useBucketStore.getState().applyRemoteRow(payload.new as BucketItemRow);
+    const refreshSpaces = () =>
+      void useSpaceStore
+        .getState()
+        .refreshSpaces()
+        .catch(() => {});
 
     const channel = supabase
-      .channel(`couple-${coupleId}`)
+      .channel(`space-${spaceId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'bucket_items',
-          filter: `couple_id=eq.${coupleId}`,
+          filter: `space_id=eq.${spaceId}`,
         },
         onRow
       )
@@ -49,7 +62,7 @@ export function CoupleSync() {
           event: 'UPDATE',
           schema: 'public',
           table: 'bucket_items',
-          filter: `couple_id=eq.${coupleId}`,
+          filter: `space_id=eq.${spaceId}`,
         },
         onRow
       )
@@ -62,20 +75,16 @@ export function CoupleSync() {
           if (id) useBucketStore.getState().applyRemoteDelete(id);
         }
       )
-      // 상대가 초대 코드로 들어오면 '연결 완료'로 바뀐다
+      // 누가 들어오거나 나가면 인원 수를 다시 센다
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'couple_members',
-          filter: `couple_id=eq.${coupleId}`,
+          table: 'space_members',
+          filter: `space_id=eq.${spaceId}`,
         },
-        () =>
-          void useCoupleStore
-            .getState()
-            .refreshCouple()
-            .catch(() => {})
+        refreshSpaces
       )
       .subscribe();
 
@@ -85,17 +94,14 @@ export function CoupleSync() {
         .getState()
         .pull()
         .catch(() => {});
-      void useCoupleStore
-        .getState()
-        .refreshCouple()
-        .catch(() => {});
+      refreshSpaces();
     });
 
     return () => {
       appState.remove();
       void supabase.removeChannel(channel);
     };
-  }, [status, coupleId]);
+  }, [status, spaceId]);
 
   return null;
 }

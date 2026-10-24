@@ -7,11 +7,16 @@ const PHOTO_DIR = 'photos';
  * 앨범에서 사진 1장을 고른다. 고른 파일은 임시 폴더에 있어 지워질 수 있으므로
  * 앱 문서 폴더로 복사한 뒤 그 uri를 돌려준다. 취소하면 null.
  */
-export async function pickPhoto(): Promise<string | null> {
+export async function pickPhoto({
+  aspect = [4, 3],
+}: {
+  /** 자르기 비율. 기록 사진은 4:3, 공간 아이콘은 1:1 */
+  aspect?: [number, number];
+} = {}): Promise<string | null> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsEditing: true,
-    aspect: [4, 3],
+    aspect,
     quality: 0.8,
   });
   if (result.canceled) return null;

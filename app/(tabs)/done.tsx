@@ -1,13 +1,19 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { Alert, FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Segmented } from '@/components/atoms';
 import { DoneCard } from '@/components/bucket/DoneCard';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
+import {
+  SelectionDeleteBar,
+  SelectionHeader,
+} from '@/components/bucket/SelectionBar';
+import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
 import { KIND_META, type BucketKind } from '@/lib/bucket/types';
+import { useSelection } from '@/hooks/useSelection';
 import { useBucketStore } from '@/store/useBucketStore';
 
 type KindOption = 'all' | BucketKind;
@@ -20,6 +26,8 @@ const KIND_OPTIONS: { value: KindOption; label: string }[] = [
 
 export default function DoneScreen() {
   const items = useBucketStore((state) => state.items);
+  const removeItems = useBucketStore((state) => state.removeItems);
+  const clearDoneMany = useBucketStore((state) => state.clearDoneMany);
   const [kind, setKind] = useState<KindOption>('all');
 
   // 최근에 한 순
@@ -35,16 +43,62 @@ export default function DoneScreen() {
     [done, kind]
   );
 
+  // 길게 눌러 여러 개 고르기 (보이는 카드 중에서만 센다)
+  const selection = useSelection();
+  const selectedIds = shown
+    .filter((it) => selection.selected.has(it.id))
+    .map((it) => it.id);
+  const allSelected = shown.length > 0 && selectedIds.length === shown.length;
+
+  // 함께한 것에서 지울 때는 '기록만 지우기'(버킷리스트로 돌아감)와 '항목까지 지우기'를 고른다
+  const confirmDelete = () =>
+    Alert.alert(
+      `${selectedIds.length}개를 어떻게 지울까요?`,
+      "'기록만 지우기'를 고르면 버킷리스트로 다시 돌아가요.",
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '기록만 지우기',
+          onPress: () => {
+            clearDoneMany(selectedIds);
+            selection.clear();
+          },
+        },
+        {
+          text: '항목까지 지우기',
+          style: 'destructive',
+          onPress: () => {
+            removeItems(selectedIds);
+            selection.clear();
+          },
+        },
+      ]
+    );
+
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <ScreenHeader
-        title="함께한 것"
-        subtitle={
-          done.length > 0
-            ? `벌써 ${done.length}개나 같이 해냈어요 💕`
-            : '같이 해낸 것들이 여기에 차곡차곡 쌓여요'
-        }
-      />
+      {selection.selecting ? (
+        <SelectionHeader
+          count={selectedIds.length}
+          allSelected={allSelected}
+          onCancel={selection.clear}
+          onToggleAll={() =>
+            allSelected
+              ? selection.clear()
+              : selection.selectAll(shown.map((it) => it.id))
+          }
+        />
+      ) : (
+        <ScreenHeader
+          right={<SpaceSwitcher />}
+          title="함께한 것"
+          subtitle={
+            done.length > 0
+              ? `벌써 ${done.length}개나 같이 해냈어요 🎉`
+              : '같이 해낸 것들이 여기에 차곡차곡 쌓여요'
+          }
+        />
+      )}
       {/* 빈 화면은 목록 밖에 둬야 화면 가운데에 온다 (버킷리스트 탭과 같은 구조) */}
       {done.length === 0 ? (
         <EmptyState
@@ -64,8 +118,20 @@ export default function DoneScreen() {
           <FlatList
             data={shown}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <DoneCard item={item} />}
-            contentContainerClassName="gap-4 px-5 pb-10"
+            extraData={selection.selected}
+            renderItem={({ item, index }) => (
+              <DoneCard
+                item={item}
+                index={index}
+                selecting={selection.selecting}
+                selected={selection.selected.has(item.id)}
+                onLongPress={() => selection.start(item.id)}
+                onToggle={() => selection.toggle(item.id)}
+              />
+            )}
+            contentContainerClassName={
+              selection.selecting ? 'gap-4 px-5 pb-28' : 'gap-4 px-5 pb-10'
+            }
             ListEmptyComponent={
               <EmptyState
                 emoji="🔍"
@@ -74,6 +140,12 @@ export default function DoneScreen() {
               />
             }
           />
+          {selection.selecting ? (
+            <SelectionDeleteBar
+              count={selectedIds.length}
+              onDelete={confirmDelete}
+            />
+          ) : null}
         </>
       )}
     </SafeAreaView>

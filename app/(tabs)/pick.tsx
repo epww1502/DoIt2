@@ -1,6 +1,7 @@
+import dayjs from 'dayjs';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Text } from '@/components/atoms';
@@ -12,9 +13,12 @@ import {
 } from '@/components/bucket/CategoryFilter';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
+import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
 import { WeatherBanner } from '@/components/bucket/WeatherBanner';
 import { useTodayWeather } from '@/hooks/useTodayWeather';
 import { getCategory, KIND_META, type BucketItem } from '@/lib/bucket/types';
+import { colors, themeColors } from '@/constants/colors';
+import { useThemeMode } from '@/contexts/ThemeModeContext';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
 
@@ -37,6 +41,8 @@ export default function PickScreen() {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [isShuffling, setIsShuffling] = useState(false);
   const [includeOutdoor, setIncludeOutdoor] = useState(false);
+  /** 이미 함께한 것도 다시 뽑을지 */
+  const [includeDone, setIncludeDone] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const { state: weatherState, reload: reloadWeather } = useTodayWeather();
 
@@ -46,8 +52,11 @@ export default function PickScreen() {
   const skipOutdoor = isRainy && !includeOutdoor;
 
   const filtered = useMemo(
-    () => items.filter((it) => !it.done && matchesFilter(it, filter)),
-    [items, filter]
+    () =>
+      items.filter(
+        (it) => (includeDone || !it.done) && matchesFilter(it, filter)
+      ),
+    [items, filter, includeDone]
   );
   const candidates = useMemo(
     () =>
@@ -84,6 +93,11 @@ export default function PickScreen() {
     setIncludeOutdoor(next);
   };
 
+  const changeIncludeDone = (next: boolean) => {
+    resetPick();
+    setIncludeDone(next);
+  };
+
   const shuffle = () => {
     if (candidates.length === 0 || isShuffling) return;
     setIsShuffling(true);
@@ -100,18 +114,22 @@ export default function PickScreen() {
     }, SHUFFLE_INTERVAL_MS);
   };
 
-  const todoCount = items.filter((it) => !it.done).length;
+  // 이미 해본 것만 남아서 뽑을 게 없을 때 안내하려고
+  const doneInFilter = items.filter(
+    (it) => it.done && matchesFilter(it, filter)
+  ).length;
   const category = current ? getCategory(current.category) : null;
   const decided = current && !isShuffling;
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <ScreenHeader
+        right={<SpaceSwitcher />}
         title="오늘 뭐 하지?"
         subtitle="고민될 땐 버킷리스트에서 하나 뽑아봐요"
       />
 
-      {todoCount === 0 ? (
+      {items.length === 0 ? (
         <EmptyState
           emoji="🎲"
           title="뽑을 게 없어요"
@@ -128,6 +146,7 @@ export default function PickScreen() {
             onChangeIncludeOutdoor={changeIncludeOutdoor}
             excludedCount={excludedCount}
           />
+          <IncludeDoneRow value={includeDone} onChange={changeIncludeDone} />
           <CategoryFilter value={filter} onChange={changeFilter} />
 
           <View className="flex-1 justify-center px-5">
@@ -159,11 +178,19 @@ export default function PickScreen() {
                       .filter(Boolean)
                       .join(' · ')}
                   </Text>
+                  {current.done ? (
+                    <Text size={12} className="text-muted-foreground">
+                      🔁 {dayjs(current.done.date).format('YYYY년 M월 D일')}에
+                      해봤어요
+                    </Text>
+                  ) : null}
                   {decided ? (
                     <Text weight="600" className="mt-2 text-primary">
-                      {current.kind === 'place'
-                        ? '오늘은 여기 어때요? 💘'
-                        : '오늘은 이거 어때요? 💘'}
+                      {current.done
+                        ? '한 번 더 어때요? 🔁'
+                        : current.kind === 'place'
+                          ? '오늘은 여기 어때요? ✨'
+                          : '오늘은 이거 어때요? ✨'}
                     </Text>
                   ) : null}
                 </>
@@ -175,7 +202,9 @@ export default function PickScreen() {
                       ? `${candidates.length}개 중에서 하나를 골라드릴게요`
                       : excludedCount > 0
                         ? "비 때문에 실외를 빼니 뽑을 게 없어요.\n'실외도 포함'을 켜보세요"
-                        : '여기엔 아직 담긴 게 없어요'}
+                        : !includeDone && doneInFilter > 0
+                          ? "여기 있는 건 다 해봤어요! 🎉\n'이미 해본 것도 포함'을 켜보세요"
+                          : '여기엔 아직 담긴 게 없어요'}
                   </Text>
                 </>
               )}
@@ -204,5 +233,33 @@ export default function PickScreen() {
         </View>
       )}
     </SafeAreaView>
+  );
+}
+
+/** '이미 해본 것도 포함' 스위치 줄 */
+function IncludeDoneRow({
+  value,
+  onChange,
+}: {
+  value: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  const { colorScheme } = useThemeMode();
+  return (
+    <View className="mx-5 mb-3 flex-row items-center justify-between">
+      <Text size={13} className="text-muted-foreground">
+        🔁 이미 해본 것도 포함
+      </Text>
+      <Switch
+        accessibilityLabel="이미 해본 것도 포함해서 뽑기"
+        value={value}
+        onValueChange={onChange}
+        trackColor={{
+          false: themeColors[colorScheme].input,
+          true: colors.primary,
+        }}
+        thumbColor={colors.white}
+      />
+    </View>
   );
 }

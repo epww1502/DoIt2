@@ -14,6 +14,8 @@ const buttonVariants = cva('items-center justify-center rounded-xl', {
       outline: 'border bg-background border-border',
       // 텍스트만 ("나중에 할게요")
       ghost: 'bg-transparent',
+      // 지우기처럼 되돌리기 어려운 동작
+      destructive: 'bg-destructive',
     },
     size: {
       lg: 'h-14 px-5',
@@ -29,6 +31,7 @@ const labelVariants = cva('', {
       primary: 'text-primary-foreground',
       outline: 'text-foreground',
       ghost: 'text-muted-foreground',
+      destructive: 'text-destructive-foreground',
     },
   },
   defaultVariants: { variant: 'primary' },

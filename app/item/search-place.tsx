@@ -10,7 +10,7 @@ import { PlaceMapPicker } from '@/components/bucket/PlaceMapPicker';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import type { PlaceInfo } from '@/lib/bucket/types';
 import { KakaoKeyMissingError, searchKakaoPlaces } from '@/lib/kakao';
-import { useCoupleStore } from '@/store/useCoupleStore';
+import { useSpaceStore } from '@/store/useSpaceStore';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
 
 /** 입력을 멈추고 이만큼 기다린 뒤 검색한다 */
@@ -36,7 +36,7 @@ export default function SearchPlaceScreen() {
   const { q } = useLocalSearchParams<{ q?: string }>();
   const pick = usePlacePickStore((state) => state.pick);
   // 검색은 서버를 거치므로 로그인(익명)이 끝나야 한다
-  const signedIn = useCoupleStore((s) => s.status === 'ready');
+  const signedIn = useSpaceStore((s) => s.status === 'ready');
   const keyboardHeight = useKeyboardHeight();
   const [query, setQuery] = useState(q ?? '');
   const [state, setState] = useState<SearchState>({ status: 'idle' });
@@ -81,7 +81,7 @@ export default function SearchPlaceScreen() {
       <EmptyState
         emoji="📡"
         title="서버에 연결해야 검색할 수 있어요"
-        description="인터넷 연결을 확인해주세요. 설정 → 커플 연결에서 상태를 볼 수 있어요."
+        description="인터넷 연결을 확인해주세요. 설정 → 공간에서 상태를 볼 수 있어요."
       />
     );
   } else if (state.status === 'no-key' && trimmed) {

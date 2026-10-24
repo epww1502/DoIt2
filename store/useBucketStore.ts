@@ -14,32 +14,43 @@ import {
 import * as remote from '@/lib/supabase/bucketRemote';
 import type { BucketItemRow } from '@/lib/supabase/database.types';
 
+/** '나만 보기'(공간 없음) 목록을 담는 캐시 키 */
+export const LOCAL_KEY = 'local';
+
+const cacheKey = (spaceId: string | null) => spaceId ?? LOCAL_KEY;
+
 /**
  * 버킷리스트 저장소.
- * - 커플 연결 전: 휴대폰(AsyncStorage)에만 저장한다.
- * - 커플 연결 후(coupleId 있음): 휴대폰에 먼저 반영하고 서버에도 쓴다. 서버가 기준이고,
- *   휴대폰 저장은 앱을 켰을 때 바로 보여주기 위한 사본이다.
+ * - 공간을 고르지 않았으면(spaceId null) '나만 보기': 이 휴대폰에만 저장한다.
+ * - 공간을 고르면 그 공간의 목록을 보여준다. 휴대폰에 먼저 반영하고 서버에도 쓴다.
+ *   서버가 기준이고, 휴대폰 캐시(공간별)는 앱을 켰을 때 바로 보여주기 위한 사본이다.
  */
 type BucketState = {
+  /** 지금 보고 있는 공간. null이면 나만 보기 */
+  spaceId: string | null;
+  /** 지금 공간의 항목 */
   items: BucketItem[];
-  /** 지금 동기화 중인 커플. null이면 휴대폰에만 저장 */
-  coupleId: string | null;
-  /** 이 휴대폰의 항목을 이미 서버로 옮긴 커플 (같은 항목을 두 번 올리지 않게) */
-  uploadedCoupleId: string | null;
+  /** 다른 공간 항목 사본 (공간을 바꿀 때 바로 보여주려고) */
+  cache: Record<string, BucketItem[]>;
 
   addItem: (input: BucketInput) => string;
   updateItem: (id: string, input: BucketInput) => void;
-  removeItem: (id: string) => void;
+  /** 여러 개를 한 번에 지운다 (사진도 같이) */
+  removeItems: (ids: string[]) => void;
   /** 사진이 새로 바뀌었으면 서버에 올린 뒤 저장한다 */
   recordDone: (id: string, record: DoneRecord) => Promise<void>;
   /** 해낸 기록을 지우고 다시 버킷리스트로 돌린다 */
   clearDone: (id: string) => void;
+  /** 여러 개의 기록을 한 번에 지운다 (항목은 버킷리스트로 돌아간다) */
+  clearDoneMany: (ids: string[]) => void;
 
-  /** 커플이 연결되면 휴대폰 항목을 서버로 옮기고 서버 기준으로 맞춘다. null이면 연결 해제 */
-  connect: (coupleId: string | null) => Promise<void>;
-  /** 서버에서 전부 다시 받아온다 */
+  /** 보고 있는 공간을 바꾼다. 캐시를 먼저 보여주고 서버에서 받아온다 */
+  switchSpace: (spaceId: string | null) => Promise<void>;
+  /** '나만 보기'에 있던 항목·사진을 공간으로 옮긴다 (처음 공간을 만들거나 들어갈 때) */
+  moveLocalTo: (spaceId: string) => Promise<void>;
+  /** 지금 공간을 서버에서 다시 받아온다 */
   pull: () => Promise<void>;
-  /** 실시간: 상대(또는 나)가 바꾼 행 반영 */
+  /** 실시간: 다른 사람(또는 나)이 바꾼 행 반영 */
   applyRemoteRow: (row: BucketItemRow) => void;
   applyRemoteDelete: (id: string) => void;
 };
@@ -52,10 +63,30 @@ type V1Place = Omit<BucketItem, 'kind' | 'done' | 'setting'> & {
 /** v2(실내/실외가 없던 때) 데이터 모양 */
 type V2Item = Omit<BucketItem, 'setting'>;
 
+type Persisted = {
+  spaceId: string | null;
+  cache: Record<string, BucketItem[]>;
+};
+
 /** 서버 쓰기 실패: 서버 기준으로 다시 맞춘다 */
 function onRemoteError(e: unknown, pull: () => Promise<void>) {
   console.warn('[bucket] remote write failed', e);
   void pull().catch(() => {});
+}
+
+/** 휴대폰 사진이 아직 서버에 없으면 올린다 */
+async function withUploadedPhoto(
+  done: DoneRecord | null,
+  spaceId: string
+): Promise<DoneRecord | null> {
+  if (!done?.photoUri || done.photoPath) return done;
+  try {
+    const photoPath = await remote.uploadPhoto(done.photoUri, spaceId);
+    return { ...done, photoPath };
+  } catch (e) {
+    console.warn('[bucket] photo upload failed', e);
+    return done;
+  }
 }
 
 export const useBucketStore = create<BucketState>()(
@@ -65,19 +96,17 @@ export const useBucketStore = create<BucketState>()(
       const replaceItem = (id: string, next: BucketItem) =>
         set({ items: get().items.map((it) => (it.id === id ? next : it)) });
 
-      /** 커플이 연결돼 있으면 항목 하나를 서버에 저장한다 */
-      const pushItem = (item: BucketItem | undefined) => {
-        const { coupleId, pull } = get();
-        if (!coupleId || !item) return;
-        remote
-          .upsertItems([item], coupleId)
-          .catch((e) => onRemoteError(e, pull));
+      /** 공간이면 항목들을 서버에 저장한다 */
+      const pushItems = (items: BucketItem[]) => {
+        const { spaceId, pull } = get();
+        if (!spaceId || items.length === 0) return;
+        remote.upsertItems(items, spaceId).catch((e) => onRemoteError(e, pull));
       };
 
       return {
+        spaceId: null,
         items: [],
-        coupleId: null,
-        uploadedCoupleId: null,
+        cache: {},
 
         addItem: (input) => {
           const id = remote.newItemId();
@@ -88,7 +117,7 @@ export const useBucketStore = create<BucketState>()(
             done: null,
           };
           set({ items: [item, ...get().items] });
-          pushItem(item);
+          pushItems([item]);
           return id;
         },
 
@@ -97,98 +126,108 @@ export const useBucketStore = create<BucketState>()(
           if (!prev) return;
           const next = { ...prev, ...input };
           replaceItem(id, next);
-          pushItem(next);
+          pushItems([next]);
         },
 
-        removeItem: (id) => {
-          const target = findItem(id);
-          deletePhoto(target?.done?.photoUri);
-          set({ items: get().items.filter((it) => it.id !== id) });
+        removeItems: (ids) => {
+          const idSet = new Set(ids);
+          const targets = get().items.filter((it) => idSet.has(it.id));
+          for (const t of targets) deletePhoto(t.done?.photoUri);
+          set({ items: get().items.filter((it) => !idSet.has(it.id)) });
 
-          const { coupleId, pull } = get();
-          if (!coupleId) return;
-          void remote.removePhoto(target?.done?.photoPath);
-          remote.deleteItem(id).catch((e) => onRemoteError(e, pull));
+          const { spaceId, pull } = get();
+          if (!spaceId) return;
+          for (const t of targets) void remote.removePhoto(t.done?.photoPath);
+          remote.deleteItems(ids).catch((e) => onRemoteError(e, pull));
         },
 
         recordDone: async (id, record) => {
           const target = findItem(id);
           if (!target) return;
           const prev = target.done;
-          const { coupleId } = get();
+          const { spaceId } = get();
 
-          let next: DoneRecord = record;
-          // 새로 고른 사진(서버 경로가 아직 없음)이면 먼저 올린다
-          if (coupleId && record.photoUri && !record.photoPath) {
-            const photoPath = await remote.uploadPhoto(
-              record.photoUri,
-              coupleId
-            );
-            next = { ...record, photoPath };
+          // 공간이면 새로 고른 사진(서버 경로가 아직 없음)을 먼저 올린다
+          const next: DoneRecord = spaceId
+            ? ((await withUploadedPhoto(record, spaceId)) ?? record)
+            : record;
+          if (spaceId && next.photoUri && !next.photoPath) {
+            throw new Error('photo upload failed');
           }
 
           // 바뀌거나 빠진 예전 사진 정리
           if (prev?.photoUri && prev.photoUri !== next.photoUri) {
             deletePhoto(prev.photoUri);
           }
-          if (
-            coupleId &&
-            prev?.photoPath &&
-            prev.photoPath !== next.photoPath
-          ) {
+          if (spaceId && prev?.photoPath && prev.photoPath !== next.photoPath) {
             void remote.removePhoto(prev.photoPath);
           }
 
           const item = { ...target, done: next };
           replaceItem(id, item);
-          if (coupleId) await remote.upsertItems([item], coupleId);
+          if (spaceId) await remote.upsertItems([item], spaceId);
         },
 
-        clearDone: (id) => {
-          const target = findItem(id);
-          if (!target) return;
-          deletePhoto(target.done?.photoUri);
-          if (get().coupleId) void remote.removePhoto(target.done?.photoPath);
-          const item = { ...target, done: null };
-          replaceItem(id, item);
-          pushItem(item);
+        clearDone: (id) => get().clearDoneMany([id]),
+
+        clearDoneMany: (ids) => {
+          const idSet = new Set(ids);
+          const cleared: BucketItem[] = [];
+          const { spaceId } = get();
+          set({
+            items: get().items.map((it) => {
+              if (!idSet.has(it.id) || !it.done) return it;
+              deletePhoto(it.done.photoUri);
+              if (spaceId) void remote.removePhoto(it.done.photoPath);
+              const next = { ...it, done: null };
+              cleared.push(next);
+              return next;
+            }),
+          });
+          pushItems(cleared);
         },
 
-        connect: async (coupleId) => {
-          set({ coupleId });
-          if (!coupleId) {
-            set({ uploadedCoupleId: null });
-            return;
+        switchSpace: async (spaceId) => {
+          const { spaceId: current, items, cache } = get();
+          if (current !== spaceId) {
+            set({
+              spaceId,
+              items: cache[cacheKey(spaceId)] ?? [],
+              cache: { ...cache, [cacheKey(current)]: items },
+            });
           }
+          if (spaceId) await get().pull();
+        },
 
-          if (get().uploadedCoupleId !== coupleId) {
-            // 이 휴대폰에만 있던 항목·사진을 커플 서버로 옮긴다
-            const uploaded: BucketItem[] = [];
-            for (const it of get().items) {
-              let done = it.done;
-              if (done?.photoUri && !done.photoPath) {
-                try {
-                  const photoPath = await remote.uploadPhoto(
-                    done.photoUri,
-                    coupleId
-                  );
-                  done = { ...done, photoPath };
-                } catch (e) {
-                  console.warn('[bucket] photo upload failed', e);
-                }
-              }
-              uploaded.push({ ...it, id: remote.ensureUuid(it.id), done });
-            }
-            await remote.upsertItems(uploaded, coupleId);
-            set({ items: uploaded, uploadedCoupleId: coupleId });
+        moveLocalTo: async (spaceId) => {
+          const { spaceId: current, items, cache } = get();
+          const localItems =
+            current === null ? items : (cache[LOCAL_KEY] ?? []);
+          if (localItems.length === 0) return;
+
+          const uploaded: BucketItem[] = [];
+          for (const it of localItems) {
+            uploaded.push({
+              ...it,
+              id: remote.ensureUuid(it.id),
+              done: await withUploadedPhoto(it.done, spaceId),
+            });
           }
+          await remote.upsertItems(uploaded, spaceId);
 
-          await get().pull();
+          // 옮긴 뒤 '나만 보기'는 비운다
+          set({
+            items: current === null ? [] : get().items,
+            cache: { ...get().cache, [LOCAL_KEY]: [] },
+          });
         },
 
         pull: async () => {
-          if (!get().coupleId) return;
-          const rows = await remote.fetchItems();
+          const { spaceId } = get();
+          if (!spaceId) return;
+          const rows = await remote.fetchItems(spaceId);
+          // 받는 사이에 다른 공간으로 바꿨으면 버린다
+          if (get().spaceId !== spaceId) return;
           const localById = new Map(get().items.map((it) => [it.id, it]));
           set({
             items: rows.map((r) => remote.fromRow(r, localById.get(r.id))),
@@ -196,6 +235,7 @@ export const useBucketStore = create<BucketState>()(
         },
 
         applyRemoteRow: (row) => {
+          if (row.space_id !== get().spaceId) return;
           const items = get().items;
           const local = items.find((it) => it.id === row.id);
           const next = remote.fromRow(row, local);
@@ -214,13 +254,24 @@ export const useBucketStore = create<BucketState>()(
     {
       // 이름은 처음 저장한 키를 그대로 써야 기존 데이터를 읽는다
       name: 'doit2-places',
-      version: 3,
+      version: 4,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        items: state.items,
-        uploadedCoupleId: state.uploadedCoupleId,
+      // 지금 공간의 항목은 그 공간 캐시에 넣어서 저장한다
+      partialize: (state): Persisted => ({
+        spaceId: state.spaceId,
+        cache: { ...state.cache, [cacheKey(state.spaceId)]: state.items },
       }),
-      migrate: (persisted, version) => {
+      merge: (persisted, current) => {
+        const p = persisted as Persisted | undefined;
+        if (!p) return current;
+        return {
+          ...current,
+          spaceId: p.spaceId,
+          cache: p.cache,
+          items: p.cache[cacheKey(p.spaceId)] ?? [],
+        };
+      },
+      migrate: (persisted, version): Persisted => {
         let items: V2Item[];
         if (version < 2) {
           // v1 → v2: 장소만 있던 데이터를 '갈 곳'으로, visit → done
@@ -230,23 +281,22 @@ export const useBucketStore = create<BucketState>()(
             kind: 'place',
             done: visit,
           }));
-        } else {
+        } else if (version < 4) {
           items = (persisted as { items?: V2Item[] }).items ?? [];
+        } else {
+          return persisted as Persisted;
         }
-        if (version < 3) {
-          // v2 → v3: 실내/실외는 카테고리 기본값으로 채운다
-          return {
-            items: items.map((it): BucketItem => ({
-              ...it,
-              setting: DEFAULT_SETTING[it.category] ?? 'indoor',
-            })),
-            uploadedCoupleId: null,
-          };
-        }
-        return persisted as {
-          items: BucketItem[];
-          uploadedCoupleId: string | null;
-        };
+        // v2 → v3: 실내/실외는 카테고리 기본값으로
+        // v3 → v4: 공간별 캐시. 예전 커플 서버는 없어졌으므로 전부 '나만 보기'로 돌린다
+        const local = items.map((it): BucketItem => ({
+          ...it,
+          setting:
+            (it as BucketItem).setting ??
+            DEFAULT_SETTING[it.category] ??
+            'indoor',
+          done: it.done ? { ...it.done, photoPath: null } : null,
+        }));
+        return { spaceId: null, cache: { [LOCAL_KEY]: local } };
       },
     }
   )
