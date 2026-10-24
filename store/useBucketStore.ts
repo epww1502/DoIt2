@@ -14,6 +14,7 @@ import {
   type DoneRecord,
   type RecordPhoto,
 } from '@/lib/bucket/types';
+import { notifySpace } from '@/lib/push';
 import * as remote from '@/lib/supabase/bucketRemote';
 import type { BucketItemRow } from '@/lib/supabase/database.types';
 
@@ -145,8 +146,16 @@ export const useBucketStore = create<BucketState>()(
             done: null,
           }));
           set({ items: [...created, ...get().items] });
-          pushItems(created);
-          return created.map((it) => it.id);
+          const ids = created.map((it) => it.id);
+          const { spaceId, pull } = get();
+          if (spaceId) {
+            remote
+              .upsertItems(created, spaceId)
+              // 저장되면 같은 공간 사람들에게 알린다
+              .then(() => notifySpace(spaceId, 'added', ids))
+              .catch((e) => onRemoteError(e, pull));
+          }
+          return ids;
         },
 
         updateItem: (id, input) => {
@@ -195,7 +204,11 @@ export const useBucketStore = create<BucketState>()(
 
           const item = { ...target, done: next };
           replaceItem(id, item);
-          if (spaceId) await remote.upsertItems([item], spaceId);
+          if (spaceId) {
+            await remote.upsertItems([item], spaceId);
+            // 처음 남긴 기록일 때만 알린다 (고쳐 쓸 때는 조용히)
+            if (!prev) notifySpace(spaceId, 'done', [id]);
+          }
         },
 
         clearDone: (id) => get().clearDoneMany([id]),

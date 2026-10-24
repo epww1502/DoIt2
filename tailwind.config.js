@@ -42,8 +42,10 @@ module.exports = {
           DEFAULT: themeColors.light.muted,
           foreground: themeColors.light.mutedForeground,
         },
+        // 라이트 모드의 연한 배경(버튼·종류 고르기·입력칸 등)은 회색 대신 테마색을 아주 연하게.
+        // 다크 모드는 아래 '.dark .bg-accent'에서 원래 어두운 색으로 덮는다
         accent: {
-          DEFAULT: themeColors.light.accent,
+          DEFAULT: 'rgb(var(--color-primary) / 0.1)',
           foreground: themeColors.light.accentForeground,
         },
         destructive: {

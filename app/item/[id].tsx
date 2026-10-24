@@ -203,6 +203,16 @@ export default function BucketDetailScreen() {
                 ) : null}
               </View>
             </View>
+            <Button
+              label="공유 카드 만들기"
+              size="md"
+              onPress={() =>
+                router.push({
+                  pathname: '/share/[id]',
+                  params: { id: item.id },
+                })
+              }
+            />
             <View className="flex-row gap-2">
               <Button
                 label="기록 수정"

@@ -92,6 +92,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_tokens: {
+        Row: {
+          platform: string;
+          token: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          platform?: string;
+          token: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          platform?: string;
+          token?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       space_members: {
         Row: {
           sort_order: number | null;
@@ -156,6 +177,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      claim_push_token: {
+        Args: { push_platform: string; push_token: string };
+        Returns: undefined;
+      };
       create_space: {
         Args: { space_emoji: string; space_name: string };
         Returns: {

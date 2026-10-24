@@ -28,6 +28,9 @@ type SettingsState = {
   /** 함께한 것 보기: card(사진 크게), compact(간단히) */
   doneView: 'card' | 'compact';
   setDoneView: (value: 'card' | 'compact') => void;
+  /** 같은 공간 사람이 담거나 기록하면 알림 받기 */
+  pushEnabled: boolean;
+  setPushEnabled: (value: boolean) => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -45,6 +48,8 @@ export const useSettingsStore = create<SettingsState>()(
       setAccountCode: (accountCode) => set({ accountCode }),
       doneView: 'card',
       setDoneView: (doneView) => set({ doneView }),
+      pushEnabled: true,
+      setPushEnabled: (pushEnabled) => set({ pushEnabled }),
     }),
     {
       name: 'doit2-settings',
@@ -57,6 +62,7 @@ export const useSettingsStore = create<SettingsState>()(
         redoMinRating: state.redoMinRating,
         accountCode: state.accountCode,
         doneView: state.doneView,
+        pushEnabled: state.pushEnabled,
       }),
     }
   )

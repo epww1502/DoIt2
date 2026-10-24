@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react-native';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Linking, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -16,6 +16,12 @@ import { ProfileCard } from '@/components/space/ProfileCard';
 import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
 import { PALETTES } from '@/constants/palettes';
 import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
+import { showAlert } from '@/lib/dialog';
+import {
+  isPushSupported,
+  registerForPush,
+  unregisterForPush,
+} from '@/lib/push';
 import { useSettingsStore } from '@/store/useSettingsStore';
 
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
@@ -74,6 +80,8 @@ export default function SettingsScreen() {
               value={haptics}
               onChange={setHaptics}
             />
+            <Separator />
+            <PushToggleRow />
           </CardContent>
         </Card>
 
@@ -175,5 +183,51 @@ function ToggleRow({
         onValueChange={onChange}
       />
     </View>
+  );
+}
+
+/** 알림 켜고 끄기. 알림을 못 받는 앱(Expo Go 등)이면 안내만 */
+function PushToggleRow() {
+  const pushEnabled = useSettingsStore((s) => s.pushEnabled);
+  const setPushEnabled = useSettingsStore((s) => s.setPushEnabled);
+  const supported = isPushSupported();
+
+  const change = async (next: boolean) => {
+    setPushEnabled(next);
+    try {
+      if (!next) {
+        await unregisterForPush();
+        return;
+      }
+      const ok = await registerForPush();
+      if (!ok) {
+        setPushEnabled(false);
+        showAlert(
+          '알림 권한이 꺼져 있어요',
+          '휴대폰 설정에서 DoIt2 알림을 허용해주세요.',
+          [
+            { text: '닫기', style: 'cancel' },
+            { text: '설정 열기', onPress: () => void Linking.openSettings() },
+          ]
+        );
+      }
+    } catch {
+      showAlert('알림 설정을 바꾸지 못했어요', '잠시 후 다시 시도해주세요.');
+    }
+  };
+
+  return (
+    <ToggleRow
+      title="알림"
+      description={
+        supported
+          ? '같은 공간 사람이 새로 담거나 기록을 남기면 알려줘요'
+          : '이 앱(Expo Go)에서는 알림을 받을 수 없어요'
+      }
+      value={supported && pushEnabled}
+      onChange={(next) => {
+        if (supported) void change(next);
+      }}
+    />
   );
 }

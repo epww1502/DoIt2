@@ -8,6 +8,7 @@ import '../global.css';
 import '@/lib/date';
 
 import { DialogHost } from '@/components/atoms/DialogHost';
+import { PushSync } from '@/components/sync/PushSync';
 import { SpaceSync } from '@/components/sync/SpaceSync';
 import { hexToRgbTriple } from '@/constants/palettes';
 import { NAV_THEME } from '@/constants/theme';
@@ -43,6 +44,8 @@ function RootLayoutInner() {
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       {/* 로그인·공간 확인·실시간 동기화 (화면 없음) */}
       <SpaceSync />
+      {/* 알림 등록·알림 눌러 열기 (화면 없음) */}
+      <PushSync />
       {/* showAlert 팝업 (기본 Alert 대신) */}
       <DialogHost />
       <View className="flex-1 bg-background" style={themeVars}>
@@ -74,6 +77,10 @@ function RootLayoutInner() {
           <Stack.Screen name="space/list" />
           <Stack.Screen name="done/map" />
           <Stack.Screen name="done/stats" />
+          <Stack.Screen
+            name="share/[id]"
+            options={{ animation: 'slide_from_bottom' }}
+          />
           <Stack.Screen name="profile" />
           <Stack.Screen name="account/restore" />
           <Stack.Screen
