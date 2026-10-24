@@ -7,9 +7,12 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { deletePhoto } from '@/lib/bucket/photo';
 import {
   DEFAULT_SETTING,
+  recordPhotos,
+  withRecordPhotos,
   type BucketInput,
   type BucketItem,
   type DoneRecord,
+  type RecordPhoto,
 } from '@/lib/bucket/types';
 import * as remote from '@/lib/supabase/bucketRemote';
 import type { BucketItemRow } from '@/lib/supabase/database.types';
@@ -76,18 +79,38 @@ function onRemoteError(e: unknown, pull: () => Promise<void>) {
   void pull().catch(() => {});
 }
 
-/** 휴대폰 사진이 아직 서버에 없으면 올린다 */
+/** 휴대폰 사진 중 아직 서버에 없는 것을 올린다 (실패한 사진은 경로 없이 남는다) */
 async function withUploadedPhoto(
   done: DoneRecord | null,
   spaceId: string
 ): Promise<DoneRecord | null> {
-  if (!done?.photoUri || done.photoPath) return done;
-  try {
-    const photoPath = await remote.uploadPhoto(done.photoUri, spaceId);
-    return { ...done, photoPath };
-  } catch (e) {
-    console.warn('[bucket] photo upload failed', e);
-    return done;
+  if (!done) return done;
+  const photos = recordPhotos(done);
+  if (!photos.some((p) => p.uri && !p.path)) return done;
+  const uploaded: RecordPhoto[] = [];
+  for (const photo of photos) {
+    if (photo.path || !photo.uri) {
+      uploaded.push(photo);
+      continue;
+    }
+    try {
+      uploaded.push({
+        ...photo,
+        path: await remote.uploadPhoto(photo.uri, spaceId),
+      });
+    } catch (e) {
+      console.warn('[bucket] photo upload failed', e);
+      uploaded.push(photo);
+    }
+  }
+  return withRecordPhotos(done, uploaded);
+}
+
+/** 기록의 사진을 휴대폰과 (공간이면) 서버에서 지운다 */
+function deleteRecordPhotos(done: DoneRecord | null, spaceId: string | null) {
+  for (const photo of recordPhotos(done)) {
+    deletePhoto(photo.uri);
+    if (spaceId) void remote.removePhoto(photo.path);
   }
 }
 
@@ -137,12 +160,11 @@ export const useBucketStore = create<BucketState>()(
         removeItems: (ids) => {
           const idSet = new Set(ids);
           const targets = get().items.filter((it) => idSet.has(it.id));
-          for (const t of targets) deletePhoto(t.done?.photoUri);
+          const { spaceId, pull } = get();
+          for (const t of targets) deleteRecordPhotos(t.done, spaceId);
           set({ items: get().items.filter((it) => !idSet.has(it.id)) });
 
-          const { spaceId, pull } = get();
           if (!spaceId) return;
-          for (const t of targets) void remote.removePhoto(t.done?.photoPath);
           remote.deleteItems(ids).catch((e) => onRemoteError(e, pull));
         },
 
@@ -156,16 +178,19 @@ export const useBucketStore = create<BucketState>()(
           const next: DoneRecord = spaceId
             ? ((await withUploadedPhoto(record, spaceId)) ?? record)
             : record;
-          if (spaceId && next.photoUri && !next.photoPath) {
+          if (spaceId && recordPhotos(next).some((p) => p.uri && !p.path)) {
             throw new Error('photo upload failed');
           }
 
-          // 바뀌거나 빠진 예전 사진 정리
-          if (prev?.photoUri && prev.photoUri !== next.photoUri) {
-            deletePhoto(prev.photoUri);
-          }
-          if (spaceId && prev?.photoPath && prev.photoPath !== next.photoPath) {
-            void remote.removePhoto(prev.photoPath);
+          // 빠진 예전 사진 정리
+          const nextPhotos = recordPhotos(next);
+          const keptUris = new Set(nextPhotos.map((p) => p.uri));
+          const keptPaths = new Set(nextPhotos.map((p) => p.path));
+          for (const photo of recordPhotos(prev)) {
+            if (photo.uri && !keptUris.has(photo.uri)) deletePhoto(photo.uri);
+            if (spaceId && photo.path && !keptPaths.has(photo.path)) {
+              void remote.removePhoto(photo.path);
+            }
           }
 
           const item = { ...target, done: next };
@@ -182,8 +207,7 @@ export const useBucketStore = create<BucketState>()(
           set({
             items: get().items.map((it) => {
               if (!idSet.has(it.id) || !it.done) return it;
-              deletePhoto(it.done.photoUri);
-              if (spaceId) void remote.removePhoto(it.done.photoPath);
+              deleteRecordPhotos(it.done, spaceId);
               const next = { ...it, done: null };
               cleared.push(next);
               return next;
@@ -299,7 +323,9 @@ export const useBucketStore = create<BucketState>()(
             (it as BucketItem).setting ??
             DEFAULT_SETTING[it.category] ??
             'indoor',
-          done: it.done ? { ...it.done, photoPath: null } : null,
+          done: it.done
+            ? { ...it.done, photoPath: null, photos: undefined }
+            : null,
         }));
         return { spaceId: null, cache: { [LOCAL_KEY]: local } };
       },

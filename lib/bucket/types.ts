@@ -96,11 +96,48 @@ export type DoneRecord = {
   /** 1~5 */
   rating: number;
   review: string;
-  /** 이 휴대폰에 있는 사진 파일 (내가 올린 사진이면 있다) */
+  /**
+   * 첫 번째 사진 (이 휴대폰 파일). 사진이 여러 장이 된 뒤에도 예전 앱이 첫 장을
+   * 보여줄 수 있게 photos[0]과 같게 맞춰 둔다
+   */
   photoUri: string | null;
-  /** 서버 사진 저장소 경로 {space_id}/{파일 이름}. 공간에 연결 전이면 없다 */
+  /** 첫 번째 사진의 서버 저장소 경로 {space_id}/{파일 이름}. 공간에 연결 전이면 없다 */
   photoPath?: string | null;
+  /** 사진 여러 장 (최대 MAX_RECORD_PHOTOS). 예전 기록에는 없고 photoUri/photoPath 한 장만 있다 */
+  photos?: RecordPhoto[];
 };
+
+/** 기록 사진 한 장. uri: 이 휴대폰 파일(내가 올린 사진), path: 서버 경로 */
+export type RecordPhoto = { uri: string | null; path: string | null };
+
+/** 기록 하나에 넣을 수 있는 사진 수 */
+export const MAX_RECORD_PHOTOS = 5;
+
+/** 기록의 사진들 (예전 한 장짜리 기록도 목록으로) */
+export function recordPhotos(
+  done: Pick<DoneRecord, 'photoUri' | 'photoPath' | 'photos'> | null | undefined
+): RecordPhoto[] {
+  if (!done) return [];
+  if (done.photos) return done.photos.filter((p) => p.uri || p.path);
+  if (done.photoUri || done.photoPath) {
+    return [{ uri: done.photoUri ?? null, path: done.photoPath ?? null }];
+  }
+  return [];
+}
+
+/** 사진 목록을 넣고, 예전 앱용 첫 장(photoUri/photoPath)도 맞춘다 */
+export function withRecordPhotos(
+  done: DoneRecord,
+  photos: RecordPhoto[]
+): DoneRecord {
+  const first = photos[0];
+  return {
+    ...done,
+    photos,
+    photoUri: first?.uri ?? null,
+    photoPath: first?.path ?? null,
+  };
+}
 
 /** 실내 / 실외. 비 오는 날 뽑기에서 실외를 뺄 때 쓴다 */
 export type BucketSetting = 'indoor' | 'outdoor';

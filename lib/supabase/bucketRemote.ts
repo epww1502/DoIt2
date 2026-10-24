@@ -5,13 +5,15 @@
 import { randomUUID } from '@/lib/uuid';
 import { File } from 'expo-file-system';
 
-import type {
-  BucketItem,
-  BucketKind,
-  BucketSetting,
-  CategoryKey,
-  DoneRecord,
-  PlaceInfo,
+import {
+  recordPhotos,
+  withRecordPhotos,
+  type BucketItem,
+  type BucketKind,
+  type BucketSetting,
+  type CategoryKey,
+  type DoneRecord,
+  type PlaceInfo,
 } from '@/lib/bucket/types';
 
 import { supabase } from './client';
@@ -24,31 +26,51 @@ const PHOTO_BUCKET = 'photos';
 const SIGNED_URL_SECONDS = 60 * 60;
 
 /** 서버 done 칸 모양 (휴대폰 파일 경로는 서버에 올리지 않는다) */
-type RemoteDone = Omit<DoneRecord, 'photoUri'>;
+type RemoteDone = Omit<DoneRecord, 'photoUri' | 'photos'> & {
+  /** 사진 여러 장의 서버 경로. 예전 기록에는 없고 photoPath 한 장만 있다 */
+  photos?: { path: string }[];
+};
 
 function toRemoteDone(done: DoneRecord | null): RemoteDone | null {
   if (!done) return null;
+  const paths = recordPhotos(done)
+    .map((p) => p.path)
+    .filter((p): p is string => Boolean(p));
   return {
     date: done.date,
     rating: done.rating,
     review: done.review,
-    photoPath: done.photoPath ?? null,
+    // 예전 앱은 photoPath 한 장만 읽는다
+    photoPath: paths[0] ?? null,
+    photos: paths.map((path) => ({ path })),
   };
 }
 
 /** 서버 행 → 앱 항목. 이 휴대폰에 같은 사진 파일이 있으면 그대로 쓴다 */
 export function fromRow(row: BucketItemRow, local?: BucketItem): BucketItem {
   const remoteDone = row.done as RemoteDone | null;
-  const localDone = local?.done;
-  const done: DoneRecord | null = remoteDone
-    ? {
-        ...remoteDone,
-        photoUri:
-          localDone?.photoPath && localDone.photoPath === remoteDone.photoPath
-            ? localDone.photoUri
-            : null,
-      }
-    : null;
+  let done: DoneRecord | null = null;
+  if (remoteDone) {
+    const localUris = new Map(
+      recordPhotos(local?.done)
+        .filter((p) => p.path && p.uri)
+        .map((p) => [p.path!, p.uri])
+    );
+    const paths = remoteDone.photos
+      ? remoteDone.photos.map((p) => p.path)
+      : remoteDone.photoPath
+        ? [remoteDone.photoPath]
+        : [];
+    done = withRecordPhotos(
+      {
+        date: remoteDone.date,
+        rating: remoteDone.rating,
+        review: remoteDone.review,
+        photoUri: null,
+      },
+      paths.map((path) => ({ path, uri: localUris.get(path) ?? null }))
+    );
+  }
 
   return {
     id: row.id,

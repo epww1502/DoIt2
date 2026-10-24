@@ -3,7 +3,12 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { Text } from '@/components/atoms';
-import { getCategory, settingTag, type BucketItem } from '@/lib/bucket/types';
+import {
+  getCategory,
+  recordPhotos,
+  settingTag,
+  type BucketItem,
+} from '@/lib/bucket/types';
 
 import type { SelectionProps } from './BucketRow';
 import { DonePhoto } from './DonePhoto';
@@ -27,7 +32,7 @@ export function DoneCard({
       }
       className="overflow-hidden rounded-2xl border bg-card border-border active:opacity-80"
     >
-      {done.photoUri || done.photoPath ? (
+      {recordPhotos(done).length > 0 ? (
         <DonePhoto done={done} />
       ) : (
         <View className="h-24 items-center justify-center bg-accent">

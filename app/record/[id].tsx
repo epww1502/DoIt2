@@ -23,8 +23,14 @@ import { usePhotoSource } from '@/components/bucket/DonePhoto';
 import { StarRating } from '@/components/bucket/StarRating';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { DATE_FORMAT, todayKey } from '@/lib/date';
-import { deletePhoto, pickPhoto } from '@/lib/bucket/photo';
-import { KIND_META } from '@/lib/bucket/types';
+import { deletePhoto, pickPhotos } from '@/lib/bucket/photo';
+import {
+  KIND_META,
+  MAX_RECORD_PHOTOS,
+  recordPhotos,
+  withRecordPhotos,
+  type RecordPhoto,
+} from '@/lib/bucket/types';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 
 const RATING_LABELS = [
@@ -48,13 +54,10 @@ export default function RecordFormScreen() {
   const [date, setDate] = useState(saved?.date ?? todayKey());
   const [rating, setRating] = useState(saved?.rating ?? 5);
   const [review, setReview] = useState(saved?.review ?? '');
-  // uri: 이 휴대폰의 사진 파일, path: 서버에 올라간 사진 (상대가 올린 사진이면 path만 있다)
-  const [photo, setPhoto] = useState<{
-    uri: string | null;
-    path: string | null;
-  }>({ uri: saved?.photoUri ?? null, path: saved?.photoPath ?? null });
-  const photoSource = usePhotoSource(photo.uri, photo.path);
-  const hasPhoto = Boolean(photo.uri || photo.path);
+  // 사진들. uri: 이 휴대폰의 사진 파일, path: 서버에 올라간 사진 (상대가 올린 사진이면 path만 있다)
+  const [photos, setPhotos] = useState<RecordPhoto[]>(() =>
+    recordPhotos(saved)
+  );
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -76,42 +79,45 @@ export default function RecordFormScreen() {
     setDate(dayjs(date).add(days, 'day').format(DATE_FORMAT));
 
   /** 이번 화면에서 새로 고른 사진이면 지운다 (저장된 사진은 저장할 때 정리) */
+  const savedUris = new Set(recordPhotos(saved).map((p) => p.uri));
   const discardNewPhoto = (uri: string | null) => {
-    if (uri && uri !== saved?.photoUri) deletePhoto(uri);
+    if (uri && !savedUris.has(uri)) deletePhoto(uri);
   };
 
-  const choosePhoto = async () => {
+  const addPhotos = async () => {
     try {
-      const uri = await pickPhoto();
-      if (!uri) return;
-      discardNewPhoto(photo.uri);
+      const uris = await pickPhotos(MAX_RECORD_PHOTOS - photos.length);
+      if (uris.length === 0) return;
       // 새 사진은 아직 서버 경로가 없다 (저장할 때 올린다)
-      setPhoto({ uri, path: null });
+      setPhotos((prev) => [
+        ...prev,
+        ...uris.map((uri) => ({ uri, path: null })),
+      ]);
     } catch {
       showAlert('사진을 불러오지 못했어요', '잠시 후 다시 시도해주세요.');
     }
   };
 
-  const removePhoto = () => {
-    discardNewPhoto(photo.uri);
-    setPhoto({ uri: null, path: null });
+  const removePhotoAt = (index: number) => {
+    discardNewPhoto(photos[index]?.uri ?? null);
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const cancel = () => {
-    discardNewPhoto(photo.uri);
+    for (const photo of photos) discardNewPhoto(photo.uri);
     router.back();
   };
 
   const save = async () => {
     setSaving(true);
     try {
-      await recordDone(item.id, {
-        date,
-        rating,
-        review: review.trim(),
-        photoUri: photo.uri,
-        photoPath: photo.path,
-      });
+      await recordDone(
+        item.id,
+        withRecordPhotos(
+          { date, rating, review: review.trim(), photoUri: null },
+          photos
+        )
+      );
       router.back();
     } catch {
       showAlert(
@@ -205,43 +211,44 @@ export default function RecordFormScreen() {
           </View>
 
           <View>
-            <FieldLabel>사진 (선택)</FieldLabel>
-            {hasPhoto ? (
-              <View className="overflow-hidden rounded-2xl bg-accent">
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="사진 바꾸기"
-                  onPress={choosePhoto}
-                >
-                  <Image
-                    source={photoSource ? { uri: photoSource } : undefined}
-                    style={{ width: '100%', aspectRatio: 4 / 3 }}
-                    contentFit="cover"
-                  />
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="사진 빼기"
-                  onPress={removePhoto}
-                  className="absolute right-3 top-3 h-8 w-8 items-center justify-center rounded-full bg-black/60"
-                >
-                  <Icon as={X} size={18} className="text-white" />
-                </Pressable>
-              </View>
-            ) : (
-              <Pressable
-                accessibilityRole="button"
-                onPress={choosePhoto}
-                className="h-32 items-center justify-center gap-2 rounded-2xl border border-dashed border-muted active:opacity-70"
-              >
-                <Icon
-                  as={ImagePlus}
-                  size={28}
-                  className="text-muted-foreground"
+            <FieldLabel>{`사진 (선택, ${photos.length}/${MAX_RECORD_PHOTOS})`}</FieldLabel>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerClassName="gap-2"
+            >
+              {photos.map((photo, i) => (
+                <PhotoThumb
+                  key={photo.path ?? photo.uri ?? i}
+                  photo={photo}
+                  first={i === 0}
+                  onRemove={() => removePhotoAt(i)}
                 />
-                <Text variant="muted">사진 추가하기</Text>
-              </Pressable>
-            )}
+              ))}
+              {photos.length < MAX_RECORD_PHOTOS ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="사진 추가하기"
+                  onPress={() => void addPhotos()}
+                  className="items-center justify-center gap-1 rounded-2xl border border-dashed border-muted active:opacity-70"
+                  style={{ width: THUMB_SIZE, height: THUMB_SIZE }}
+                >
+                  <Icon
+                    as={ImagePlus}
+                    size={24}
+                    className="text-muted-foreground"
+                  />
+                  <Text variant="muted" size={12}>
+                    사진 추가
+                  </Text>
+                </Pressable>
+              ) : null}
+            </ScrollView>
+            {photos.length > 1 ? (
+              <Text size={12} className="mt-2 text-muted-foreground">
+                첫 번째 사진이 목록에 대표로 보여요
+              </Text>
+            ) : null}
           </View>
         </ScrollView>
 
@@ -260,5 +267,49 @@ export default function RecordFormScreen() {
         onClose={() => setPickerOpen(false)}
       />
     </SafeAreaView>
+  );
+}
+
+/** 사진 칸 크기 */
+const THUMB_SIZE = 96;
+
+/** 기록 사진 한 칸: 오른쪽 위 X로 빼고, 첫 장엔 '대표' 표시 */
+function PhotoThumb({
+  photo,
+  first,
+  onRemove,
+}: {
+  photo: RecordPhoto;
+  first: boolean;
+  onRemove: () => void;
+}) {
+  const uri = usePhotoSource(photo.uri, photo.path);
+  return (
+    <View
+      className="overflow-hidden rounded-2xl bg-accent"
+      style={{ width: THUMB_SIZE, height: THUMB_SIZE }}
+    >
+      <Image
+        source={uri ? { uri } : undefined}
+        style={{ width: THUMB_SIZE, height: THUMB_SIZE }}
+        contentFit="cover"
+      />
+      {first ? (
+        <View className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5">
+          <Text size={10} weight="600" className="text-white">
+            대표
+          </Text>
+        </View>
+      ) : null}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="사진 빼기"
+        hitSlop={6}
+        onPress={onRemove}
+        className="absolute right-1.5 top-1.5 h-6 w-6 items-center justify-center rounded-full bg-black/60"
+      >
+        <Icon as={X} size={14} className="text-white" />
+      </Pressable>
+    </View>
   );
 }

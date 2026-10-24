@@ -72,6 +72,8 @@ function RootLayoutInner() {
           <Stack.Screen name="space/index" />
           <Stack.Screen name="space/profile" />
           <Stack.Screen name="space/list" />
+          <Stack.Screen name="done/map" />
+          <Stack.Screen name="done/stats" />
           <Stack.Screen name="profile" />
           <Stack.Screen name="account/restore" />
           <Stack.Screen

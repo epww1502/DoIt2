@@ -1,11 +1,16 @@
-import { CircleCheck } from 'lucide-react-native';
+import {
+  ChartColumn,
+  CircleCheck,
+  Map as MapIcon,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { FlatList, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { showAlert } from '@/lib/dialog';
-import { Segmented } from '@/components/atoms';
+import { Icon, Segmented, Text } from '@/components/atoms';
 import { DoneCard } from '@/components/bucket/DoneCard';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
@@ -42,6 +47,8 @@ export default function DoneScreen() {
         .sort((a, b) => (b.done!.date > a.done!.date ? 1 : -1)),
     [items]
   );
+  // 지도에 찍을 수 있는 (장소를 골라둔) 기록 수
+  const visitedCount = done.filter((it) => it.place).length;
   const shown = useMemo(
     () => (kind === 'all' ? done : done.filter((it) => it.kind === kind)),
     [done, kind]
@@ -115,8 +122,27 @@ export default function DoneScreen() {
         />
       ) : (
         <>
-          <View className="px-5 pb-4">
+          <View className="gap-3 px-5 pb-4">
             <Segmented options={KIND_OPTIONS} value={kind} onChange={setKind} />
+            {/* 지도·추억 모아보기 (여러 개 고를 땐 숨긴다) */}
+            {!selection.selecting ? (
+              <View className="flex-row gap-2">
+                <ViewLink
+                  icon={MapIcon}
+                  label={
+                    visitedCount > 0
+                      ? `함께한 곳 지도 · ${visitedCount}곳`
+                      : '함께한 곳 지도'
+                  }
+                  onPress={() => router.push('/done/map')}
+                />
+                <ViewLink
+                  icon={ChartColumn}
+                  label="추억 모아보기"
+                  onPress={() => router.push('/done/stats')}
+                />
+              </View>
+            ) : null}
           </View>
           <FlatList
             data={shown}
@@ -150,5 +176,29 @@ export default function DoneScreen() {
         </>
       )}
     </SafeAreaView>
+  );
+}
+
+/** 함께한 것 위의 작은 바로가기 버튼 (지도, 추억 모아보기) */
+function ViewLink({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      className="h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-xl bg-accent active:opacity-70"
+    >
+      <Icon as={icon} size={15} className="text-primary" />
+      <Text size={13} weight="600" numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
