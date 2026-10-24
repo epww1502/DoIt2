@@ -1,39 +1,21 @@
 import dayjs from 'dayjs';
 import { router } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, View } from 'react-native';
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import { useTogether } from '@/hooks/useTogether';
 import { Icon, NavBar, Text } from '@/components/atoms';
 import { PhotoImage } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { groupBySpot, ItemsMap } from '@/components/bucket/ItemsMap';
 import { StarRating } from '@/components/bucket/StarRating';
 import { recordPhotos, type BucketItem } from '@/lib/bucket/types';
-import { KAKAO_MAP_BASE_URL, kakaoMapHtml } from '@/lib/kakaoMapHtml';
 import { useBucketStore } from '@/store/useBucketStore';
-
-const KAKAO_JS_KEY = process.env.EXPO_PUBLIC_KAKAO_JS_KEY ?? '';
-const MapWebView = WebView<object>;
-
-/** 처음 보여줄 곳 (핀이 생기면 핀들이 다 보이게 옮겨간다): 서울시청 */
-const DEFAULT_CENTER = { latitude: 37.5663, longitude: 126.9779 };
-/** 아래 카드에 핀이 가리지 않게 두는 여백(px) */
-const CARD_PADDING = 180;
-/** 핀을 누르면 지도 누르기도 같이 오는 경우가 있어서, 이 시간 안의 지도 누르기는 무시한다 */
-const MARKER_PRESS_GUARD_MS = 400;
-
-type MapMessage =
-  | { type: 'ready' }
-  | { type: 'center' }
-  | { type: 'select'; index: number }
-  | { type: 'mapPress' }
-  | { type: 'error'; message: string };
 
 /** 함께한 곳 지도: 장소를 골라둔 기록들을 핀으로. 핀을 누르면 아래에 그 기록 */
 export default function DoneMapScreen() {
@@ -41,12 +23,6 @@ export default function DoneMapScreen() {
   const placesLabel = together ? '함께한 곳' : '다녀온 곳';
   const items = useBucketStore((s) => s.items);
   const insets = useSafeAreaInsets();
-  const webRef = useRef<WebView<object>>(null);
-  const lastMarkerPress = useRef(0);
-  const [ready, setReady] = useState(false);
-  const [mapError, setMapError] = useState(false);
-  /** 누른 핀의 기록들 (같은 위치면 여러 개) */
-  const [selected, setSelected] = useState<BucketItem[] | null>(null);
 
   // 장소 좌표가 있는 함께한 기록 (최근 순)
   const visited = useMemo(
@@ -56,72 +32,7 @@ export default function DoneMapScreen() {
         .sort((a, b) => (b.done!.date > a.done!.date ? 1 : -1)),
     [items]
   );
-
-  // 같은 위치(약 1m 이내)의 기록은 핀 하나로 묶는다
-  const spots = useMemo(() => {
-    const byKey = new Map<string, BucketItem[]>();
-    for (const it of visited) {
-      const key = `${it.place!.latitude.toFixed(5)},${it.place!.longitude.toFixed(5)}`;
-      byKey.set(key, [...(byKey.get(key) ?? []), it]);
-    }
-    return [...byKey.values()];
-  }, [visited]);
-
-  const html = useMemo(
-    () =>
-      kakaoMapHtml({
-        jsKey: KAKAO_JS_KEY,
-        ...DEFAULT_CENTER,
-        bottomPadding: CARD_PADDING,
-      }),
-    []
-  );
-
-  const run = (script: string) =>
-    webRef.current?.injectJavaScript(`${script}; true;`);
-
-  useEffect(() => {
-    if (!ready) return;
-    const places = spots.map((group) => ({
-      latitude: group[0].place!.latitude,
-      longitude: group[0].place!.longitude,
-    }));
-    webRef.current?.injectJavaScript(
-      `window.DoIt2.setMarkers(${JSON.stringify(places)}); true;`
-    );
-  }, [ready, spots]);
-
-  const onMessage = (e: WebViewMessageEvent) => {
-    let message: MapMessage;
-    try {
-      message = JSON.parse(e.nativeEvent.data) as MapMessage;
-    } catch {
-      return;
-    }
-    switch (message.type) {
-      case 'ready':
-        setReady(true);
-        break;
-      case 'select': {
-        const group = spots[message.index];
-        if (!group) return;
-        lastMarkerPress.current = Date.now();
-        setSelected(group);
-        run(`window.DoIt2.highlight(${message.index})`);
-        break;
-      }
-      case 'mapPress':
-        if (Date.now() - lastMarkerPress.current < MARKER_PRESS_GUARD_MS) {
-          return;
-        }
-        setSelected(null);
-        break;
-      case 'error':
-        console.warn('[kakao-map]', message.message);
-        setMapError(true);
-        break;
-    }
-  };
+  const spotCount = useMemo(() => groupBySpot(visited).length, [visited]);
 
   if (visited.length === 0) {
     return (
@@ -137,61 +48,18 @@ export default function DoneMapScreen() {
     );
   }
 
-  if (!KAKAO_JS_KEY || mapError) {
-    return (
-      <SafeAreaView edges={['top']} className="flex-1 bg-background">
-        <NavBar title={`${placesLabel} 지도`} />
-        <EmptyState
-          title="지도를 열지 못했어요"
-          description="인터넷 연결을 확인하고 다시 열어주세요."
-        />
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <NavBar title={`${placesLabel} ${spots.length}곳`} />
-      <View className="flex-1">
-        <MapWebView
-          ref={webRef}
-          source={{ html, baseUrl: KAKAO_MAP_BASE_URL }}
-          originWhitelist={['*']}
-          onMessage={onMessage}
-          overScrollMode="never"
-          bounces={false}
-          style={{ flex: 1 }}
-        />
-
-        <View
-          className="absolute bottom-0 left-0 right-0 rounded-t-3xl px-5 pt-4 bg-background"
-          style={{ paddingBottom: insets.bottom + 12 }}
-        >
-          {selected ? (
-            <>
-              {selected.length > 1 ? (
-                <Text weight="700" size={14} className="mb-2">
-                  {`${selected[0].place?.name ?? '이곳'}에서 ${selected.length}번 ${together ? '함께했어요' : '다녀왔어요'}`}
-                </Text>
-              ) : null}
-              {/* 여러 개면 목록으로 (많으면 스크롤) */}
-              <ScrollView
-                style={{ maxHeight: 260 }}
-                contentContainerClassName="gap-3"
-                showsVerticalScrollIndicator={selected.length > 3}
-              >
-                {selected.map((item) => (
-                  <VisitedCard key={item.id} item={item} />
-                ))}
-              </ScrollView>
-            </>
-          ) : (
-            <Text variant="muted" size={13} className="py-3 text-center">
-              핀을 누르면 그날의 기록을 볼 수 있어요
-            </Text>
-          )}
-        </View>
-      </View>
+      <NavBar title={`${placesLabel} ${spotCount}곳`} />
+      <ItemsMap
+        items={visited}
+        renderItem={(item) => <VisitedCard item={item} />}
+        groupTitle={(group) =>
+          `${group[0].place?.name ?? '이곳'}에서 ${group.length}번 ${together ? '함께했어요' : '다녀왔어요'}`
+        }
+        hint="핀을 누르면 그날의 기록을 볼 수 있어요"
+        bottomInset={insets.bottom}
+      />
     </SafeAreaView>
   );
 }

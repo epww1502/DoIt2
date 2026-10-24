@@ -3,17 +3,22 @@ import {
   ChevronRight,
   Download,
   Inbox,
+  LayoutGrid,
+  List,
+  Map as MapIcon,
+  Rows3,
   RotateCcw,
   type LucideIcon,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { FlatList, Pressable, SectionList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
 import { showAlert } from '@/lib/dialog';
-import { Fab, Icon, ProgressBar, Text } from '@/components/atoms';
-import { BucketRow } from '@/components/bucket/BucketRow';
+import { ActionSheet, Fab, Icon, ProgressBar, Text } from '@/components/atoms';
+import { BucketRow, BucketRowCompact } from '@/components/bucket/BucketRow';
+import { ItemsMap } from '@/components/bucket/ItemsMap';
 import {
   ALL_FILTER,
   CategoryFilter,
@@ -29,9 +34,27 @@ import {
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
 import { useSelection } from '@/hooks/useSelection';
 import { useBucketStore } from '@/store/useBucketStore';
+import { type BucketView, useSettingsStore } from '@/store/useSettingsStore';
+import {
+  CATEGORIES_BY_KIND,
+  getCategory,
+  type BucketItem,
+} from '@/lib/bucket/types';
+import { cn } from '@/lib/utils';
 import { useSpace, useSpaceStore } from '@/store/useSpaceStore';
 import { shareBucketItems } from '@/lib/shareItems';
 import { useImportSources } from '@/hooks/useImportSources';
+
+/** 보기 방식 이름·아이콘 */
+const BUCKET_VIEW_META: Record<
+  BucketView,
+  { label: string; icon: LucideIcon }
+> = {
+  list: { label: '목록으로 보기', icon: Rows3 },
+  compact: { label: '간단히 보기', icon: List },
+  category: { label: '카테고리별로 보기', icon: LayoutGrid },
+  map: { label: '지도로 보기', icon: MapIcon },
+};
 
 export default function BucketListScreen() {
   const together = useTogether();
@@ -103,6 +126,60 @@ export default function BucketListScreen() {
         },
       ]
     );
+
+  // 보기 방식 (목록 / 간단히 / 카테고리별 / 지도). 이 휴대폰에 기억한다
+  const bucketView = useSettingsStore((s) => s.bucketView);
+  const setBucketView = useSettingsStore((s) => s.setBucketView);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
+
+  // 카테고리별 보기: 카테고리 순서대로 묶는다 (가보기 → 해보기)
+  const sections = useMemo(() => {
+    const groups = new Map<string, BucketItem[]>();
+    for (const it of filtered) {
+      const key = `${it.kind}:${it.category}`;
+      groups.set(key, [...(groups.get(key) ?? []), it]);
+    }
+    return (['place', 'activity'] as const).flatMap((kind) =>
+      CATEGORIES_BY_KIND[kind]
+        .filter((c) => groups.has(`${kind}:${c.key}`))
+        .map((c) => ({
+          key: `${kind}:${c.key}`,
+          label: c.label,
+          emoji: c.emoji,
+          data: groups.get(`${kind}:${c.key}`)!,
+        }))
+    );
+  }, [filtered]);
+
+  const footer = !selection.selecting ? (
+    <View className="flex-row flex-wrap items-center justify-center gap-x-5 gap-y-2 py-3">
+      {doneCount > 0 ? (
+        <FooterLink
+          icon={RotateCcw}
+          label={`${doneLabel} 다시 담기`}
+          onPress={goRedo}
+        />
+      ) : null}
+      {canImport ? (
+        <FooterLink
+          icon={Download}
+          label="다른 공간에서 가져오기"
+          onPress={goImport}
+        />
+      ) : null}
+      <FooterLink
+        icon={Inbox}
+        label="공유받은 목록 가져오기"
+        onPress={goShared}
+      />
+    </View>
+  ) : undefined;
+  const listEmpty = (
+    <EmptyState
+      title="여기엔 아직 없어요"
+      description="다른 걸 골라보거나 새로 담아봐요."
+    />
+  );
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
@@ -192,53 +269,94 @@ export default function BucketListScreen() {
         />
       ) : (
         <>
-          <CategoryFilter value={filter} onChange={setFilter} />
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.id}
-            extraData={selection.selected}
-            renderItem={({ item }) => (
-              <BucketRow
-                item={item}
-                selecting={selection.selecting}
-                selected={selection.selected.has(item.id)}
-                onLongPress={() => selection.start(item.id)}
-                onToggle={() => selection.toggle(item.id)}
-              />
-            )}
-            contentContainerClassName="gap-3 px-5 pb-28 pt-4"
-            ListFooterComponent={
-              !selection.selecting ? (
-                <View className="flex-row flex-wrap items-center justify-center gap-x-5 gap-y-2 py-3">
-                  {doneCount > 0 ? (
-                    <FooterLink
-                      icon={RotateCcw}
-                      label={`${doneLabel} 다시 담기`}
-                      onPress={goRedo}
-                    />
-                  ) : null}
-                  {canImport ? (
-                    <FooterLink
-                      icon={Download}
-                      label="다른 공간에서 가져오기"
-                      onPress={goImport}
-                    />
-                  ) : null}
-                  <FooterLink
-                    icon={Inbox}
-                    label="공유받은 목록 가져오기"
-                    onPress={goShared}
-                  />
-                </View>
-              ) : undefined
-            }
-            ListEmptyComponent={
-              <EmptyState
-                title="여기엔 아직 없어요"
-                description="다른 걸 골라보거나 새로 담아봐요."
-              />
+          <CategoryFilter
+            value={filter}
+            onChange={setFilter}
+            right={
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`보기 방식: ${BUCKET_VIEW_META[bucketView].label}`}
+                onPress={() => setViewSheetOpen(true)}
+                className="h-10 w-10 items-center justify-center rounded-lg bg-accent active:opacity-70"
+              >
+                <Icon
+                  as={BUCKET_VIEW_META[bucketView].icon}
+                  size={18}
+                  className="text-muted-foreground"
+                />
+              </Pressable>
             }
           />
+          {bucketView === 'map' ? (
+            <View className="mt-3 flex-1">
+              {filtered.some((it) => it.place) ? (
+                <ItemsMap
+                  items={filtered}
+                  renderItem={(item) => <MapItemCard item={item} />}
+                  groupTitle={(group) =>
+                    `${group[0].place?.name ?? '이곳'}에 ${group.length}개 담겨 있어요`
+                  }
+                  hint="핀을 누르면 그곳에 담아둔 걸 볼 수 있어요"
+                />
+              ) : (
+                <EmptyState
+                  title="지도에 찍을 곳이 없어요"
+                  description={'담을 때 장소를 골라두면\n여기에 핀으로 모여요.'}
+                />
+              )}
+            </View>
+          ) : bucketView === 'category' ? (
+            <SectionList
+              sections={sections}
+              keyExtractor={(item) => item.id}
+              extraData={selection.selected}
+              stickySectionHeadersEnabled={false}
+              renderSectionHeader={({ section }) => (
+                <Text weight="700" size={14} className="pb-1 pt-4">
+                  {`${section.emoji} ${section.label}`}
+                  <Text size={12} className="text-muted-foreground">
+                    {` · ${section.data.length}`}
+                  </Text>
+                </Text>
+              )}
+              renderItem={({ item }) => (
+                <View className="pb-2">
+                  <BucketRowCompact
+                    item={item}
+                    selecting={selection.selecting}
+                    selected={selection.selected.has(item.id)}
+                    onLongPress={() => selection.start(item.id)}
+                    onToggle={() => selection.toggle(item.id)}
+                  />
+                </View>
+              )}
+              contentContainerClassName="px-5 pb-28"
+              ListFooterComponent={footer}
+              ListEmptyComponent={listEmpty}
+            />
+          ) : (
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item.id}
+              extraData={selection.selected}
+              renderItem={({ item }) => (
+                <BucketItemRow
+                  compact={bucketView === 'compact'}
+                  item={item}
+                  selecting={selection.selecting}
+                  selected={selection.selected.has(item.id)}
+                  onLongPress={() => selection.start(item.id)}
+                  onToggle={() => selection.toggle(item.id)}
+                />
+              )}
+              contentContainerClassName={cn(
+                'px-5 pb-28 pt-4',
+                bucketView === 'compact' ? 'gap-2' : 'gap-3'
+              )}
+              ListFooterComponent={footer}
+              ListEmptyComponent={listEmpty}
+            />
+          )}
           {selection.selecting ? (
             <SelectionDeleteBar
               count={selectedIds.length}
@@ -249,14 +367,68 @@ export default function BucketListScreen() {
               }
               onSecondary={() => void shareSelected()}
             />
-          ) : (
+          ) : bucketView === 'map' ? null : (
             <View className="absolute bottom-6 right-5">
               <Fab accessibilityLabel="버킷리스트 담기" onPress={goNew} />
             </View>
           )}
         </>
       )}
+      <ActionSheet
+        visible={viewSheetOpen}
+        onClose={() => setViewSheetOpen(false)}
+        header={
+          <Text weight="700" size={17}>
+            보기 방식
+          </Text>
+        }
+        items={(Object.keys(BUCKET_VIEW_META) as BucketView[]).map((view) => ({
+          label:
+            view === bucketView
+              ? `${BUCKET_VIEW_META[view].label} (지금)`
+              : BUCKET_VIEW_META[view].label,
+          onPress: () => {
+            selection.clear();
+            setBucketView(view);
+          },
+        }))}
+      />
     </SafeAreaView>
+  );
+}
+
+/** 보기 방식에 맞는 한 줄 */
+function BucketItemRow({
+  compact,
+  ...props
+}: { compact: boolean } & React.ComponentProps<typeof BucketRow>) {
+  return compact ? <BucketRowCompact {...props} /> : <BucketRow {...props} />;
+}
+
+/** 지도에서 핀을 눌렀을 때 보이는 항목. 누르면 항목 화면으로 */
+function MapItemCard({ item }: { item: BucketItem }) {
+  const category = getCategory(item.category);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={() =>
+        router.push({ pathname: '/item/[id]', params: { id: item.id } })
+      }
+      className="flex-row items-center gap-3 active:opacity-70"
+    >
+      <View className="h-11 w-11 items-center justify-center rounded-full bg-accent">
+        <Text size={20}>{category.emoji}</Text>
+      </View>
+      <View className="flex-1 gap-0.5">
+        <Text weight="700" size={15} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text variant="muted" size={12} numberOfLines={1}>
+          {[category.label, item.place?.name].filter(Boolean).join(' · ')}
+        </Text>
+      </View>
+      <Icon as={ChevronRight} size={18} className="text-muted-foreground" />
+    </Pressable>
   );
 }
 

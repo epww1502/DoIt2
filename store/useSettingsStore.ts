@@ -9,6 +9,7 @@ import {
 } from '@/constants/palettes';
 
 export type DoneView = 'card' | 'compact' | 'calendar';
+export type BucketView = 'list' | 'compact' | 'category' | 'map';
 
 /** 앱 설정 (이 휴대폰에만 저장) */
 type SettingsState = {
@@ -30,6 +31,9 @@ type SettingsState = {
   /** 함께한 것 보기: card(사진 크게), compact(간단히), calendar(달력) */
   doneView: DoneView;
   setDoneView: (value: DoneView) => void;
+  /** 버킷리스트 보기: list(목록), compact(간단히), category(카테고리별), map(지도) */
+  bucketView: BucketView;
+  setBucketView: (value: BucketView) => void;
   /** 같은 공간 사람이 담거나 기록하면 알림 받기 */
   pushEnabled: boolean;
   setPushEnabled: (value: boolean) => void;
@@ -50,6 +54,8 @@ export const useSettingsStore = create<SettingsState>()(
       setAccountCode: (accountCode) => set({ accountCode }),
       doneView: 'card',
       setDoneView: (doneView) => set({ doneView }),
+      bucketView: 'list',
+      setBucketView: (bucketView) => set({ bucketView }),
       pushEnabled: true,
       setPushEnabled: (pushEnabled) => set({ pushEnabled }),
     }),
@@ -64,6 +70,7 @@ export const useSettingsStore = create<SettingsState>()(
         redoMinRating: state.redoMinRating,
         accountCode: state.accountCode,
         doneView: state.doneView,
+        bucketView: state.bucketView,
         pushEnabled: state.pushEnabled,
       }),
     }

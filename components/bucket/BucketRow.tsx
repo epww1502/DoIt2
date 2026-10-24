@@ -60,3 +60,30 @@ export function BucketRow({
     </Selectable>
   );
 }
+
+/** 간단히 보기: 이모지 + 제목 한 줄 (촘촘하게) */
+export function BucketRowCompact({
+  item,
+  ...selection
+}: { item: BucketItem } & SelectionProps) {
+  const category = getCategory(item.category);
+  return (
+    <Selectable
+      {...selection}
+      onPress={() =>
+        router.push({ pathname: '/item/[id]', params: { id: item.id } })
+      }
+      className="flex-row items-center gap-2.5 rounded-xl border px-3 py-2.5 bg-card border-border active:opacity-70"
+    >
+      <Text size={16}>{category.emoji}</Text>
+      <Text weight="500" size={15} numberOfLines={1} className="flex-1 pr-6">
+        {item.title}
+      </Text>
+      {!selection.selecting ? (
+        <Text size={11} className="text-muted-foreground">
+          {settingTag(item.setting)}
+        </Text>
+      ) : null}
+    </Selectable>
+  );
+}

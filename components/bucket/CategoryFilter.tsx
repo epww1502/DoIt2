@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { Chip, Segmented } from '@/components/atoms';
@@ -45,20 +46,29 @@ const KIND_OPTIONS: SegmentedOption<KindOption>[] = [
 type CategoryFilterProps = {
   value: BucketFilter;
   onChange: (value: BucketFilter) => void;
+  /** 종류 고르기 오른쪽에 붙일 버튼 (보기 방식 등) */
+  right?: ReactNode;
 };
 
 /** 전체 / 가보기 / 해보기 + (종류를 고르면) 카테고리 칩 */
-export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
+export function CategoryFilter({
+  value,
+  onChange,
+  right,
+}: CategoryFilterProps) {
   return (
     <View className="gap-3">
-      <View className="px-5">
-        <Segmented
-          options={KIND_OPTIONS}
-          value={value.kind ?? 'all'}
-          onChange={(next) =>
-            onChange({ kind: next === 'all' ? null : next, category: null })
-          }
-        />
+      <View className="flex-row items-center gap-2 px-5">
+        <View className="flex-1">
+          <Segmented
+            options={KIND_OPTIONS}
+            value={value.kind ?? 'all'}
+            onChange={(next) =>
+              onChange({ kind: next === 'all' ? null : next, category: null })
+            }
+          />
+        </View>
+        {right}
       </View>
       {value.kind ? (
         <ScrollView
