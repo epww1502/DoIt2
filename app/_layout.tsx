@@ -1,7 +1,8 @@
 import { Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { vars } from 'nativewind';
-import { useMemo } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useMemo } from 'react';
 import { View } from 'react-native';
 import 'react-native-reanimated';
 import '../global.css';
@@ -14,6 +15,7 @@ import { hexToRgbTriple } from '@/constants/palettes';
 import { NAV_THEME } from '@/constants/theme';
 import { ThemeModeProvider, useThemeMode } from '@/contexts/ThemeModeContext';
 import { useFontsLoader } from '@/hooks/useFontsLoader';
+import { useStartupUpdate } from '@/hooks/useStartupUpdate';
 import { useBucketStoreHydrated } from '@/store/useBucketStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 
@@ -30,15 +32,20 @@ function RootLayoutInner() {
   const { colorScheme } = useThemeMode();
   const hydrated = useBucketStoreHydrated();
   const primary = usePrimaryColor();
+  // 켤 때 스플래시 동안 새 업데이트를 받아 바로 적용한다
+  const updateChecked = useStartupUpdate();
+  const ready =
+    (fontsLoaded || Boolean(fontError)) && hydrated && updateChecked;
+  useEffect(() => {
+    if (ready) void SplashScreen.hideAsync();
+  }, [ready]);
   // 설정에서 고른 테마색을 CSS 변수로 깔아서 bg-primary·text-primary 등이 모두 따라 바뀌게 한다
   const themeVars = useMemo(
     () => vars({ '--color-primary': hexToRgbTriple(primary) }),
     [primary]
   );
 
-  if ((!fontsLoaded && !fontError) || !hydrated) {
-    return null;
-  }
+  if (!ready) return null;
 
   return (
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>

@@ -1,8 +1,7 @@
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
 
-// Splash screen 자동 숨김 방지
+// 스플래시 자동 숨김 방지 (글꼴·저장된 데이터·업데이트 확인이 끝나면 루트 레이아웃에서 숨긴다)
 SplashScreen.preventAutoHideAsync();
 
 export function useFontsLoader() {
@@ -17,12 +16,6 @@ export function useFontsLoader() {
     'Pretendard-ExtraBold': require('../assets/fonts/Pretendard-ExtraBold.otf'),
     'Pretendard-Black': require('../assets/fonts/Pretendard-Black.otf'),
   });
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
 
   return { fontsLoaded, fontError };
 }
