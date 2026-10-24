@@ -3,7 +3,8 @@ import { Pressable, View } from 'react-native';
 import { Button, Text } from '@/components/atoms';
 
 type EmptyStateProps = {
-  emoji: string;
+  /** 없으면 아이콘 없이 글자만 */
+  emoji?: string;
   title: string;
   description: string;
   actionLabel?: string;
@@ -24,8 +25,8 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <View className="flex-1 items-center justify-center gap-2 px-8 py-16">
-      <Text size={48}>{emoji}</Text>
-      <Text weight="700" size={18} className="mt-2">
+      {emoji ? <Text size={48}>{emoji}</Text> : null}
+      <Text weight="700" size={18} className={emoji ? 'mt-2' : undefined}>
         {title}
       </Text>
       <Text variant="muted" className="text-center">

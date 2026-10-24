@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { Text } from '@/components/atoms';
-import { getCategory, KIND_META, type BucketItem } from '@/lib/bucket/types';
+import { getCategory, settingTag, type BucketItem } from '@/lib/bucket/types';
 
 import type { SelectionProps } from './BucketRow';
 import { DonePhoto } from './DonePhoto';
@@ -42,8 +42,8 @@ export function DoneCard({
           <StarRating value={done.rating} size={14} />
         </View>
         <Text variant="muted" size={13}>
-          {KIND_META[item.kind].emoji}{' '}
           {dayjs(done.date).format('YYYY년 M월 D일 (dd)')}
+          {` · ${settingTag(item.setting)}`}
           {item.location ? ` · ${item.location}` : ''}
         </Text>
         {done.review ? (

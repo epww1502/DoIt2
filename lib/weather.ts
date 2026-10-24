@@ -54,13 +54,33 @@ type OpenMeteoResponse = {
   };
 };
 
+export type LatLng = { latitude: number; longitude: number };
+
+/**
+ * 가까운 곳끼리 묶는 열쇠 (소수 둘째 자리 ≈ 1km).
+ * 같은 동네의 장소들은 날씨를 한 번만 물어본다.
+ */
+export function weatherKey({ latitude, longitude }: LatLng) {
+  return `${latitude.toFixed(2)},${longitude.toFixed(2)}`;
+}
+
+/** 한 곳의 오늘 날씨 */
 export async function fetchTodayWeather(
   latitude: number,
   longitude: number
 ): Promise<TodayWeather> {
+  const [weather] = await fetchTodayWeatherMany([{ latitude, longitude }]);
+  return weather;
+}
+
+/** 여러 곳의 오늘 날씨를 한 번에 (돌려주는 순서 = 넣은 순서) */
+export async function fetchTodayWeatherMany(
+  points: LatLng[]
+): Promise<TodayWeather[]> {
+  if (points.length === 0) return [];
   const params = new URLSearchParams({
-    latitude: latitude.toFixed(3),
-    longitude: longitude.toFixed(3),
+    latitude: points.map((p) => p.latitude.toFixed(3)).join(','),
+    longitude: points.map((p) => p.longitude.toFixed(3)).join(','),
     current: 'weather_code,precipitation',
     daily: 'precipitation_probability_max,weather_code',
     timezone: 'auto',
@@ -68,8 +88,12 @@ export async function fetchTodayWeather(
   });
   const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
   if (!res.ok) throw new Error(`weather ${res.status}`);
-  const data = (await res.json()) as OpenMeteoResponse;
+  // 한 곳이면 객체, 여러 곳이면 배열로 온다
+  const data = (await res.json()) as OpenMeteoResponse | OpenMeteoResponse[];
+  return (Array.isArray(data) ? data : [data]).map(toTodayWeather);
+}
 
+function toTodayWeather(data: OpenMeteoResponse): TodayWeather {
   const currentCode = data.current?.weather_code ?? 0;
   const currentRain = data.current?.precipitation ?? 0;
   const rainChance = data.daily?.precipitation_probability_max?.[0] ?? 0;

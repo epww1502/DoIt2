@@ -11,7 +11,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { Text } from '@/components/atoms';
-import { getCategory, type BucketItem } from '@/lib/bucket/types';
+import { getCategory, settingTag, type BucketItem } from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
 
 /** 카드 한 장 너비와 간격 */
@@ -123,6 +123,9 @@ export function PickReel({ reel, pickedIndex, onEnd }: PickReelProps) {
                   className="text-center"
                 >
                   {item.title}
+                </Text>
+                <Text size={11} className="text-muted-foreground">
+                  {settingTag(item.setting)}
                 </Text>
               </View>
             </Animated.View>

@@ -1,14 +1,14 @@
-/** 갈 곳(장소) / 할 것(같이 해보고 싶은 일) */
+/** 가보기(장소) / 해보기(같이 해보고 싶은 일) */
 export type BucketKind = 'place' | 'activity';
 
 export type CategoryKey =
-  // 갈 곳
+  // 가보기
   | 'food'
   | 'cafe'
   | 'trip'
   | 'activity'
   | 'culture'
-  // 할 것
+  // 해보기
   | 'cook'
   | 'exercise'
   | 'hobby'
@@ -68,28 +68,28 @@ export const KIND_META: Record<
   }
 > = {
   place: {
-    label: '갈 곳',
+    label: '가보기',
     emoji: '📍',
     question: '어디 가고 싶어요?',
     placeholder: '예) 성수동 그 파스타집',
-    doneLabel: '다녀왔어요!',
-    whenQuestion: '언제 다녀왔어요?',
+    doneLabel: '가봤어요',
+    whenQuestion: '언제 가봤어요?',
     locationLabel: '위치 (선택)',
     locationPlaceholder: '예) 서울 성동구',
   },
   activity: {
-    label: '할 것',
+    label: '해보기',
     emoji: '✅',
     question: '뭐 같이 해볼까요?',
     placeholder: '예) 같이 생파스타 만들어보기',
-    doneLabel: '해냈어요!',
-    whenQuestion: '언제 했어요?',
+    doneLabel: '해봤어요',
+    whenQuestion: '언제 해봤어요?',
     locationLabel: '장소 (선택)',
     locationPlaceholder: '예) 우리 집, 한강공원',
   },
 };
 
-/** 해낸 기록 (다녀온 곳 / 해본 것 공통) */
+/** 함께한 기록 (가본 곳 / 해본 것 공통) */
 export type DoneRecord = {
   /** YYYY-MM-DD */
   date: string;
@@ -112,6 +112,11 @@ export const SETTING_META: Record<
   indoor: { label: '실내', emoji: '🏠' },
   outdoor: { label: '실외', emoji: '🌳' },
 };
+
+/** 목록에 붙이는 짧은 표시: '실내' / '실외' */
+export function settingTag(setting: BucketSetting) {
+  return (SETTING_META[setting] ?? SETTING_META.indoor).label;
+}
 
 /** 카테고리를 고르면 먼저 채워 주는 실내/실외 (담을 때 바꿀 수 있다) */
 export const DEFAULT_SETTING: Record<CategoryKey, BucketSetting> = {

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppSwitch, Button, Text } from '@/components/atoms';
@@ -16,10 +16,17 @@ import { PickReel } from '@/components/bucket/PickReel';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
 import { WeatherBanner } from '@/components/bucket/WeatherBanner';
+import { usePlacesWeather } from '@/hooks/usePlacesWeather';
 import { useTodayWeather } from '@/hooks/useTodayWeather';
 import { hapticSuccess } from '@/lib/haptics';
-import { getCategory, KIND_META, type BucketItem } from '@/lib/bucket/types';
+import {
+  getCategory,
+  KIND_META,
+  settingTag,
+  type BucketItem,
+} from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
+import { weatherKey } from '@/lib/weather';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 
@@ -77,10 +84,9 @@ export default function PickScreen() {
   const [includeDone, setIncludeDone] = useState(false);
   const { state: weatherState, reload: reloadWeather } = useTodayWeather();
 
-  // 비 오는 날에는 실외 항목을 뺀다 ('실외도 포함'을 켜면 같이 뽑는다)
-  const isRainy =
+  // 내 위치 날씨 (장소 좌표가 없는 항목은 이걸로 판단한다)
+  const hereIsRainy =
     weatherState.status === 'ready' && weatherState.weather.isRainy;
-  const skipOutdoor = isRainy && !includeOutdoor;
 
   const filtered = useMemo(
     () =>
@@ -89,14 +95,42 @@ export default function PickScreen() {
       ),
     [items, filter, includeDone]
   );
-  const candidates = useMemo(
+
+  // 장소 좌표가 있는 실외 항목은 그 장소의 날씨를 따로 본다
+  const outdoorPlaces = useMemo(
     () =>
-      skipOutdoor
-        ? filtered.filter((it) => it.setting !== 'outdoor')
-        : filtered,
-    [filtered, skipOutdoor]
+      filtered
+        .filter((it) => it.setting === 'outdoor' && it.place)
+        .map((it) => it.place!),
+    [filtered]
   );
+  const placesWeather = usePlacesWeather(outdoorPlaces);
+
+  /** 이 실외 항목을 할 곳에 오늘 비가 오는지 */
+  const isRainyFor = useCallback(
+    (it: BucketItem) => {
+      const placeWeather = it.place
+        ? placesWeather[weatherKey(it.place)]
+        : undefined;
+      // 장소 날씨를 아직 못 받았으면 내 위치 날씨로 대신
+      return placeWeather ? placeWeather.isRainy : hereIsRainy;
+    },
+    [placesWeather, hereIsRainy]
+  );
+
+  // 비 오는 곳의 실외 항목은 뺀다 ('실외도 포함'을 켜면 같이 뽑는다)
+  const rainyOutdoor = useMemo(
+    () => filtered.filter((it) => it.setting === 'outdoor' && isRainyFor(it)),
+    [filtered, isRainyFor]
+  );
+  const candidates = useMemo(() => {
+    if (includeOutdoor) return filtered;
+    const rainyIds = new Set(rainyOutdoor.map((it) => it.id));
+    return filtered.filter((it) => !rainyIds.has(it.id));
+  }, [filtered, rainyOutdoor, includeOutdoor]);
   const excludedCount = filtered.length - candidates.length;
+  /** 비 때문에 뺄 게 있거나 내 위치에 비가 오면 '실외 포함' 스위치를 보여준다 */
+  const rainMatters = hereIsRainy || rainyOutdoor.length > 0;
   // 뽑힌 게 지워지거나 해낸 것이 되면 자연스럽게 결과가 사라진다
   const current: BucketItem | null =
     candidates.find((it) => it.id === currentId) ?? null;
@@ -159,7 +193,6 @@ export default function PickScreen() {
 
       {items.length === 0 ? (
         <EmptyState
-          emoji="🎲"
           title="뽑을 게 없어요"
           description="버킷리스트를 먼저 담아주세요."
           actionLabel="버킷리스트 담으러 가기"
@@ -170,11 +203,23 @@ export default function PickScreen() {
           <WeatherBanner
             state={weatherState}
             onReload={reloadWeather}
+            rainMatters={rainMatters}
             includeOutdoor={includeOutdoor}
-            onChangeIncludeOutdoor={changeIncludeOutdoor}
             excludedCount={excludedCount}
           />
-          <IncludeDoneRow value={includeDone} onChange={changeIncludeDone} />
+          {/* 비 때문에 뺄 실외가 있을 때만 */}
+          {rainMatters ? (
+            <OptionRow
+              label="비 와도 실외 포함"
+              value={includeOutdoor}
+              onChange={changeIncludeOutdoor}
+            />
+          ) : null}
+          <OptionRow
+            label="이미 해본 것도 포함"
+            value={includeDone}
+            onChange={changeIncludeDone}
+          />
           <CategoryFilter value={filter} onChange={changeFilter} />
 
           {reel ? (
@@ -186,10 +231,14 @@ export default function PickScreen() {
               />
             </View>
           ) : (
-            <View className="flex-1 justify-center px-5">
+            // 위 옵션이 늘어 공간이 좁아도 카드가 아래 버튼과 겹치지 않게 스크롤 안에 둔다
+            <ScrollView
+              className="flex-1"
+              contentContainerClassName="grow justify-center px-5 py-3"
+            >
               <View
                 className={cn(
-                  'min-h-[260px] items-center justify-center gap-3 rounded-3xl border-2 p-6',
+                  'min-h-[200px] items-center justify-center gap-2 rounded-3xl border-2 p-5',
                   decided
                     ? 'border-primary bg-card'
                     : 'border-dashed bg-card border-border'
@@ -197,7 +246,7 @@ export default function PickScreen() {
               >
                 {current && category ? (
                   <>
-                    <Text size={56}>{category.emoji}</Text>
+                    <Text size={44}>{category.emoji}</Text>
                     <Text
                       weight="700"
                       size={24}
@@ -210,6 +259,7 @@ export default function PickScreen() {
                       {[
                         KIND_META[current.kind].label,
                         category.label,
+                        settingTag(current.setting),
                         current.location,
                       ]
                         .filter(Boolean)
@@ -217,39 +267,40 @@ export default function PickScreen() {
                     </Text>
                     {current.done ? (
                       <Text size={12} className="text-muted-foreground">
-                        🔁 {dayjs(current.done.date).format('YYYY년 M월 D일')}에
+                        {dayjs(current.done.date).format('YYYY년 M월 D일')}에
                         해봤어요
                       </Text>
                     ) : null}
                     {decided ? (
                       <Text weight="600" className="mt-2 text-primary">
                         {current.done
-                          ? '한 번 더 어때요? 🔁'
+                          ? '한 번 더 어때요?'
                           : current.kind === 'place'
-                            ? '오늘은 여기 어때요? ✨'
-                            : '오늘은 이거 어때요? ✨'}
+                            ? '오늘은 여기 어때요?'
+                            : '오늘은 이거 어때요?'}
                       </Text>
                     ) : null}
                   </>
                 ) : (
                   <>
-                    <Text size={56}>🎲</Text>
+                    {/* 뽑을 게 없을 땐 아이콘 없이 안내 글만 */}
+                    {candidates.length > 0 ? <Text size={44}>🎲</Text> : null}
                     <Text variant="muted" className="text-center">
                       {candidates.length > 0
                         ? `${candidates.length}개 중에서 하나를 골라드릴게요`
                         : excludedCount > 0
-                          ? "비 때문에 실외를 빼니 뽑을 게 없어요.\n'실외도 포함'을 켜보세요"
+                          ? "비 때문에 실외를 빼니 뽑을 게 없어요.\n'비 와도 실외 포함'을 켜보세요"
                           : !includeDone && doneInFilter > 0
-                            ? "여기 있는 건 다 해봤어요! 🎉\n'이미 해본 것도 포함'을 켜보세요"
+                            ? "여기 있는 건 다 해봤어요!\n'이미 해본 것도 포함'을 켜보세요"
                             : '여기엔 아직 담긴 게 없어요'}
                     </Text>
                   </>
                 )}
               </View>
-            </View>
+            </ScrollView>
           )}
 
-          <View className="gap-2 px-5 pb-6">
+          <View className="gap-2 px-5 pb-6 pt-2">
             {decided ? (
               <Button
                 label={current.kind === 'place' ? '여기 가자!' : '이거 하자!'}
@@ -274,21 +325,23 @@ export default function PickScreen() {
   );
 }
 
-/** '이미 해본 것도 포함' 스위치 줄 */
-function IncludeDoneRow({
+/** 뽑기 옵션 스위치 줄 ('이미 해본 것도 포함', '비 와도 실외 포함') */
+function OptionRow({
+  label,
   value,
   onChange,
 }: {
+  label: string;
   value: boolean;
   onChange: (value: boolean) => void;
 }) {
   return (
     <View className="mx-5 mb-3 flex-row items-center justify-between">
       <Text size={13} className="text-muted-foreground">
-        🔁 이미 해본 것도 포함
+        {label}
       </Text>
       <AppSwitch
-        accessibilityLabel="이미 해본 것도 포함해서 뽑기"
+        accessibilityLabel={label}
         value={value}
         onValueChange={onChange}
       />

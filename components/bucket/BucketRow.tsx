@@ -3,7 +3,12 @@ import { ChevronRight } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
-import { getCategory, KIND_META, type BucketItem } from '@/lib/bucket/types';
+import {
+  getCategory,
+  KIND_META,
+  settingTag,
+  type BucketItem,
+} from '@/lib/bucket/types';
 
 import { Selectable } from './Selectable';
 
@@ -20,7 +25,12 @@ export function BucketRow({
   ...selection
 }: { item: BucketItem } & SelectionProps) {
   const category = getCategory(item.category);
-  const meta = [KIND_META[item.kind].label, category.label, item.location]
+  const meta = [
+    KIND_META[item.kind].label,
+    category.label,
+    settingTag(item.setting),
+    item.location,
+  ]
     .filter(Boolean)
     .join(' · ');
 

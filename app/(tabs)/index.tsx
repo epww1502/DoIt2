@@ -91,7 +91,7 @@ export default function BucketListScreen() {
         <View className="mx-5 mb-4 gap-2 rounded-2xl p-4 bg-accent">
           <View className="flex-row items-center justify-between">
             <Text weight="600" size={15}>
-              {items.length}개 중 {doneCount}개 해냈어요 ✨
+              {items.length}개 중 {doneCount}개 해냈어요
             </Text>
             {/* 해낸 게 있으면 '함께한 것' 탭으로 바로 */}
             {doneCount > 0 ? (
@@ -115,7 +115,6 @@ export default function BucketListScreen() {
 
       {todo.length === 0 ? (
         <EmptyState
-          emoji={items.length === 0 ? '💌' : '🎉'}
           title={
             items.length === 0
               ? '아직 담은 게 없어요'
@@ -129,7 +128,7 @@ export default function BucketListScreen() {
           actionLabel={items.length === 0 ? '첫 버킷리스트 담기' : '새로 담기'}
           onAction={goNew}
           // 해본 게 있으면 여러 개 골라 한 번에 다시 담을 수 있다
-          secondaryLabel={doneCount > 0 ? '해본 것 다시 담기' : undefined}
+          secondaryLabel={doneCount > 0 ? '함께한 것 다시 담기' : undefined}
           onSecondary={goRedo}
         />
       ) : (
@@ -162,14 +161,13 @@ export default function BucketListScreen() {
                     className="text-muted-foreground"
                   />
                   <Text size={12} className="text-muted-foreground">
-                    해본 것 다시 담기
+                    함께한 것 다시 담기
                   </Text>
                 </Pressable>
               ) : undefined
             }
             ListEmptyComponent={
               <EmptyState
-                emoji="🔍"
                 title="여기엔 아직 없어요"
                 description="다른 걸 골라보거나 새로 담아봐요."
               />

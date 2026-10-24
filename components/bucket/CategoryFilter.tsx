@@ -8,6 +8,8 @@ import {
   type BucketKind,
   type CategoryKey,
 } from '@/lib/bucket/types';
+import { KIND_ICON } from '@/components/bucket/kindIcons';
+import type { SegmentedOption } from '@/components/atoms/Segmented';
 
 export type BucketFilter = {
   /** null이면 전체 */
@@ -26,15 +28,17 @@ export function matchesFilter(item: BucketItem, filter: BucketFilter) {
 
 type KindOption = 'all' | BucketKind;
 
-const KIND_OPTIONS: { value: KindOption; label: string }[] = [
+const KIND_OPTIONS: SegmentedOption<KindOption>[] = [
   { value: 'all', label: '전체' },
   {
     value: 'place',
-    label: `${KIND_META.place.emoji} ${KIND_META.place.label}`,
+    label: KIND_META.place.label,
+    icon: KIND_ICON.place,
   },
   {
     value: 'activity',
-    label: `${KIND_META.activity.emoji} ${KIND_META.activity.label}`,
+    label: KIND_META.activity.label,
+    icon: KIND_ICON.activity,
   },
 ];
 
@@ -43,7 +47,7 @@ type CategoryFilterProps = {
   onChange: (value: BucketFilter) => void;
 };
 
-/** 전체 / 갈 곳 / 할 것 + (종류를 고르면) 카테고리 칩 */
+/** 전체 / 가보기 / 해보기 + (종류를 고르면) 카테고리 칩 */
 export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
   return (
     <View className="gap-3">

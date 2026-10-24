@@ -120,7 +120,7 @@ export default function BucketDetailScreen() {
           </View>
           <Badge variant="primary">
             <Text>
-              {meta.emoji} {meta.label} · {category.label} ·{' '}
+              {meta.label} · {category.label} ·{' '}
               {SETTING_META[item.setting].label}
             </Text>
           </Badge>

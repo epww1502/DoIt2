@@ -27,22 +27,32 @@ import {
   type CategoryKey,
   type PlaceInfo,
 } from '@/lib/bucket/types';
+import { KIND_ICON } from '@/components/bucket/kindIcons';
+import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
 
-const KIND_OPTIONS: { value: BucketKind; label: string }[] = [
-  { value: 'place', label: `${KIND_META.place.emoji} 갈 곳` },
-  { value: 'activity', label: `${KIND_META.activity.emoji} 할 것` },
+const KIND_OPTIONS: SegmentedOption<BucketKind>[] = [
+  {
+    value: 'place',
+    label: KIND_META.place.label,
+    icon: KIND_ICON.place,
+  },
+  {
+    value: 'activity',
+    label: KIND_META.activity.label,
+    icon: KIND_ICON.activity,
+  },
 ];
 
 const SETTING_OPTIONS: { value: BucketSetting; label: string }[] = [
   {
     value: 'indoor',
-    label: `${SETTING_META.indoor.emoji} ${SETTING_META.indoor.label}`,
+    label: SETTING_META.indoor.label,
   },
   {
     value: 'outdoor',
-    label: `${SETTING_META.outdoor.emoji} ${SETTING_META.outdoor.label}`,
+    label: SETTING_META.outdoor.label,
   },
 ];
 

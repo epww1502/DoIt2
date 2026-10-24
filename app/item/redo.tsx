@@ -21,7 +21,7 @@ import { useBucketStore } from '@/store/useBucketStore';
 const sameKey = (it: Pick<BucketItem, 'kind' | 'title'>) =>
   `${it.kind}:${it.title.trim()}`;
 
-/** 해본 것을 그대로 새 항목으로 (기록은 '함께한 것'에 남는다) */
+/** 함께한 것을 그대로 새 항목으로 (기록은 '함께한 것'에 남는다) */
 function toInput(it: BucketItem): BucketInput {
   return {
     kind: it.kind,
@@ -34,7 +34,7 @@ function toInput(it: BucketItem): BucketInput {
   };
 }
 
-/** 해본 것 다시 담기: 함께한 것 중에서 여러 개 골라 버킷리스트에 한 번에 다시 담는다 */
+/** 함께한 것 다시 담기: 함께한 것 중에서 여러 개 골라 버킷리스트에 한 번에 다시 담는다 */
 export default function RedoScreen() {
   const items = useBucketStore((s) => s.items);
   const addItems = useBucketStore((s) => s.addItems);
@@ -83,7 +83,7 @@ export default function RedoScreen() {
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <NavBar
-        title="해본 것 다시 담기"
+        title="함께한 것 다시 담기"
         right={
           selectable.length > 0 ? (
             <Pressable

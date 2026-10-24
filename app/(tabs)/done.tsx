@@ -1,3 +1,4 @@
+import { CircleCheck } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, FlatList, View } from 'react-native';
@@ -12,16 +13,18 @@ import {
   SelectionHeader,
 } from '@/components/bucket/SelectionBar';
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
-import { KIND_META, type BucketKind } from '@/lib/bucket/types';
+import type { BucketKind } from '@/lib/bucket/types';
+import { KIND_ICON } from '@/components/bucket/kindIcons';
+import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useSelection } from '@/hooks/useSelection';
 import { useBucketStore } from '@/store/useBucketStore';
 
 type KindOption = 'all' | BucketKind;
 
-const KIND_OPTIONS: { value: KindOption; label: string }[] = [
+const KIND_OPTIONS: SegmentedOption<KindOption>[] = [
   { value: 'all', label: '전체' },
-  { value: 'place', label: `${KIND_META.place.emoji} 다녀온 곳` },
-  { value: 'activity', label: `${KIND_META.activity.emoji} 해본 것` },
+  { value: 'place', label: '가본 곳', icon: KIND_ICON.place },
+  { value: 'activity', label: '해본 것', icon: CircleCheck },
 ];
 
 export default function DoneScreen() {
@@ -94,7 +97,7 @@ export default function DoneScreen() {
           title="함께한 것"
           subtitle={
             done.length > 0
-              ? `벌써 ${done.length}개나 같이 해냈어요 🎉`
+              ? `벌써 ${done.length}개나 같이 해냈어요`
               : '같이 해낸 것들이 여기에 차곡차곡 쌓여요'
           }
         />
@@ -102,10 +105,9 @@ export default function DoneScreen() {
       {/* 빈 화면은 목록 밖에 둬야 화면 가운데에 온다 (버킷리스트 탭과 같은 구조) */}
       {done.length === 0 ? (
         <EmptyState
-          emoji="👣"
           title="아직 함께한 게 없어요"
           description={
-            "버킷리스트에서 하나를 고르고\n'다녀왔어요', '해냈어요'를 누르면 여기에 쌓여요."
+            "버킷리스트에서 하나를 고르고\n'가봤어요', '해봤어요'를 누르면 여기에 쌓여요."
           }
           actionLabel="버킷리스트 보러 가기"
           onAction={() => router.navigate('/')}
@@ -133,7 +135,6 @@ export default function DoneScreen() {
             }
             ListEmptyComponent={
               <EmptyState
-                emoji="🔍"
                 title="여기엔 아직 없어요"
                 description="다른 종류를 골라봐요."
               />

@@ -34,7 +34,7 @@ type BucketState = {
   cache: Record<string, BucketItem[]>;
 
   addItem: (input: BucketInput) => string;
-  /** 여러 개를 한 번에 담는다 (해본 것 다시 담기). 입력 순서대로 맨 위에 쌓인다 */
+  /** 여러 개를 한 번에 담는다 (함께한 것 다시 담기). 입력 순서대로 맨 위에 쌓인다 */
   addItems: (inputs: BucketInput[]) => string[];
   updateItem: (id: string, input: BucketInput) => void;
   /** 여러 개를 한 번에 지운다 (사진도 같이) */
@@ -279,7 +279,7 @@ export const useBucketStore = create<BucketState>()(
       migrate: (persisted, version): Persisted => {
         let items: V2Item[];
         if (version < 2) {
-          // v1 → v2: 장소만 있던 데이터를 '갈 곳'으로, visit → done
+          // v1 → v2: 장소만 있던 데이터를 '가보기'로, visit → done
           const old = (persisted as { places?: V1Place[] }).places ?? [];
           items = old.map(({ visit, ...rest }) => ({
             ...rest,
