@@ -2,7 +2,7 @@
  * 버킷리스트 항목·사진을 Supabase와 주고받는 함수들.
  * 화면이나 스토어는 이 파일을 통해서만 서버에 접근한다.
  */
-import { randomUUID } from 'expo-crypto';
+import { randomUUID } from '@/lib/uuid';
 import { File } from 'expo-file-system';
 
 import type {

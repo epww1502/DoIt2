@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { ChevronRight, Ellipsis } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { showAlert } from '@/lib/dialog';
@@ -28,45 +28,52 @@ type SpaceMembersProps = {
  */
 export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
   const [members, setMembers] = useState<MemberProfile[] | null>(null);
-  /** 넘겨주기·내보내기 뒤에 다시 받으려고 올린다 */
-  const [version, setVersion] = useState(0);
   /** 선택지 시트를 연 멤버 */
   const [sheetFor, setSheetFor] = useState<MemberProfile | null>(null);
 
-  // 화면에 돌아올 때마다(내 프로필을 바꾸고 온 경우 등), 인원이 바뀔 때마다 다시 받는다
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      // 인원·version이 바뀌면 다시 받으려고 의존성에 넣는다 (값 자체는 안 쓴다)
-      void memberCount;
-      void version;
-      fetchSpaceMembers(spaceId)
-        .then((list) => {
-          if (!cancelled) setMembers(list);
-        })
-        .catch(() => {});
-      return () => {
-        cancelled = true;
-      };
-    }, [spaceId, memberCount, version])
-  );
+  /** 멤버 목록을 서버에서 다시 받는다. 돌려주는 함수를 부르면 늦게 온 응답은 버린다 */
+  const load = useCallback(() => {
+    let cancelled = false;
+    fetchSpaceMembers(spaceId)
+      .then((list) => {
+        if (!cancelled) setMembers(list);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [spaceId]);
+
+  // 화면에 돌아올 때마다 (내 프로필을 바꾸고 온 경우 등)
+  useFocusEffect(load);
+
+  // 누가 들어오거나 나가서 인원 수가 바뀌면 (실시간)
+  useEffect(() => {
+    if (memberCount > 0) return load();
+  }, [memberCount, load]);
 
   if (!members) return null;
   const iAmOwner = members.some((m) => m.is_me && m.is_owner);
 
-  const afterChange = () => {
-    setVersion((v) => v + 1);
-    void useSpaceStore
-      .getState()
-      .refreshSpaces()
-      .catch(() => {});
-  };
-
-  const run = async (action: () => Promise<void>) => {
+  /**
+   * 넘겨주기·내보내기를 하고 목록·인원 수를 다시 받는다.
+   * optimistic: 서버 응답 전에 화면에 먼저 반영할 목록
+   */
+  const run = async (
+    action: () => Promise<void>,
+    optimistic?: (list: MemberProfile[]) => MemberProfile[]
+  ) => {
+    const prev = members;
+    if (optimistic) setMembers(optimistic(prev));
     try {
       await action();
-      afterChange();
+      load();
+      void useSpaceStore
+        .getState()
+        .refreshSpaces()
+        .catch(() => {});
     } catch (e) {
+      setMembers(prev);
       showAlert(e instanceof Error ? e.message : '하지 못했어요');
     }
   };
@@ -96,7 +103,11 @@ export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
         {
           text: '내보내기',
           style: 'destructive',
-          onPress: () => void run(() => kickSpaceMember(spaceId, m.user_id)),
+          onPress: () =>
+            void run(
+              () => kickSpaceMember(spaceId, m.user_id),
+              (list) => list.filter((x) => x.user_id !== m.user_id)
+            ),
         },
       ]
     );
