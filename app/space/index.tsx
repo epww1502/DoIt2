@@ -1,6 +1,6 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, Share, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Share, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, NavBar, Text, TextField } from '@/components/atoms';
@@ -9,8 +9,12 @@ import { EmptyState } from '@/components/bucket/EmptyState';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
 import { SpaceIconPicker } from '@/components/space/SpaceIconPicker';
+import { SpaceMembers } from '@/components/space/SpaceMembers';
+import { confirmLeaveSpace } from '@/components/space/spaceFlow';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { deletePhoto } from '@/lib/bucket/photo';
+import { copyText } from '@/lib/clipboard';
+import { resetInviteCode } from '@/lib/supabase/account';
 import { useBucketStore } from '@/store/useBucketStore';
 import {
   MAX_SPACE_MEMBERS,
@@ -18,9 +22,11 @@ import {
   useSpaceStore,
 } from '@/store/useSpaceStore';
 
-/** 지금 보고 있는 공간 관리: 초대 코드 보내기, 이름·아이콘 바꾸기, 나가기 */
+/** 공간 관리: 초대 코드 보내기, 멤버, 이름·아이콘 바꾸기, 나가기. id가 없으면 지금 보고 있는 공간 */
 export default function SpaceScreen() {
-  const spaceId = useBucketStore((s) => s.spaceId);
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const currentId = useBucketStore((s) => s.spaceId);
+  const spaceId = id ?? currentId;
   const space = useSpace(spaceId);
 
   if (!space) {
@@ -44,7 +50,7 @@ export default function SpaceScreen() {
 
 function SpaceManage({ spaceId }: { spaceId: string }) {
   const space = useSpace(spaceId)!;
-  const { updateSpace, leaveSpace } = useSpaceStore.getState();
+  const { updateSpace } = useSpaceStore.getState();
   const keyboardHeight = useKeyboardHeight();
 
   const [name, setName] = useState(space.name);
@@ -87,34 +93,34 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
     }
   };
 
-  const share = () =>
-    Share.share({
-      message: `DoIt2에서 '${space.name}' 버킷리스트 같이 쓰자 ${space.emoji}\n초대 코드: ${space.invite_code}`,
-    });
+  const isOwner = useSpaceStore((s) => s.userId) === space.owner_id;
 
-  const confirmLeave = () =>
+  const confirmResetCode = () =>
     Alert.alert(
-      `'${space.name}'에서 나갈까요?`,
-      space.memberCount <= 1
-        ? '마지막 멤버라서, 나가면 이 공간의 버킷리스트와 기록이 모두 지워져요.'
-        : '다시 들어오려면 초대 코드가 필요해요.',
+      '초대 코드를 바꿀까요?',
+      '지금 코드로는 더 이상 들어올 수 없어요. 이미 들어온 멤버는 그대로예요.',
       [
         { text: '취소', style: 'cancel' },
         {
-          text: '나가기',
-          style: 'destructive',
+          text: '바꾸기',
           onPress: async () => {
             try {
-              await leaveSpace(spaceId);
-              await useBucketStore.getState().switchSpace(null);
-              router.back();
+              await resetInviteCode(spaceId);
+              await useSpaceStore.getState().refreshSpaces();
             } catch (e) {
-              Alert.alert(e instanceof Error ? e.message : '나가지 못했어요');
+              Alert.alert(e instanceof Error ? e.message : '바꾸지 못했어요');
             }
           },
         },
       ]
     );
+
+  const share = () =>
+    Share.share({
+      message: `DoIt2에서 '${space.name}' 버킷리스트 같이 쓰자 ${space.emoji}\n초대 코드: ${space.invite_code}`,
+    });
+
+  const confirmLeave = () => confirmLeaveSpace(space, () => router.back());
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
@@ -138,11 +144,22 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
             <Text variant="muted" size={13}>
               {space.memberCount}명 / 최대 {MAX_SPACE_MEMBERS}명
             </Text>
-            <View className="rounded-2xl px-6 py-3 bg-background">
+            {/* 누르면 초대 코드가 복사된다 */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`초대 코드 ${space.invite_code} 복사`}
+              onPress={() =>
+                void copyText(space.invite_code, '초대 코드를 복사했어요')
+              }
+              className="items-center gap-1 rounded-2xl px-6 py-3 bg-background active:opacity-70"
+            >
               <Text weight="800" size={30} className="tracking-[6px]">
                 {space.invite_code}
               </Text>
-            </View>
+              <Text size={11} className="text-muted-foreground">
+                눌러서 복사
+              </Text>
+            </Pressable>
             <Text variant="muted" size={12} className="text-center">
               함께할 사람이 &apos;초대 코드로 들어가기&apos;에 이 코드를 넣으면
               들어와요
@@ -153,6 +170,19 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
               className="self-stretch"
               onPress={() => void share()}
             />
+            {isOwner ? (
+              <Pressable hitSlop={8} onPress={confirmResetCode}>
+                <Text size={12} className="text-muted-foreground">
+                  초대 코드 바꾸기
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {/* 멤버: 내 줄을 누르면 이 공간에서의 내 프로필을 바꾼다 */}
+          <View>
+            <FieldLabel>{`멤버 ${space.memberCount}명`}</FieldLabel>
+            <SpaceMembers spaceId={spaceId} memberCount={space.memberCount} />
           </View>
 
           {/* 이름·아이콘 */}

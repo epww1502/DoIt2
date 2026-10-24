@@ -14,6 +14,7 @@ import {
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { PickReel } from '@/components/bucket/PickReel';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
+import { StarRating } from '@/components/bucket/StarRating';
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
 import { WeatherBanner } from '@/components/bucket/WeatherBanner';
 import { usePlacesWeather } from '@/hooks/usePlacesWeather';
@@ -74,6 +75,8 @@ function buildReel(candidates: BucketItem[], picked: BucketItem): Reel {
 export default function PickScreen() {
   const items = useBucketStore((state) => state.items);
   const pickAnimation = useSettingsStore((s) => s.pickAnimation);
+  const redoMinRating = useSettingsStore((s) => s.redoMinRating);
+  const setRedoMinRating = useSettingsStore((s) => s.setRedoMinRating);
   const [filter, setFilter] = useState<BucketFilter>(ALL_FILTER);
   const [currentId, setCurrentId] = useState<string | null>(null);
   /** 촤르륵 지나가는 중인 카드들. null이면 멈춰 있음 */
@@ -91,9 +94,12 @@ export default function PickScreen() {
   const filtered = useMemo(
     () =>
       items.filter(
-        (it) => (includeDone || !it.done) && matchesFilter(it, filter)
+        (it) =>
+          // 해본 것은 '이미 해본 것도 포함'을 켜고, 설정한 별점 이상일 때만
+          (!it.done || (includeDone && it.done.rating >= redoMinRating)) &&
+          matchesFilter(it, filter)
       ),
-    [items, filter, includeDone]
+    [items, filter, includeDone, redoMinRating]
   );
 
   // 장소 좌표가 있는 실외 항목은 그 장소의 날씨를 따로 본다
@@ -156,6 +162,11 @@ export default function PickScreen() {
     setIncludeDone(next);
   };
 
+  const changeRedoMinRating = (next: number) => {
+    resetPick();
+    setRedoMinRating(next);
+  };
+
   const shuffle = () => {
     if (candidates.length === 0 || isShuffling) return;
     // 직전에 뽑힌 것은 되도록 피한다
@@ -180,6 +191,8 @@ export default function PickScreen() {
   const doneInFilter = items.filter(
     (it) => it.done && matchesFilter(it, filter)
   ).length;
+  /** 해본 건 있지만 별점이 낮아서 다 빠졌는지 */
+  const lowRatedOnly = includeDone && redoMinRating > 1 && doneInFilter > 0;
   const category = current ? getCategory(current.category) : null;
   const decided = current && !isShuffling;
 
@@ -207,19 +220,35 @@ export default function PickScreen() {
             includeOutdoor={includeOutdoor}
             excludedCount={excludedCount}
           />
-          {/* 비 때문에 뺄 실외가 있을 때만 */}
-          {rainMatters ? (
+          {/* 뽑기 옵션 줄들: 줄 사이는 좁게, 아래 카테고리와는 띄운다 */}
+          <View className="mx-5 mb-3 gap-1">
+            {/* 비 때문에 뺄 실외가 있을 때만 */}
+            {rainMatters ? (
+              <OptionRow
+                label="비 와도 실외 포함"
+                value={includeOutdoor}
+                onChange={changeIncludeOutdoor}
+              />
+            ) : null}
             <OptionRow
-              label="비 와도 실외 포함"
-              value={includeOutdoor}
-              onChange={changeIncludeOutdoor}
+              label="이미 해본 것도 포함"
+              value={includeDone}
+              onChange={changeIncludeDone}
             />
-          ) : null}
-          <OptionRow
-            label="이미 해본 것도 포함"
-            value={includeDone}
-            onChange={changeIncludeDone}
-          />
+            {/* 해본 것도 뽑을 때만: 이 별점 이상인 것만 넣는다 (기록 별점과 같은 별) */}
+            {includeDone ? (
+              <View className="flex-row items-center justify-between">
+                <Text size={13} className="text-muted-foreground">
+                  최소 별점
+                </Text>
+                <StarRating
+                  value={redoMinRating}
+                  onChange={changeRedoMinRating}
+                  size={20}
+                />
+              </View>
+            ) : null}
+          </View>
           <CategoryFilter value={filter} onChange={changeFilter} />
 
           {reel ? (
@@ -292,7 +321,9 @@ export default function PickScreen() {
                           ? "비 때문에 실외를 빼니 뽑을 게 없어요.\n'비 와도 실외 포함'을 켜보세요"
                           : !includeDone && doneInFilter > 0
                             ? "여기 있는 건 다 해봤어요!\n'이미 해본 것도 포함'을 켜보세요"
-                            : '여기엔 아직 담긴 게 없어요'}
+                            : lowRatedOnly
+                              ? `${redoMinRating}점 이상인 게 없어요.\n최소 별점을 낮춰보세요`
+                              : '여기엔 아직 담긴 게 없어요'}
                     </Text>
                   </>
                 )}
@@ -336,7 +367,7 @@ function OptionRow({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <View className="mx-5 mb-3 flex-row items-center justify-between">
+    <View className="flex-row items-center justify-between">
       <Text size={13} className="text-muted-foreground">
         {label}
       </Text>

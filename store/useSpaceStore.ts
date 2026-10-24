@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { deletePhoto } from '@/lib/bucket/photo';
+import { signInWithAccountCode } from '@/lib/supabase/account';
 import { removePhoto, uploadPhoto } from '@/lib/supabase/bucketRemote';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import type { SpaceRow } from '@/lib/supabase/database.types';
@@ -21,15 +22,19 @@ export const MAX_SPACE_MEMBERS = 10;
 type SpaceState = {
   status: SpaceStatus;
   userId: string | null;
-  /** 내가 들어가 있는 공간들 (먼저 만든 순) */
+  /** 내가 들어가 있는 공간들 (내가 정한 순서, 없으면 먼저 만든 순) */
   spaces: Space[];
 
   init: () => Promise<void>;
+  /** 계정 코드로 다른 폰에서 쓰던 계정을 불러온다. 실패하면 보여줄 문구를 담은 Error */
+  restoreAccount: (code: string) => Promise<void>;
   refreshSpaces: () => Promise<void>;
   /** 실패하면 사용자에게 보여줄 문구를 담은 Error를 던진다 */
   createSpace: (name: string, emoji: string) => Promise<SpaceRow>;
   joinSpace: (code: string) => Promise<SpaceRow>;
   leaveSpace: (spaceId: string) => Promise<void>;
+  /** 공간 노출 순서 바꾸기 (화면은 바로 바뀌고, 서버 저장이 실패하면 되돌린다) */
+  reorderSpaces: (orderedIds: string[]) => Promise<void>;
   /** 이름·이모지·사진 바꾸기. imageUri: 새 사진(휴대폰 파일), null: 사진 빼기, undefined: 그대로 */
   updateSpace: (
     spaceId: string,
@@ -74,6 +79,15 @@ export const useSpaceStore = create<SpaceState>((set, get) => ({
     }
   },
 
+  restoreAccount: async (code) => {
+    const userId = await signInWithAccountCode(code);
+    set({ userId, spaces: [] });
+    await get()
+      .refreshSpaces()
+      .catch(() => {});
+    set({ status: 'ready' });
+  },
+
   refreshSpaces: async () => {
     // RLS 때문에 내가 들어가 있는 공간만 보인다
     const [{ data: spaces, error }, { data: members, error: memberError }] =
@@ -82,7 +96,7 @@ export const useSpaceStore = create<SpaceState>((set, get) => ({
           .from('spaces')
           .select('*')
           .order('created_at', { ascending: true }),
-        supabase.from('space_members').select('space_id'),
+        supabase.from('space_members').select('space_id, user_id, sort_order'),
       ]);
     if (error) throw error;
     if (memberError) throw memberError;
@@ -91,8 +105,18 @@ export const useSpaceStore = create<SpaceState>((set, get) => ({
     for (const m of members) {
       counts.set(m.space_id, (counts.get(m.space_id) ?? 0) + 1);
     }
+    // 내가 정한 순서대로 (정하지 않은 공간은 뒤에, 먼저 만든 순)
+    const userId = get().userId;
+    const order = new Map<string, number>();
+    for (const m of members) {
+      if (m.user_id === userId && m.sort_order != null) {
+        order.set(m.space_id, m.sort_order);
+      }
+    }
+    const rank = (id: string) => order.get(id) ?? Number.MAX_SAFE_INTEGER;
+    const sorted = [...spaces].sort((a, b) => rank(a.id) - rank(b.id));
     set({
-      spaces: spaces.map((s) => ({ ...s, memberCount: counts.get(s.id) ?? 1 })),
+      spaces: sorted.map((s) => ({ ...s, memberCount: counts.get(s.id) ?? 1 })),
     });
   },
 
@@ -129,6 +153,23 @@ export const useSpaceStore = create<SpaceState>((set, get) => ({
     });
     if (error) throw new Error('나가지 못했어요. 잠시 후 다시 시도해주세요.');
     set({ spaces: get().spaces.filter((s) => s.id !== spaceId) });
+  },
+
+  reorderSpaces: async (orderedIds) => {
+    const prev = get().spaces;
+    const byId = new Map(prev.map((s) => [s.id, s]));
+    set({
+      spaces: orderedIds
+        .map((id) => byId.get(id))
+        .filter((s): s is Space => Boolean(s)),
+    });
+    const { error } = await supabase.rpc('set_space_order', {
+      ordered: orderedIds,
+    });
+    if (error) {
+      set({ spaces: prev });
+      throw new Error('순서를 저장하지 못했어요. 잠시 후 다시 시도해주세요.');
+    }
   },
 
   updateSpace: async (spaceId, { name, emoji, imageUri }) => {

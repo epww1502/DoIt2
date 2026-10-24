@@ -19,6 +19,12 @@ type SettingsState = {
   /** 길게 눌러 고르기·뽑기 결과 등에서 진동 */
   haptics: boolean;
   setHaptics: (value: boolean) => void;
+  /** '이미 해본 것도 포함'으로 뽑을 때 이 별점 이상인 것만 넣는다 (1이면 전체). 뽑기 화면에서 고르고, 다음에도 기억한다 */
+  redoMinRating: number;
+  setRedoMinRating: (value: number) => void;
+  /** 내가 만든 계정 코드. 다른 계정으로 바꾸면 안 맞으니 누구 코드인지 같이 둔다 */
+  accountCode: { userId: string; code: string } | null;
+  setAccountCode: (value: { userId: string; code: string } | null) => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -30,6 +36,10 @@ export const useSettingsStore = create<SettingsState>()(
       setPalette: (palette) => set({ palette }),
       haptics: true,
       setHaptics: (haptics) => set({ haptics }),
+      redoMinRating: 1,
+      setRedoMinRating: (redoMinRating) => set({ redoMinRating }),
+      accountCode: null,
+      setAccountCode: (accountCode) => set({ accountCode }),
     }),
     {
       name: 'doit2-settings',
@@ -39,6 +49,8 @@ export const useSettingsStore = create<SettingsState>()(
         pickAnimation: state.pickAnimation,
         palette: state.palette,
         haptics: state.haptics,
+        redoMinRating: state.redoMinRating,
+        accountCode: state.accountCode,
       }),
     }
   )

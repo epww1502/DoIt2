@@ -1,0 +1,190 @@
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Alert, Pressable, ScrollView, Share, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Button, NavBar, Text, TextField } from '@/components/atoms';
+import { BottomBar } from '@/components/bucket/BottomBar';
+import { FieldLabel } from '@/components/bucket/FieldLabel';
+import { AvatarField } from '@/components/space/AvatarField';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
+import { deletePhoto } from '@/lib/bucket/photo';
+import { copyText } from '@/lib/clipboard';
+import { issueAccountCode } from '@/lib/supabase/account';
+import { useProfileStore } from '@/store/useProfileStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
+import { useSpaceStore } from '@/store/useSpaceStore';
+
+/** 내 기본 프로필(모든 공간에 기본으로 보임)과 계정 코드 */
+export default function ProfileScreen() {
+  const profile = useProfileStore((s) => s.profile);
+  const save = useProfileStore((s) => s.save);
+  const keyboardHeight = useKeyboardHeight();
+
+  const [nickname, setNickname] = useState(profile?.nickname ?? '');
+  /** 새로 고른 사진(휴대폰 파일), null: 사진 빼기, undefined: 그대로 */
+  const [avatarUri, setAvatarUri] = useState<string | null | undefined>();
+  const [busy, setBusy] = useState(false);
+
+  const savedPath = profile?.avatar_path ?? null;
+  const photoChanged =
+    avatarUri !== undefined && !(avatarUri === null && !savedPath);
+  const changed = nickname.trim() !== (profile?.nickname ?? '') || photoChanged;
+
+  const pick = (uri: string) => {
+    if (avatarUri) deletePhoto(avatarUri);
+    setAvatarUri(uri);
+  };
+  const remove = () => {
+    if (avatarUri) deletePhoto(avatarUri);
+    setAvatarUri(null);
+  };
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      await save({
+        nickname: nickname.trim() || null,
+        avatarUri: photoChanged ? avatarUri : undefined,
+      });
+      setAvatarUri(undefined);
+      router.back();
+    } catch (e) {
+      Alert.alert(e instanceof Error ? e.message : '저장하지 못했어요');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <SafeAreaView edges={['top']} className="flex-1 bg-background">
+      <NavBar title="내 프로필" />
+      <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
+        <ScrollView
+          contentContainerClassName="gap-6 px-5 pb-8 pt-4"
+          keyboardShouldPersistTaps="handled"
+        >
+          <AvatarField
+            imagePath={avatarUri === undefined ? savedPath : null}
+            localUri={avatarUri ?? null}
+            onPick={pick}
+            onRemove={remove}
+          />
+          <View>
+            <FieldLabel>닉네임 (선택)</FieldLabel>
+            <TextField
+              value={nickname}
+              onChangeText={setNickname}
+              placeholder="비워두면 '익명'으로 보여요"
+              maxLength={20}
+            />
+            <Text size={12} className="mt-2 text-muted-foreground">
+              모든 공간에 기본으로 보여요. 공간마다 다른 닉네임·사진을 쓰거나
+              숨기려면 공간 관리에서 바꿀 수 있어요.
+            </Text>
+          </View>
+
+          <AccountCodeSection />
+        </ScrollView>
+        {changed ? (
+          <BottomBar>
+            <Button
+              label={busy ? '저장하는 중…' : '저장하기'}
+              disabled={busy}
+              onPress={() => void submit()}
+            />
+          </BottomBar>
+        ) : null}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+/** 계정 코드: 다른 폰에서 이 계정을 다시 불러올 때 쓴다 */
+function AccountCodeSection() {
+  const userId = useSpaceStore((s) => s.userId);
+  const saved = useSettingsStore((s) => s.accountCode);
+  const setAccountCode = useSettingsStore((s) => s.setAccountCode);
+  const [busy, setBusy] = useState(false);
+  // 다른 계정으로 바꾼 뒤라면 예전 코드는 보여주지 않는다
+  const code = saved && saved.userId === userId ? saved.code : null;
+
+  const issue = async () => {
+    if (!userId) return;
+    setBusy(true);
+    try {
+      setAccountCode({ userId, code: await issueAccountCode() });
+    } catch (e) {
+      Alert.alert(e instanceof Error ? e.message : '코드를 만들지 못했어요');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmReissue = () =>
+    Alert.alert('새 코드를 만들까요?', '지금 코드는 더 이상 쓸 수 없게 돼요.', [
+      { text: '취소', style: 'cancel' },
+      { text: '새로 만들기', onPress: () => void issue() },
+    ]);
+
+  return (
+    <View className="gap-3 rounded-2xl p-5 bg-accent">
+      <Text weight="600" size={16}>
+        계정 코드
+      </Text>
+      <Text variant="muted" size={12}>
+        폰을 바꾸거나 앱을 다시 깔면, 이 코드로 지금 계정을 다시 불러올 수
+        있어요. 비밀번호처럼 나만 알고 있어야 해요.
+      </Text>
+      {code ? (
+        <>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="계정 코드 복사"
+            onPress={() => void copyText(code, '계정 코드를 복사했어요')}
+            className="items-center gap-1 rounded-xl py-3 bg-background active:opacity-70"
+          >
+            <Text weight="800" size={22} className="tracking-[3px]">
+              {code}
+            </Text>
+            <Text size={11} className="text-muted-foreground">
+              눌러서 복사
+            </Text>
+          </Pressable>
+          <Button
+            label="다른 곳에 저장하기"
+            size="md"
+            onPress={() =>
+              void Share.share({ message: `DoIt2 계정 코드: ${code}` })
+            }
+          />
+          <Pressable
+            hitSlop={8}
+            onPress={confirmReissue}
+            className="self-center"
+          >
+            <Text size={12} className="text-muted-foreground">
+              새 코드 만들기
+            </Text>
+          </Pressable>
+        </>
+      ) : (
+        <Button
+          label={busy ? '만드는 중…' : '계정 코드 만들기'}
+          size="md"
+          disabled={busy || !userId}
+          onPress={() => void issue()}
+        />
+      )}
+      <Pressable
+        hitSlop={8}
+        onPress={() => router.push('/account/restore')}
+        className="self-center"
+      >
+        <Text size={12} className="text-muted-foreground">
+          다른 폰에서 쓰던 계정 불러오기
+        </Text>
+      </Pressable>
+    </View>
+  );
+}

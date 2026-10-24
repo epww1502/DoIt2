@@ -9,7 +9,7 @@ import { useSpace, useSpaceStore } from '@/store/useSpaceStore';
 import { SpaceAvatar } from './SpaceAvatar';
 import { PERSONAL } from './SpaceSwitcher';
 
-/** 설정 탭: 지금 공간 요약. 누르면 공간 관리(또는 새 공간 만들기)로 */
+/** 설정 탭: 지금 공간 요약. 누르면 내 공간 전체 관리(공간이 없으면 새 공간 만들기)로 */
 export function SpaceStatusCard() {
   const status = useSpaceStore((s) => s.status);
   const spaceCount = useSpaceStore((s) => s.spaces.length);
@@ -35,7 +35,7 @@ export function SpaceStatusCard() {
     <Pressable
       accessibilityRole="button"
       disabled={status !== 'ready'}
-      onPress={() => router.push(space ? '/space' : '/space/new')}
+      onPress={() => router.push(spaceCount > 0 ? '/space/list' : '/space/new')}
       className="flex-row items-center gap-3 rounded-2xl px-4 py-3 bg-accent active:opacity-70"
     >
       <SpaceAvatar

@@ -4,6 +4,7 @@ import { AppState } from 'react-native';
 import { supabase } from '@/lib/supabase/client';
 import type { BucketItemRow } from '@/lib/supabase/database.types';
 import { useBucketStore } from '@/store/useBucketStore';
+import { useProfileStore } from '@/store/useProfileStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
 /**
@@ -16,10 +17,20 @@ export function SpaceSync() {
   const status = useSpaceStore((s) => s.status);
   const spaces = useSpaceStore((s) => s.spaces);
   const spaceId = useBucketStore((s) => s.spaceId);
+  const userId = useSpaceStore((s) => s.userId);
 
   useEffect(() => {
     void useSpaceStore.getState().init();
   }, []);
+
+  // 로그인되거나 계정을 불러오면 내 프로필을 받는다
+  useEffect(() => {
+    if (status !== 'ready') return;
+    void useProfileStore
+      .getState()
+      .load()
+      .catch(() => {});
+  }, [status, userId]);
 
   // 보고 있는 공간이 내 공간 목록에 없으면 '나만 보기'로
   useEffect(() => {

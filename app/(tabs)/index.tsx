@@ -21,6 +21,7 @@ import {
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
 import { useSelection } from '@/hooks/useSelection';
 import { useBucketStore } from '@/store/useBucketStore';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 export default function BucketListScreen() {
   const items = useBucketStore((state) => state.items);
@@ -36,6 +37,10 @@ export default function BucketListScreen() {
 
   const goNew = () => router.push('/item/new');
   const goRedo = () => router.push('/item/redo');
+  // 처음 깐 폰(공간도 담은 것도 없음)이면 쓰던 계정을 불러올 수 있게
+  const isFreshStart = useSpaceStore(
+    (s) => s.status === 'ready' && s.spaces.length === 0
+  );
 
   // 길게 눌러 여러 개 고르기 (보이는 항목 중에서만 센다)
   const selection = useSelection();
@@ -127,9 +132,18 @@ export default function BucketListScreen() {
           }
           actionLabel={items.length === 0 ? '첫 버킷리스트 담기' : '새로 담기'}
           onAction={goNew}
-          // 해본 게 있으면 여러 개 골라 한 번에 다시 담을 수 있다
-          secondaryLabel={doneCount > 0 ? '함께한 것 다시 담기' : undefined}
-          onSecondary={goRedo}
+          // 해본 게 있으면 여러 개 골라 한 번에 다시 담을 수 있다.
+          // 처음 깐 폰이면 대신 쓰던 계정 불러오기
+          secondaryLabel={
+            doneCount > 0
+              ? '함께한 것 다시 담기'
+              : items.length === 0 && isFreshStart
+                ? '다른 폰에서 쓰던 계정 불러오기'
+                : undefined
+          }
+          onSecondary={
+            doneCount > 0 ? goRedo : () => router.push('/account/restore')
+          }
         />
       ) : (
         <>

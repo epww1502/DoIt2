@@ -67,6 +67,10 @@ function RootLayoutInner() {
             options={{ animation: 'slide_from_bottom' }}
           />
           <Stack.Screen name="space/index" />
+          <Stack.Screen name="space/profile" />
+          <Stack.Screen name="space/list" />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="account/restore" />
           <Stack.Screen
             name="space/new"
             options={{ animation: 'slide_from_bottom' }}

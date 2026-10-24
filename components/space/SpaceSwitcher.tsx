@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   Plus,
+  ListOrdered,
   Settings2,
   Ticket,
 } from 'lucide-react-native';
@@ -70,7 +71,9 @@ function SpaceSheet({
       .catch(() => {});
   };
 
-  const go = (path: '/space/new' | '/space/join' | '/space') => {
+  const go = (
+    path: '/space/new' | '/space/join' | '/space' | '/space/list'
+  ) => {
     onClose();
     router.push(path);
   };
@@ -137,6 +140,13 @@ function SpaceSheet({
                     icon={Settings2}
                     label="지금 공간 관리 · 초대하기"
                     onPress={() => go('/space')}
+                  />
+                ) : null}
+                {spaces.length > 1 ? (
+                  <ActionRow
+                    icon={ListOrdered}
+                    label="모든 공간 관리 · 순서 바꾸기"
+                    onPress={() => go('/space/list')}
                   />
                 ) : null}
               </>

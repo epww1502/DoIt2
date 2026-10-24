@@ -39,15 +39,18 @@ export function SelectionHeader({
 export function SelectionDeleteBar({
   count,
   onDelete,
+  label,
 }: {
   count: number;
   onDelete: () => void;
+  /** 버튼 글자 (기본: 'N개 지우기') */
+  label?: string;
 }) {
   return (
     <View className="absolute bottom-0 left-0 right-0 border-t px-5 pb-4 pt-3 bg-background border-border">
       <View>
         <Button
-          label={`${count}개 지우기`}
+          label={label ?? `${count}개 지우기`}
           variant="destructive"
           onPress={onDelete}
         />

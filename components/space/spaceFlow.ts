@@ -1,6 +1,7 @@
 import { Alert } from 'react-native';
 
 import { LOCAL_KEY, useBucketStore } from '@/store/useBucketStore';
+import { type Space, useSpaceStore } from '@/store/useSpaceStore';
 
 /** 공간을 만들 때 고를 수 있는 이모지 */
 export const SPACE_EMOJIS = [
@@ -59,4 +60,82 @@ export async function enterSpace(spaceId: string, spaceName: string) {
     .getState()
     .switchSpace(spaceId)
     .catch(() => {});
+}
+
+/**
+ * 공간에서 나가기 (확인을 받고). 보고 있던 공간이면 '나만 보기'로 돌아간다.
+ * 나갔으면 onLeft를 부른다.
+ */
+export function confirmLeaveSpace(space: Space, onLeft?: () => void) {
+  const { userId } = useSpaceStore.getState();
+  const detail =
+    space.memberCount <= 1
+      ? '마지막 멤버라서, 나가면 이 공간의 버킷리스트와 기록이 모두 지워져요.'
+      : space.owner_id === userId
+        ? '공간장은 가장 먼저 들어온 멤버에게 넘어가요. 다시 들어오려면 초대 코드가 필요해요.'
+        : '다시 들어오려면 초대 코드가 필요해요.';
+  Alert.alert(`'${space.name}'에서 나갈까요?`, detail, [
+    { text: '취소', style: 'cancel' },
+    {
+      text: '나가기',
+      style: 'destructive',
+      onPress: async () => {
+        try {
+          await useSpaceStore.getState().leaveSpace(space.id);
+          if (useBucketStore.getState().spaceId === space.id) {
+            await useBucketStore.getState().switchSpace(null);
+          }
+          onLeft?.();
+        } catch (e) {
+          Alert.alert(e instanceof Error ? e.message : '나가지 못했어요');
+        }
+      },
+    },
+  ]);
+}
+
+/** 여러 공간에서 한 번에 나가기 (확인을 받고). 다 나갔으면 onLeft */
+export function confirmLeaveSpaces(spaces: Space[], onLeft?: () => void) {
+  const { userId } = useSpaceStore.getState();
+  const lastOnes = spaces.filter((s) => s.memberCount <= 1).length;
+  const owned = spaces.filter(
+    (s) => s.memberCount > 1 && s.owner_id === userId
+  ).length;
+  const notes = [
+    lastOnes > 0
+      ? `${lastOnes}개는 마지막 멤버라서 버킷리스트와 기록이 모두 지워져요.`
+      : null,
+    owned > 0
+      ? `공간장인 ${owned}개는 가장 먼저 들어온 멤버에게 공간장이 넘어가요.`
+      : null,
+    '다시 들어오려면 초대 코드가 필요해요.',
+  ].filter(Boolean);
+
+  Alert.alert(`${spaces.length}개 공간에서 나갈까요?`, notes.join(' '), [
+    { text: '취소', style: 'cancel' },
+    {
+      text: '나가기',
+      style: 'destructive',
+      onPress: async () => {
+        const failed: string[] = [];
+        for (const space of spaces) {
+          try {
+            await useSpaceStore.getState().leaveSpace(space.id);
+            if (useBucketStore.getState().spaceId === space.id) {
+              await useBucketStore.getState().switchSpace(null);
+            }
+          } catch {
+            failed.push(space.name);
+          }
+        }
+        if (failed.length > 0) {
+          Alert.alert(
+            '일부 공간에서 나가지 못했어요',
+            `${failed.join(', ')} · 잠시 후 다시 시도해주세요.`
+          );
+        }
+        onLeft?.();
+      },
+    },
+  ]);
 }

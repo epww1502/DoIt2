@@ -12,6 +12,7 @@ import {
   Text,
 } from '@/components/atoms';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
+import { ProfileCard } from '@/components/space/ProfileCard';
 import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
 import { PALETTES } from '@/constants/palettes';
 import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
@@ -34,6 +35,7 @@ export default function SettingsScreen() {
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <ScreenHeader title="설정" subtitle="공간과 화면을 바꿀 수 있어요" />
       <ScrollView contentContainerClassName="gap-4 px-5 pb-10">
+        <ProfileCard />
         <SpaceStatusCard />
 
         <Card className="rounded-2xl">
