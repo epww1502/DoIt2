@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import { deletePhoto } from '@/lib/bucket/photo';
-import { signInWithAccountCode } from '@/lib/supabase/account';
+import { deleteMyAccount, signInWithAccountCode } from '@/lib/supabase/account';
 import { removePhoto, uploadPhoto } from '@/lib/supabase/bucketRemote';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import type { SpaceRow } from '@/lib/supabase/database.types';
@@ -28,6 +28,8 @@ type SpaceState = {
   init: () => Promise<void>;
   /** 계정 코드로 다른 폰에서 쓰던 계정을 불러온다. 실패하면 보여줄 문구를 담은 Error */
   restoreAccount: (code: string) => Promise<void>;
+  /** 계정을 지우고 새 익명 계정으로 다시 시작한다. 실패하면 보여줄 문구를 담은 Error */
+  deleteAccount: () => Promise<void>;
   refreshSpaces: () => Promise<void>;
   /** 실패하면 사용자에게 보여줄 문구를 담은 Error를 던진다 */
   /** personal: 나만 쓰는 개인 공간 (초대할 수 없다) */
@@ -96,6 +98,13 @@ export const useSpaceStore = create<SpaceState>((set, get) => ({
       .refreshSpaces()
       .catch(() => {});
     set({ status: 'ready' });
+  },
+
+  deleteAccount: async () => {
+    await deleteMyAccount();
+    set({ userId: null, spaces: [] });
+    // 새 익명 계정으로 다시 로그인
+    await get().init();
   },
 
   refreshSpaces: async () => {

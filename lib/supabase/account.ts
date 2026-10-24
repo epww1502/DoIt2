@@ -169,3 +169,17 @@ export async function resetInviteCode(spaceId: string) {
   if (error) throw ownerError(error.message);
   return data;
 }
+
+/**
+ * 내 계정 지우기 (되돌릴 수 없다). 혼자 있는 공간은 통째로, 함께 쓰는 공간은 나가기만 한다.
+ * 성공하면 이 폰의 로그인도 끊는다.
+ */
+export async function deleteMyAccount() {
+  const { error } = await supabase.functions.invoke('delete-account', {
+    body: {},
+  });
+  if (error) {
+    throw new Error('계정을 지우지 못했어요. 잠시 후 다시 시도해주세요.');
+  }
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+}

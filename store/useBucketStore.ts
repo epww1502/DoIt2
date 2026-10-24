@@ -60,6 +60,8 @@ type BucketState = {
   switchSpace: (spaceId: string | null) => Promise<void>;
   /** '나만 보기'에 있던 항목·사진을 공간으로 옮긴다 (처음 공간을 만들거나 들어갈 때) */
   moveLocalTo: (spaceId: string) => Promise<void>;
+  /** 이 폰에 있는 모든 목록·기록·사진을 지운다 (계정 삭제 때) */
+  resetAll: () => void;
   /** 지금 공간을 서버에서 다시 받아온다 */
   pull: () => Promise<void>;
   /** 실시간: 다른 사람(또는 나)이 바꾼 행 반영 */
@@ -273,6 +275,14 @@ export const useBucketStore = create<BucketState>()(
             });
           }
           if (spaceId) await get().pull();
+        },
+
+        resetAll: () => {
+          const { items, cache } = get();
+          for (const it of [...items, ...Object.values(cache).flat()]) {
+            for (const photo of recordPhotos(it.done)) deletePhoto(photo.uri);
+          }
+          set({ spaceId: null, items: [], cache: {} });
         },
 
         moveLocalTo: async (spaceId) => {

@@ -17,6 +17,8 @@ import { AvatarField } from '@/components/space/AvatarField';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { deletePhoto } from '@/lib/bucket/photo';
 import { issueAccountCode } from '@/lib/supabase/account';
+import { useBucketStore } from '@/store/useBucketStore';
+import { useRecentPlacesStore } from '@/store/useRecentPlacesStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
@@ -91,6 +93,7 @@ export default function ProfileScreen() {
           </View>
 
           <AccountCodeSection />
+          <DeleteAccountLink />
         </ScrollView>
         {changed ? (
           <BottomBar>
@@ -185,5 +188,61 @@ function AccountCodeSection() {
         </Text>
       </Pressable>
     </View>
+  );
+}
+
+/** 계정 삭제 (맨 아래 작은 글씨). 한 번 더 확인받고 지운다 */
+function DeleteAccountLink() {
+  const [busy, setBusy] = useState(false);
+
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await useSpaceStore.getState().deleteAccount();
+      // 이 폰에 남은 데이터도 비운다
+      useBucketStore.getState().resetAll();
+      useProfileStore.setState({ profile: null });
+      useSettingsStore.getState().setAccountCode(null);
+      useRecentPlacesStore.getState().clear();
+      router.dismissAll();
+      showAlert('계정을 지웠어요', '새로 시작할 수 있어요.');
+    } catch (e) {
+      showAlert(e instanceof Error ? e.message : '계정을 지우지 못했어요');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirm = () =>
+    showAlert(
+      '계정을 지울까요?',
+      [
+        '되돌릴 수 없어요.',
+        '· 혼자 쓰는 공간과 그 안의 기록·사진이 모두 지워져요.',
+        '· 함께 쓰는 공간에서는 나가요. 내가 담은 항목은 공간에 남아요.',
+        "· 프로필, 계정 코드, 이 폰의 '나만 보기' 기록도 지워져요.",
+      ].join('\n'),
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '계정 지우기',
+          style: 'destructive',
+          onPress: () => void remove(),
+        },
+      ]
+    );
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      hitSlop={8}
+      disabled={busy}
+      onPress={confirm}
+      className="mt-4 self-center"
+    >
+      <Text size={12} className="underline text-muted-foreground">
+        {busy ? '지우는 중…' : '계정 삭제'}
+      </Text>
+    </Pressable>
   );
 }
