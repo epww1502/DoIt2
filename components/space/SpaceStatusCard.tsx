@@ -24,7 +24,9 @@ export function SpaceStatusCard() {
         : status === 'error'
           ? '서버에 연결하지 못했어요'
           : space
-            ? `${space.memberCount}명이 함께 쓰고 있어요 · 초대 코드 ${space.invite_code}`
+            ? space.is_personal
+              ? '개인 공간 · 나만 볼 수 있어요'
+              : `${space.memberCount}명이 함께 쓰고 있어요 · 초대 코드 ${space.invite_code}`
             : spaceCount > 0
               ? `공간 ${spaceCount}개에 들어가 있어요 · 지금은 나만 보기`
               : '공간을 만들면 친구·연인·가족과 함께 쓸 수 있어요';

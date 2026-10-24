@@ -69,6 +69,14 @@ function RootLayoutInner() {
             options={{ animation: 'slide_from_bottom' }}
           />
           <Stack.Screen
+            name="item/shared"
+            options={{ animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="item/import"
+            options={{ animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
             name="item/redo"
             options={{ animation: 'slide_from_bottom' }}
           />

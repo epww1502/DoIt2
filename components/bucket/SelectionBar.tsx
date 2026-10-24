@@ -40,19 +40,33 @@ export function SelectionDeleteBar({
   count,
   onDelete,
   label,
+  secondaryLabel,
+  onSecondary,
 }: {
   count: number;
   onDelete: () => void;
   /** 버튼 글자 (기본: 'N개 지우기') */
   label?: string;
+  /** 왼쪽에 하나 더 두는 버튼 (예: 공유하기) */
+  secondaryLabel?: string;
+  onSecondary?: () => void;
 }) {
   return (
     <View className="absolute bottom-0 left-0 right-0 border-t px-5 pb-4 pt-3 bg-background border-border">
-      <View>
+      <View className="flex-row gap-2">
+        {secondaryLabel && onSecondary ? (
+          <Button
+            label={secondaryLabel}
+            variant="outline"
+            onPress={onSecondary}
+            className="flex-1"
+          />
+        ) : null}
         <Button
           label={label ?? `${count}개 지우기`}
           variant="destructive"
           onPress={onDelete}
+          className="flex-1"
         />
       </View>
     </View>

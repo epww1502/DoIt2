@@ -7,17 +7,20 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
+import { useTogether } from '@/hooks/useTogether';
 import { showAlert } from '@/lib/dialog';
 import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
+import { MapAppButtons } from '@/components/bucket/MapAppButtons';
 import { StarRating } from '@/components/bucket/StarRating';
 import { getCategory, KIND_META, SETTING_META } from '@/lib/bucket/types';
-import { MAP_APPS, openInMap } from '@/lib/mapLinks';
+import { openInMap } from '@/lib/mapLinks';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 
 export default function BucketDetailScreen() {
+  const together = useTogether();
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = useBucketItem(id);
   const removeItems = useBucketStore((state) => state.removeItems);
@@ -50,7 +53,9 @@ export default function BucketDetailScreen() {
   const confirmRemove = () => {
     showAlert(
       '버킷리스트에서 지울까요?',
-      '함께한 기록과 사진도 같이 지워져요.',
+      together
+        ? '함께한 기록과 사진도 같이 지워져요.'
+        : '기록과 사진도 같이 지워져요.',
       [
         { text: '취소', style: 'cancel' },
         {
@@ -160,18 +165,7 @@ export default function BucketDetailScreen() {
                 </Text>
               )}
             </View>
-            <View className="flex-row gap-2">
-              {MAP_APPS.map((app) => (
-                <Button
-                  key={app.key}
-                  label={app.label}
-                  variant="outline"
-                  size="md"
-                  className="flex-1 px-2"
-                  onPress={() => void openInMap(app.key, mapTarget)}
-                />
-              ))}
-            </View>
+            <MapAppButtons onOpen={(app) => void openInMap(app, mapTarget)} />
           </View>
         ) : null}
 
@@ -187,7 +181,7 @@ export default function BucketDetailScreen() {
         {done ? (
           <View className="gap-3">
             <Text weight="700" size={18}>
-              우리의 기록 📝
+              {together ? '우리의 기록' : '나의 기록'}
             </Text>
             <View className="overflow-hidden rounded-2xl border bg-card border-border">
               <DonePhotoGallery done={done} />

@@ -23,7 +23,7 @@ const badgeVariants = cva(
           Platform.select({ web: '[a&]:hover:bg-secondary/90' })
         ),
         primary: cn(
-          'border-transparent bg-primary/10',
+          'border-transparent bg-accent',
           Platform.select({ web: '[a&]:hover:bg-primary/90' })
         ),
         destructive: cn(

@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTogether } from '@/hooks/useTogether';
 import { NavBar, Text } from '@/components/atoms';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { StarRating } from '@/components/bucket/StarRating';
@@ -79,6 +80,7 @@ function buildStats(done: BucketItem[]): Stats {
 
 /** 추억 모아보기: 함께한 기록 숫자로 돌아보기 */
 export default function DoneStatsScreen() {
+  const together = useTogether();
   const items = useBucketStore((s) => s.items);
   const stats = useMemo(
     () => buildStats(items.filter((it) => it.done)),
@@ -91,7 +93,7 @@ export default function DoneStatsScreen() {
         <NavBar title="추억 모아보기" />
         <EmptyState
           title="아직 모아볼 기록이 없어요"
-          description="함께한 기록이 생기면 여기서 돌아볼 수 있어요."
+          description={`${together ? '함께한 ' : ''}기록이 생기면 여기서 돌아볼 수 있어요.`}
         />
       </SafeAreaView>
     );
@@ -111,7 +113,7 @@ export default function DoneStatsScreen() {
             {dayjs(stats.firstDate).format('YYYY년 M월 D일')}부터 {days}일 동안
           </Text>
           <Text weight="800" size={26}>
-            {stats.total}개를 함께 해냈어요
+            {`${stats.total}개를 ${together ? '함께 ' : ''}해냈어요`}
           </Text>
           <Text variant="muted" size={13}>
             올해만 {stats.thisYear}개

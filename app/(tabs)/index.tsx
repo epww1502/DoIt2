@@ -1,9 +1,16 @@
 import { router } from 'expo-router';
-import { ChevronRight, RotateCcw } from 'lucide-react-native';
+import {
+  ChevronRight,
+  Download,
+  Inbox,
+  RotateCcw,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTogether } from '@/hooks/useTogether';
 import { showAlert } from '@/lib/dialog';
 import { Fab, Icon, ProgressBar, Text } from '@/components/atoms';
 import { BucketRow } from '@/components/bucket/BucketRow';
@@ -22,9 +29,13 @@ import {
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
 import { useSelection } from '@/hooks/useSelection';
 import { useBucketStore } from '@/store/useBucketStore';
-import { useSpaceStore } from '@/store/useSpaceStore';
+import { useSpace, useSpaceStore } from '@/store/useSpaceStore';
+import { shareBucketItems } from '@/lib/shareItems';
+import { useImportSources } from '@/hooks/useImportSources';
 
 export default function BucketListScreen() {
+  const together = useTogether();
+  const doneLabel = together ? '함께한 것' : '해낸 것';
   const items = useBucketStore((state) => state.items);
   const removeItems = useBucketStore((state) => state.removeItems);
   const [filter, setFilter] = useState<BucketFilter>(ALL_FILTER);
@@ -38,6 +49,10 @@ export default function BucketListScreen() {
 
   const goNew = () => router.push('/item/new');
   const goRedo = () => router.push('/item/redo');
+  // 내가 공간장인 다른 공간(또는 나만 보기)에서 버킷리스트를 가져올 수 있는지
+  const canImport = useImportSources().length > 0;
+  const goImport = () => router.push('/item/import');
+  const goShared = () => router.push('/item/shared');
   // 처음 깐 폰(공간도 담은 것도 없음)이면 쓰던 계정을 불러올 수 있게
   const isFreshStart = useSpaceStore(
     (s) => s.status === 'ready' && s.spaces.length === 0
@@ -50,6 +65,27 @@ export default function BucketListScreen() {
     .map((it) => it.id);
   const allSelected =
     filtered.length > 0 && selectedIds.length === filtered.length;
+
+  // 고른 항목을 공유 코드로 나눠주기 (사본만 넘어간다)
+  const [sharing, setSharing] = useState(false);
+  const spaceId = useBucketStore((s) => s.spaceId);
+  const currentSpaceName = useSpace(spaceId)?.name;
+  const shareSelected = async () => {
+    if (sharing || selectedIds.length === 0) return;
+    const picked = filtered.filter((it) => selection.selected.has(it.id));
+    const title = currentSpaceName
+      ? `${currentSpaceName} 버킷리스트`
+      : '나의 버킷리스트';
+    setSharing(true);
+    try {
+      await shareBucketItems(picked, title);
+      selection.clear();
+    } catch (e) {
+      showAlert(e instanceof Error ? e.message : '공유하지 못했어요');
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const confirmDelete = () =>
     showAlert(
@@ -87,7 +123,7 @@ export default function BucketListScreen() {
           title="버킷리스트"
           subtitle={
             items.length === 0
-              ? '같이 가고 싶은 곳, 해보고 싶은 것을 모아봐요'
+              ? `${together ? '같이 ' : ''}가고 싶은 곳, 해보고 싶은 것을 모아봐요`
               : `아직 ${todo.length}개가 기다리고 있어요`
           }
         />
@@ -103,7 +139,7 @@ export default function BucketListScreen() {
             {doneCount > 0 ? (
               <Pressable
                 accessibilityRole="link"
-                accessibilityLabel="함께한 것 보러가기"
+                accessibilityLabel={`${doneLabel} 보러가기`}
                 hitSlop={8}
                 onPress={() => router.navigate('/done')}
                 className="flex-row items-center active:opacity-60"
@@ -128,8 +164,8 @@ export default function BucketListScreen() {
           }
           description={
             items.length === 0
-              ? '맛집, 여행지도 좋고\n같이 요리하기, 사진 찍기도 좋아요.'
-              : '다음에 같이 할 걸 또 담아봐요.'
+              ? `맛집, 여행지도 좋고\n${together ? '같이 ' : ''}요리하기, 사진 찍기도 좋아요.`
+              : `다음에 ${together ? '같이 ' : ''}할 걸 또 담아봐요.`
           }
           actionLabel={items.length === 0 ? '첫 버킷리스트 담기' : '새로 담기'}
           onAction={goNew}
@@ -137,13 +173,21 @@ export default function BucketListScreen() {
           // 처음 깐 폰이면 대신 쓰던 계정 불러오기
           secondaryLabel={
             doneCount > 0
-              ? '함께한 것 다시 담기'
-              : items.length === 0 && isFreshStart
-                ? '다른 폰에서 쓰던 계정 불러오기'
-                : undefined
+              ? `${doneLabel} 다시 담기`
+              : canImport
+                ? '다른 공간에서 가져오기'
+                : items.length === 0 && isFreshStart
+                  ? '다른 폰에서 쓰던 계정 불러오기'
+                  : '공유받은 목록 가져오기'
           }
           onSecondary={
-            doneCount > 0 ? goRedo : () => router.push('/account/restore')
+            doneCount > 0
+              ? goRedo
+              : canImport
+                ? goImport
+                : items.length === 0 && isFreshStart
+                  ? () => router.push('/account/restore')
+                  : goShared
           }
         />
       ) : (
@@ -164,21 +208,28 @@ export default function BucketListScreen() {
             )}
             contentContainerClassName="gap-3 px-5 pb-28 pt-4"
             ListFooterComponent={
-              doneCount > 0 && !selection.selecting ? (
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={goRedo}
-                  className="flex-row items-center justify-center gap-1 py-3 active:opacity-60"
-                >
-                  <Icon
-                    as={RotateCcw}
-                    size={12}
-                    className="text-muted-foreground"
+              !selection.selecting ? (
+                <View className="flex-row flex-wrap items-center justify-center gap-x-5 gap-y-2 py-3">
+                  {doneCount > 0 ? (
+                    <FooterLink
+                      icon={RotateCcw}
+                      label={`${doneLabel} 다시 담기`}
+                      onPress={goRedo}
+                    />
+                  ) : null}
+                  {canImport ? (
+                    <FooterLink
+                      icon={Download}
+                      label="다른 공간에서 가져오기"
+                      onPress={goImport}
+                    />
+                  ) : null}
+                  <FooterLink
+                    icon={Inbox}
+                    label="공유받은 목록 가져오기"
+                    onPress={goShared}
                   />
-                  <Text size={12} className="text-muted-foreground">
-                    함께한 것 다시 담기
-                  </Text>
-                </Pressable>
+                </View>
               ) : undefined
             }
             ListEmptyComponent={
@@ -192,6 +243,11 @@ export default function BucketListScreen() {
             <SelectionDeleteBar
               count={selectedIds.length}
               onDelete={confirmDelete}
+              label="지우기"
+              secondaryLabel={
+                sharing ? '만드는 중…' : `${selectedIds.length}개 공유하기`
+              }
+              onSecondary={() => void shareSelected()}
             />
           ) : (
             <View className="absolute bottom-6 right-5">
@@ -201,5 +257,30 @@ export default function BucketListScreen() {
         </>
       )}
     </SafeAreaView>
+  );
+}
+
+/** 목록 아래 작은 회색 링크 (다시 담기, 가져오기) */
+function FooterLink({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      hitSlop={6}
+      onPress={onPress}
+      className="flex-row items-center gap-1 active:opacity-60"
+    >
+      <Icon as={icon} size={12} className="text-muted-foreground" />
+      <Text size={12} className="text-muted-foreground">
+        {label}
+      </Text>
+    </Pressable>
   );
 }

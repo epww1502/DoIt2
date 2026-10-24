@@ -4,7 +4,7 @@ import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { showAlert } from '@/lib/dialog';
-import { Button, NavBar, Text, TextField } from '@/components/atoms';
+import { Button, NavBar, Segmented, Text, TextField } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
@@ -16,7 +16,12 @@ import { useSpaceStore } from '@/store/useSpaceStore';
 
 const NAME_MAX = 20;
 
-/** 새 공간 만들기 → 만들고 나면 초대 화면으로 */
+const USE_OPTIONS: { value: 'shared' | 'personal'; label: string }[] = [
+  { value: 'shared', label: '함께 쓰기' },
+  { value: 'personal', label: '혼자 쓰기' },
+];
+
+/** 새 공간 만들기 (함께 쓰기 / 혼자 쓰는 개인 공간). 함께 쓰면 만들고 나서 초대 화면으로 */
 export default function NewSpaceScreen() {
   const { createSpace, updateSpace } = useSpaceStore.getState();
   const keyboardHeight = useKeyboardHeight();
@@ -24,6 +29,8 @@ export default function NewSpaceScreen() {
   const [emoji, setEmoji] = useState(SPACE_EMOJIS[0]);
   /** 아이콘으로 고른 사진 (휴대폰 파일). 없으면 이모지 */
   const [imageUri, setImageUri] = useState<string | null>(null);
+  /** 혼자 쓰는 개인 공간인지 */
+  const [personal, setPersonal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +49,11 @@ export default function NewSpaceScreen() {
     setBusy(true);
     setError(null);
     try {
-      const space = await createSpace(name.trim() || '우리 공간', emoji);
+      const space = await createSpace(
+        name.trim() || (personal ? '나의 공간' : '우리 공간'),
+        emoji,
+        personal
+      );
       if (imageUri) {
         // 공간이 생겨야 그 폴더에 사진을 올릴 수 있다
         try {
@@ -55,7 +66,9 @@ export default function NewSpaceScreen() {
         }
       }
       await enterSpace(space.id, space.name);
-      router.replace('/space');
+      // 함께 쓰는 공간이면 바로 초대할 수 있게 공간 관리로, 개인 공간이면 그냥 닫는다
+      if (personal) router.back();
+      else router.replace('/space');
     } catch (e) {
       setError(e instanceof Error ? e.message : '문제가 생겼어요.');
     } finally {
@@ -74,9 +87,19 @@ export default function NewSpaceScreen() {
           <View className="items-center gap-2 pt-2">
             <SpaceAvatar emoji={emoji} localUri={imageUri} size={80} />
             <Text variant="muted" className="text-center">
-              연인, 친구, 가족 누구와도 함께 쓸 수 있어요.{'\n'}한 공간에 최대
-              10명까지 들어올 수 있어요.
+              {personal
+                ? '나만 쓰는 공간이에요. 서버에 저장돼서\n폰을 바꿔도 계정 코드로 다시 볼 수 있어요.'
+                : '연인, 친구, 가족 누구와도 함께 쓸 수 있어요.\n한 공간에 최대 10명까지 들어올 수 있어요.'}
             </Text>
+          </View>
+
+          <View>
+            <FieldLabel>누구와 쓸까요?</FieldLabel>
+            <Segmented
+              options={USE_OPTIONS}
+              value={personal ? 'personal' : 'shared'}
+              onChange={(v) => setPersonal(v === 'personal')}
+            />
           </View>
 
           <View>
@@ -84,7 +107,11 @@ export default function NewSpaceScreen() {
             <TextField
               value={name}
               onChangeText={setName}
-              placeholder="예) 둘이서, 대학 친구들, 우리 가족"
+              placeholder={
+                personal
+                  ? '예) 나의 버킷리스트, 혼자 여행'
+                  : '예) 둘이서, 대학 친구들, 우리 가족'
+              }
               maxLength={NAME_MAX}
               autoFocus
             />

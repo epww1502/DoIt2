@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   CalendarDays,
   ChevronLeft,
@@ -8,10 +8,11 @@ import {
   ImagePlus,
   X,
 } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTogether } from '@/hooks/useTogether';
 import { showAlert } from '@/lib/dialog';
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { TextArea } from '@/components/atoms/TextArea';
@@ -19,6 +20,7 @@ import { BottomBar } from '@/components/bucket/BottomBar';
 import { DatePickerSheet } from '@/components/bucket/DatePickerSheet';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
+import { PlaceField } from '@/components/bucket/PlaceField';
 import { usePhotoSource } from '@/components/bucket/DonePhoto';
 import { StarRating } from '@/components/bucket/StarRating';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
@@ -29,9 +31,11 @@ import {
   MAX_RECORD_PHOTOS,
   recordPhotos,
   withRecordPhotos,
+  type PlaceInfo,
   type RecordPhoto,
 } from '@/lib/bucket/types';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
+import { usePlacePickStore } from '@/store/usePlacePickStore';
 
 const RATING_LABELS = [
   '',
@@ -44,6 +48,7 @@ const RATING_LABELS = [
 
 /** 함께한 기록 남기기 / 수정 */
 export default function RecordFormScreen() {
+  const together = useTogether();
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = useBucketItem(id);
   const recordDone = useBucketStore((state) => state.recordDone);
@@ -60,6 +65,21 @@ export default function RecordFormScreen() {
   );
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  // 장소 (항목에 붙어 있는 값). 기록하면서 새로 붙이거나 바꿀 수 있다
+  const updateItem = useBucketStore((state) => state.updateItem);
+  const [place, setPlace] = useState<PlaceInfo | null>(item?.place ?? null);
+  const [location, setLocation] = useState(item?.location ?? '');
+
+  // 장소 검색 화면에서 고르고 돌아오면 받아서 채운다
+  const takePicked = usePlacePickStore((state) => state.take);
+  useFocusEffect(
+    useCallback(() => {
+      const picked = takePicked();
+      if (!picked) return;
+      setPlace(picked);
+      setLocation(picked.address);
+    }, [takePicked])
+  );
 
   if (!item) {
     return (
@@ -108,9 +128,25 @@ export default function RecordFormScreen() {
     router.back();
   };
 
+  const openSearch = () =>
+    router.push({
+      pathname: '/item/search-place',
+      params: { q: place?.name ?? (location.trim() || item.title) },
+    });
+
+  const clearPlace = () => {
+    setPlace(null);
+    setLocation('');
+  };
+
   const save = async () => {
     setSaving(true);
     try {
+      // 장소가 바뀌었으면 항목에 먼저 반영한다 (기록 저장이 같은 항목을 서버에 올린다)
+      const nextLocation = location.trim();
+      if (place !== item.place || nextLocation !== item.location) {
+        updateItem(item.id, { place, location: nextLocation });
+      }
       await recordDone(
         item.id,
         withRecordPhotos(
@@ -131,7 +167,10 @@ export default function RecordFormScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <NavBar title={saved ? '기록 수정' : '함께한 기록'} onBack={cancel} />
+      <NavBar
+        title={saved ? '기록 수정' : together ? '함께한 기록' : '기록 남기기'}
+        onBack={cancel}
+      />
       {/* 키보드 높이만큼 아래를 비워서 입력칸과 버튼을 키보드 위로 올린다 */}
       <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
         <ScrollView
@@ -191,6 +230,17 @@ export default function RecordFormScreen() {
               </Pressable>
             </View>
           </View>
+
+          <PlaceField
+            label={KIND_META[item.kind].locationLabel}
+            placeholder={KIND_META[item.kind].locationPlaceholder}
+            place={place}
+            location={location}
+            onChangeLocation={setLocation}
+            onSearch={openSearch}
+            onClear={clearPlace}
+            onFocus={ensureFocusedVisible}
+          />
 
           <View className="items-center gap-2">
             <StarRating value={rating} onChange={setRating} size={36} />

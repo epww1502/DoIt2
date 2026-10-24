@@ -1,13 +1,11 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { MapPin, Search, X } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   Button,
   Chip,
-  Icon,
   NavBar,
   Segmented,
   Text,
@@ -16,6 +14,7 @@ import {
 import { TextArea } from '@/components/atoms/TextArea';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
+import { PlaceField } from '@/components/bucket/PlaceField';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import {
   CATEGORIES_BY_KIND,
@@ -196,60 +195,16 @@ export default function BucketFormScreen() {
             </Text>
           </View>
 
-          <View>
-            <FieldLabel>{meta.locationLabel}</FieldLabel>
-            {place ? (
-              // 카카오에서 고른 장소
-              <View className="flex-row items-center gap-3 rounded-xl px-4 py-3 bg-accent">
-                <Icon as={MapPin} size={18} className="text-primary" />
-                <View className="flex-1 gap-0.5">
-                  <Text weight="600" size={15} numberOfLines={1}>
-                    {place.name}
-                  </Text>
-                  <Text variant="muted" size={12} numberOfLines={1}>
-                    {place.address}
-                  </Text>
-                </View>
-                <Pressable
-                  accessibilityRole="button"
-                  hitSlop={6}
-                  onPress={openSearch}
-                >
-                  <Text weight="600" size={13} className="text-primary">
-                    바꾸기
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="장소 지우기"
-                  hitSlop={6}
-                  onPress={clearPlace}
-                >
-                  <Icon as={X} size={18} className="text-muted-foreground" />
-                </Pressable>
-              </View>
-            ) : (
-              <View className="gap-2">
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={openSearch}
-                  className="h-12 flex-row items-center gap-2 rounded-xl px-4 bg-accent active:opacity-70"
-                >
-                  <Icon as={Search} size={18} className="text-primary" />
-                  <Text weight="600" size={15} className="text-primary">
-                    장소 찾기 · 지도에서 고르기
-                  </Text>
-                </Pressable>
-                <TextField
-                  value={location}
-                  onChangeText={setLocation}
-                  placeholder={`또는 직접 적기: ${meta.locationPlaceholder.replace('예) ', '')}`}
-                  maxLength={40}
-                  onFocus={ensureFocusedVisible}
-                />
-              </View>
-            )}
-          </View>
+          <PlaceField
+            label={meta.locationLabel}
+            placeholder={meta.locationPlaceholder}
+            place={place}
+            location={location}
+            onChangeLocation={setLocation}
+            onSearch={openSearch}
+            onClear={clearPlace}
+            onFocus={ensureFocusedVisible}
+          />
 
           <View>
             <FieldLabel>메모 (선택)</FieldLabel>

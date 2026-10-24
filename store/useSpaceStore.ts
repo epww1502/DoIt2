@@ -30,7 +30,14 @@ type SpaceState = {
   restoreAccount: (code: string) => Promise<void>;
   refreshSpaces: () => Promise<void>;
   /** 실패하면 사용자에게 보여줄 문구를 담은 Error를 던진다 */
-  createSpace: (name: string, emoji: string) => Promise<SpaceRow>;
+  /** personal: 나만 쓰는 개인 공간 (초대할 수 없다) */
+  createSpace: (
+    name: string,
+    emoji: string,
+    personal?: boolean
+  ) => Promise<SpaceRow>;
+  /** 개인 공간 ↔ 함께 쓰는 공간 (공간장만) */
+  setPersonal: (spaceId: string, personal: boolean) => Promise<void>;
   joinSpace: (code: string) => Promise<SpaceRow>;
   leaveSpace: (spaceId: string) => Promise<void>;
   /** 공간 노출 순서 바꾸기 (화면은 바로 바뀌고, 서버 저장이 실패하면 되돌린다) */
@@ -46,6 +53,9 @@ const RPC_ERRORS: Record<string, string> = {
   invalid_code: '초대 코드가 맞지 않아요. 다시 확인해주세요.',
   space_full: `이미 ${MAX_SPACE_MEMBERS}명이 꽉 찬 공간이에요.`,
   too_many_spaces: '공간은 20개까지 들어갈 수 있어요.',
+  personal_space: '개인 공간이라 들어갈 수 없어요.',
+  has_members: '다른 멤버가 있어서 개인 공간으로 바꿀 수 없어요.',
+  not_owner: '공간장만 바꿀 수 있어요.',
 };
 
 function friendlyError(message: string, fallback: string) {
@@ -120,10 +130,11 @@ export const useSpaceStore = create<SpaceState>((set, get) => ({
     });
   },
 
-  createSpace: async (name, emoji) => {
+  createSpace: async (name, emoji, personal = false) => {
     const { data, error } = await supabase.rpc('create_space', {
       space_name: name,
       space_emoji: emoji,
+      personal,
     });
     if (error) {
       throw friendlyError(
@@ -133,6 +144,24 @@ export const useSpaceStore = create<SpaceState>((set, get) => ({
     }
     await get().refreshSpaces();
     return data;
+  },
+
+  setPersonal: async (spaceId, personal) => {
+    const { error } = await supabase.rpc('set_space_personal', {
+      target_space: spaceId,
+      personal,
+    });
+    if (error) {
+      throw friendlyError(
+        error.message,
+        '바꾸지 못했어요. 잠시 후 다시 시도해주세요.'
+      );
+    }
+    set({
+      spaces: get().spaces.map((s) =>
+        s.id === spaceId ? { ...s, is_personal: personal } : s
+      ),
+    });
   },
 
   joinSpace: async (code) => {

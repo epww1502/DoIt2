@@ -21,7 +21,8 @@ export function TextField({
   ...props
 }: TextFieldProps) {
   const isSearch = variant === 'search';
-  const showClear = !isSearch && !!value;
+  // 글자가 있으면 오른쪽에 X (검색칸은 돋보기 대신 X)
+  const showClear = !!value;
 
   return (
     <View
@@ -43,7 +44,7 @@ export function TextField({
         }}
         {...props}
       />
-      {isSearch ? (
+      {isSearch && !showClear ? (
         <Icon as={Search} size={18} className="text-muted-foreground" />
       ) : null}
       {showClear ? (
@@ -52,8 +53,9 @@ export function TextField({
           accessibilityLabel="지우기"
           hitSlop={8}
           onPress={() => onChangeText?.('')}
+          className="ml-2 h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/40"
         >
-          <Icon as={X} size={18} className="text-muted-foreground" />
+          <Icon as={X} size={13} className="text-white" />
         </Pressable>
       ) : null}
     </View>

@@ -19,3 +19,14 @@ export async function copyText(text: string, doneMessage = '복사했어요') {
   }
   await Share.share({ message: text });
 }
+
+/** 복사해 둔 글자 (복사 기능이 없는 예전 앱이면 빈 글자) */
+export async function readCopiedText() {
+  if (!requireOptionalNativeModule('ExpoClipboard')) return '';
+  try {
+    const Clipboard = await import('expo-clipboard');
+    return await Clipboard.getStringAsync();
+  } catch {
+    return '';
+  }
+}

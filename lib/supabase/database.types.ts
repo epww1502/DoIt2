@@ -150,6 +150,7 @@ export type Database = {
           invite_code: string;
           name: string;
           owner_id: string | null;
+          is_personal: boolean;
         };
         Insert: {
           created_at?: string;
@@ -169,6 +170,7 @@ export type Database = {
           invite_code?: string;
           name?: string;
           owner_id?: string | null;
+          is_personal?: boolean;
         };
         Relationships: [];
       };
@@ -181,8 +183,21 @@ export type Database = {
         Args: { push_platform: string; push_token: string };
         Returns: undefined;
       };
+      create_shared_list: {
+        Args: { list_title: string; list_items: Json };
+        Returns: string;
+      };
+      get_shared_list: {
+        Args: { share_code: string };
+        Returns: {
+          title: string;
+          items: Json;
+          sender: string | null;
+          created_at: string;
+        }[];
+      };
       create_space: {
-        Args: { space_emoji: string; space_name: string };
+        Args: { space_emoji: string; space_name: string; personal?: boolean };
         Returns: {
           created_at: string;
           created_by: string | null;
@@ -192,6 +207,7 @@ export type Database = {
           invite_code: string;
           name: string;
           owner_id: string | null;
+          is_personal: boolean;
         };
         SetofOptions: {
           from: '*';
@@ -212,6 +228,7 @@ export type Database = {
           invite_code: string;
           name: string;
           owner_id: string | null;
+          is_personal: boolean;
         };
         SetofOptions: {
           from: '*';
@@ -226,6 +243,10 @@ export type Database = {
       };
       leave_space: { Args: { target_space: string }; Returns: undefined };
       reset_invite_code: { Args: { target_space: string }; Returns: string };
+      set_space_personal: {
+        Args: { target_space: string; personal: boolean };
+        Returns: undefined;
+      };
       set_space_order: { Args: { ordered: string[] }; Returns: undefined };
       transfer_space_owner: {
         Args: { new_owner: string; target_space: string };

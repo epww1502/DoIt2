@@ -8,6 +8,8 @@ import {
   type PaletteKey,
 } from '@/constants/palettes';
 
+export type DoneView = 'card' | 'compact' | 'calendar';
+
 /** 앱 설정 (이 휴대폰에만 저장) */
 type SettingsState = {
   /** '오늘 뭐 하지' 뽑을 때 카드가 촤르륵 지나가는 애니메이션. 끄면 바로 결과 */
@@ -25,9 +27,9 @@ type SettingsState = {
   /** 내가 만든 계정 코드. 다른 계정으로 바꾸면 안 맞으니 누구 코드인지 같이 둔다 */
   accountCode: { userId: string; code: string } | null;
   setAccountCode: (value: { userId: string; code: string } | null) => void;
-  /** 함께한 것 보기: card(사진 크게), compact(간단히) */
-  doneView: 'card' | 'compact';
-  setDoneView: (value: 'card' | 'compact') => void;
+  /** 함께한 것 보기: card(사진 크게), compact(간단히), calendar(달력) */
+  doneView: DoneView;
+  setDoneView: (value: DoneView) => void;
   /** 같은 공간 사람이 담거나 기록하면 알림 받기 */
   pushEnabled: boolean;
   setPushEnabled: (value: boolean) => void;

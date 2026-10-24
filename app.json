@@ -63,6 +63,15 @@
           "color": "#5AB0FF",
           "defaultChannel": "default"
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "공유 카드를 사진 앨범에 저장하려면 사진 권한이 필요해요.",
+          "savePhotosPermission": "공유 카드를 사진 앨범에 저장하려면 사진 권한이 필요해요.",
+          "isAccessMediaLocationEnabled": false,
+          "granularPermissions": ["photo"]
+        }
       ]
     ],
     "experiments": {

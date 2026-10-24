@@ -100,6 +100,29 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
   };
 
   const isOwner = useSpaceStore((s) => s.userId) === space.owner_id;
+  const personal = space.is_personal;
+
+  /** 개인 공간 ↔ 함께 쓰는 공간 */
+  const confirmPersonal = (next: boolean) =>
+    showAlert(
+      next ? '개인 공간으로 바꿀까요?' : '함께 쓰는 공간으로 바꿀까요?',
+      next
+        ? '초대 코드로 아무도 들어올 수 없게 돼요. 기록은 그대로예요.'
+        : '초대 코드로 다른 사람을 초대할 수 있게 돼요. 기록은 그대로예요.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '바꾸기',
+          onPress: async () => {
+            try {
+              await useSpaceStore.getState().setPersonal(spaceId, next);
+            } catch (e) {
+              showAlert(e instanceof Error ? e.message : '바꾸지 못했어요');
+            }
+          },
+        },
+      ]
+    );
 
   const confirmResetCode = () =>
     showAlert(
@@ -147,38 +170,68 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
             <Text weight="700" size={20}>
               {space.name}
             </Text>
-            <Text variant="muted" size={13}>
-              {space.memberCount}명 / 최대 {MAX_SPACE_MEMBERS}명
-            </Text>
-            <CopyableCode
-              code={space.invite_code}
-              doneMessage="초대 코드를 복사했어요"
-              size={30}
-            />
-            <Text variant="muted" size={12} className="text-center">
-              함께할 사람이 &apos;초대 코드로 들어가기&apos;에 이 코드를 넣으면
-              들어와요
-            </Text>
-            <Button
-              label="초대 코드 보내기"
-              size="md"
-              className="self-stretch"
-              onPress={() => void share()}
-            />
-            {isOwner ? (
-              <Pressable hitSlop={8} onPress={confirmResetCode}>
-                <Text size={12} className="text-muted-foreground">
-                  초대 코드 바꾸기
+            {personal ? (
+              <>
+                <Text variant="muted" size={13} className="text-center">
+                  개인 공간 · 나만 볼 수 있어요
                 </Text>
-              </Pressable>
-            ) : null}
+                {isOwner ? (
+                  <Button
+                    label="함께 쓰는 공간으로 바꾸기"
+                    variant="outline"
+                    size="md"
+                    className="self-stretch"
+                    onPress={() => confirmPersonal(false)}
+                  />
+                ) : null}
+              </>
+            ) : (
+              <>
+                <Text variant="muted" size={13}>
+                  {space.memberCount}명 / 최대 {MAX_SPACE_MEMBERS}명
+                </Text>
+                <CopyableCode
+                  code={space.invite_code}
+                  doneMessage="초대 코드를 복사했어요"
+                  size={30}
+                />
+                <Text variant="muted" size={12} className="text-center">
+                  함께할 사람이 &apos;초대 코드로 들어가기&apos;에 이 코드를
+                  넣으면 들어와요
+                </Text>
+                <Button
+                  label="초대 코드 보내기"
+                  size="md"
+                  className="self-stretch"
+                  onPress={() => void share()}
+                />
+                {isOwner ? (
+                  <Pressable hitSlop={8} onPress={confirmResetCode}>
+                    <Text size={12} className="text-muted-foreground">
+                      초대 코드 바꾸기
+                    </Text>
+                  </Pressable>
+                ) : null}
+
+                {/* 혼자 남은 함께 쓰는 공간은 개인 공간으로 바꿀 수 있다 */}
+                {isOwner && space.memberCount <= 1 ? (
+                  <Pressable hitSlop={8} onPress={() => confirmPersonal(true)}>
+                    <Text size={12} className="text-muted-foreground">
+                      개인 공간으로 바꾸기
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </>
+            )}
           </View>
 
-          {/* 멤버: 내 줄을 누르면 이 공간에서의 내 프로필을 바꾼다 */}
-          <View>
-            <FieldLabel>{`멤버 ${space.memberCount}명`}</FieldLabel>
-            <SpaceMembers spaceId={spaceId} memberCount={space.memberCount} />
-          </View>
+          {/* 멤버: 내 줄을 누르면 이 공간에서의 내 프로필을 바꾼다 (개인 공간은 숨김) */}
+          {!personal ? (
+            <View>
+              <FieldLabel>{`멤버 ${space.memberCount}명`}</FieldLabel>
+              <SpaceMembers spaceId={spaceId} memberCount={space.memberCount} />
+            </View>
+          ) : null}
 
           {/* 이름·아이콘 */}
           <View>
@@ -196,7 +249,7 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
           </View>
 
           <Button
-            label="이 공간에서 나가기"
+            label={personal ? '이 공간 지우기' : '이 공간에서 나가기'}
             variant="ghost"
             size="md"
             onPress={confirmLeave}

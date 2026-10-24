@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTogether } from '@/hooks/useTogether';
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { usePhotoSource } from '@/components/bucket/DonePhoto';
@@ -32,13 +33,15 @@ const CARD_MUTED = '#8B95A1';
 
 /** 함께한 기록을 예쁜 카드 이미지로 만들어 공유한다 */
 export default function ShareCardScreen() {
+  const together = useTogether();
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = useBucketItem(id);
   const spaceId = useBucketStore((s) => s.spaceId);
   const space = useSpace(spaceId);
   const primary = usePrimaryColor();
   const cardRef = useRef<ViewInstance>(null);
-  const [sharing, setSharing] = useState(false);
+  /** 공유·저장 중이면 무엇을 하는 중인지 */
+  const [busy, setBusy] = useState<'share' | 'save' | null>(null);
 
   const done = item?.done;
   const photo = recordPhotos(done)[0];
@@ -61,24 +64,28 @@ export default function ShareCardScreen() {
 
   const category = getCategory(item.category);
 
+  /** 카드를 PNG로 찍는다 (네이티브 부품이 없는 예전 앱에서 멈추지 않게 쓸 때만 불러온다) */
+  const capture = async () => {
+    const { captureRef } = await import('react-native-view-shot');
+    return captureRef(cardRef, {
+      format: 'png',
+      quality: 1,
+      width: CARD_WIDTH * 3,
+      height: CARD_HEIGHT * 3,
+    });
+  };
+
   const share = async () => {
     if (!cardRef.current) return;
-    setSharing(true);
+    setBusy('share');
     try {
-      // 네이티브 부품이 없는 예전 앱에서 멈추지 않게, 쓸 때만 불러온다
-      const [{ captureRef }, Sharing] = await Promise.all([
-        import('react-native-view-shot'),
+      const [uri, Sharing] = await Promise.all([
+        capture(),
         import('expo-sharing'),
       ]);
-      const uri = await captureRef(cardRef, {
-        format: 'png',
-        quality: 1,
-        width: CARD_WIDTH * 3,
-        height: CARD_HEIGHT * 3,
-      });
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
-        dialogTitle: '함께한 기록 공유하기',
+        dialogTitle: together ? '함께한 기록 공유하기' : '나의 기록 공유하기',
       });
     } catch (e) {
       console.warn('[share-card]', e);
@@ -87,7 +94,34 @@ export default function ShareCardScreen() {
         '앱을 최신 버전으로 다시 설치했는지 확인해주세요.'
       );
     } finally {
-      setSharing(false);
+      setBusy(null);
+    }
+  };
+
+  /** 사진 앨범에 저장 (저장 권한만 묻는다) */
+  const save = async () => {
+    if (!cardRef.current) return;
+    setBusy('save');
+    try {
+      const MediaLibrary = await import('expo-media-library');
+      const { granted } = await MediaLibrary.requestPermissionsAsync(true);
+      if (!granted) {
+        showAlert(
+          '사진 저장 권한이 필요해요',
+          '휴대폰 설정에서 DoIt2의 사진 권한을 허용해주세요.'
+        );
+        return;
+      }
+      await MediaLibrary.Asset.create(await capture());
+      showAlert('사진 앨범에 저장했어요');
+    } catch (e) {
+      console.warn('[share-card] save', e);
+      showAlert(
+        '저장하지 못했어요',
+        '앱을 최신 버전으로 다시 설치했는지 확인해주세요.'
+      );
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -176,17 +210,31 @@ export default function ShareCardScreen() {
         </View>
 
         <Text variant="muted" size={12} className="text-center">
-          카드를 이미지로 만들어 카톡, 인스타 등에 공유해요
+          카드를 이미지로 만들어 앨범에 저장하거나 카톡, 인스타 등에 공유해요
         </Text>
       </ScrollView>
       <BottomBar>
-        <Button
-          label={
-            sharing ? '만드는 중…' : ready ? '공유하기' : '사진 불러오는 중…'
-          }
-          disabled={sharing || !ready}
-          onPress={() => void share()}
-        />
+        <View className="flex-row gap-2">
+          <Button
+            label={busy === 'save' ? '저장하는 중…' : '앨범에 저장'}
+            variant="outline"
+            disabled={busy !== null || !ready}
+            onPress={() => void save()}
+            className="flex-1"
+          />
+          <Button
+            label={
+              busy === 'share'
+                ? '만드는 중…'
+                : ready
+                  ? '공유하기'
+                  : '사진 불러오는 중…'
+            }
+            disabled={busy !== null || !ready}
+            onPress={() => void share()}
+            className="flex-1"
+          />
+        </View>
       </BottomBar>
     </SafeAreaView>
   );

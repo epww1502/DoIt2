@@ -1,10 +1,11 @@
 import dayjs from 'dayjs';
 import { router } from 'expo-router';
+import { SlidersHorizontal } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppSwitch, Button, Text } from '@/components/atoms';
+import { Button, Icon, Text } from '@/components/atoms';
 import {
   ALL_FILTER,
   CategoryFilter,
@@ -14,7 +15,12 @@ import {
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { PickReel } from '@/components/bucket/PickReel';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
-import { StarRating } from '@/components/bucket/StarRating';
+import {
+  activePickFilterCount,
+  pickFilterSummary,
+  PickFilterSheet,
+  type PickFilter,
+} from '@/components/bucket/PickFilterSheet';
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
 import { WeatherBanner } from '@/components/bucket/WeatherBanner';
 import { usePlacesWeather } from '@/hooks/usePlacesWeather';
@@ -86,6 +92,9 @@ export default function PickScreen() {
   /** 이미 함께한 것도 다시 뽑을지 */
   const [includeDone, setIncludeDone] = useState(false);
   const { state: weatherState, reload: reloadWeather } = useTodayWeather();
+  /** 실내만 / 실외만 뽑기 */
+  const [settingFilter, setSettingFilter] =
+    useState<PickFilter['setting']>('all');
 
   // 내 위치 날씨 (장소 좌표가 없는 항목은 이걸로 판단한다)
   const hereIsRainy =
@@ -97,9 +106,10 @@ export default function PickScreen() {
         (it) =>
           // 해본 것은 '이미 해본 것도 포함'을 켜고, 설정한 별점 이상일 때만
           (!it.done || (includeDone && it.done.rating >= redoMinRating)) &&
+          (settingFilter === 'all' || it.setting === settingFilter) &&
           matchesFilter(it, filter)
       ),
-    [items, filter, includeDone, redoMinRating]
+    [items, filter, includeDone, redoMinRating, settingFilter]
   );
 
   // 장소 좌표가 있는 실외 항목은 그 장소의 날씨를 따로 본다
@@ -152,19 +162,22 @@ export default function PickScreen() {
     setFilter(next);
   };
 
-  const changeIncludeOutdoor = (next: boolean) => {
-    resetPick();
-    setIncludeOutdoor(next);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const pickFilter: PickFilter = {
+    setting: settingFilter,
+    includeDone,
+    minRating: redoMinRating,
+    includeOutdoor,
   };
+  const filterCount = activePickFilterCount(pickFilter);
+  const filterSummary = pickFilterSummary(pickFilter);
 
-  const changeIncludeDone = (next: boolean) => {
+  const applyPickFilter = (next: PickFilter) => {
     resetPick();
-    setIncludeDone(next);
-  };
-
-  const changeRedoMinRating = (next: number) => {
-    resetPick();
-    setRedoMinRating(next);
+    setSettingFilter(next.setting);
+    setIncludeDone(next.includeDone);
+    setRedoMinRating(next.minRating);
+    setIncludeOutdoor(next.includeOutdoor);
   };
 
   const shuffle = () => {
@@ -220,34 +233,52 @@ export default function PickScreen() {
             includeOutdoor={includeOutdoor}
             excludedCount={excludedCount}
           />
-          {/* 뽑기 옵션 줄들: 줄 사이는 좁게, 아래 카테고리와는 띄운다 */}
-          <View className="mx-5 mb-3 gap-1">
-            {/* 비 때문에 뺄 실외가 있을 때만 */}
-            {rainMatters ? (
-              <OptionRow
-                label="비 와도 실외 포함"
-                value={includeOutdoor}
-                onChange={changeIncludeOutdoor}
+          {/* 뽑기 조건: 켜진 조건 요약 + 필터 버튼 (누르면 시트) */}
+          <View className="mx-5 mb-3 flex-row items-center gap-2">
+            <Text
+              size={13}
+              numberOfLines={1}
+              className={cn(
+                'flex-1',
+                filterCount > 0 ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
+              {filterCount > 0 ? filterSummary : '모든 버킷리스트에서 뽑아요'}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                filterCount > 0
+                  ? `뽑기 조건 ${filterCount}개 적용 중`
+                  : '뽑기 조건'
+              }
+              onPress={() => setFilterOpen(true)}
+              className={cn(
+                'h-9 flex-row items-center gap-1.5 rounded-lg px-3 active:opacity-70',
+                filterCount > 0 ? 'bg-primary' : 'bg-accent'
+              )}
+            >
+              <Icon
+                as={SlidersHorizontal}
+                size={15}
+                className={
+                  filterCount > 0
+                    ? 'text-primary-foreground'
+                    : 'text-muted-foreground'
+                }
               />
-            ) : null}
-            <OptionRow
-              label="이미 해본 것도 포함"
-              value={includeDone}
-              onChange={changeIncludeDone}
-            />
-            {/* 해본 것도 뽑을 때만: 이 별점 이상인 것만 넣는다 (기록 별점과 같은 별) */}
-            {includeDone ? (
-              <View className="flex-row items-center justify-between">
-                <Text size={13} className="text-muted-foreground">
-                  최소 별점
-                </Text>
-                <StarRating
-                  value={redoMinRating}
-                  onChange={changeRedoMinRating}
-                  size={20}
-                />
-              </View>
-            ) : null}
+              <Text
+                size={13}
+                weight="600"
+                className={
+                  filterCount > 0
+                    ? 'text-primary-foreground'
+                    : 'text-muted-foreground'
+                }
+              >
+                {filterCount > 0 ? `조건 ${filterCount}` : '조건'}
+              </Text>
+            </Pressable>
           </View>
           <CategoryFilter value={filter} onChange={changeFilter} />
 
@@ -318,11 +349,11 @@ export default function PickScreen() {
                       {candidates.length > 0
                         ? `${candidates.length}개 중에서 하나를 골라드릴게요`
                         : excludedCount > 0
-                          ? "비 때문에 실외를 빼니 뽑을 게 없어요.\n'비 와도 실외 포함'을 켜보세요"
+                          ? "비 때문에 실외를 빼니 뽑을 게 없어요.\n조건에서 '비 와도 실외 포함'을 켜보세요"
                           : !includeDone && doneInFilter > 0
-                            ? "여기 있는 건 다 해봤어요!\n'이미 해본 것도 포함'을 켜보세요"
+                            ? "여기 있는 건 다 해봤어요!\n조건에서 '이미 해본 것도 포함'을 켜보세요"
                             : lowRatedOnly
-                              ? `${redoMinRating}점 이상인 게 없어요.\n최소 별점을 낮춰보세요`
+                              ? `${redoMinRating}점 이상인 게 없어요.\n조건에서 최소 별점을 낮춰보세요`
                               : '여기엔 아직 담긴 게 없어요'}
                     </Text>
                   </>
@@ -352,30 +383,13 @@ export default function PickScreen() {
           </View>
         </View>
       )}
-    </SafeAreaView>
-  );
-}
-
-/** 뽑기 옵션 스위치 줄 ('이미 해본 것도 포함', '비 와도 실외 포함') */
-function OptionRow({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <View className="flex-row items-center justify-between">
-      <Text size={13} className="text-muted-foreground">
-        {label}
-      </Text>
-      <AppSwitch
-        accessibilityLabel={label}
-        value={value}
-        onValueChange={onChange}
+      <PickFilterSheet
+        visible={filterOpen}
+        value={pickFilter}
+        rainMatters={rainMatters}
+        onApply={applyPickFilter}
+        onClose={() => setFilterOpen(false)}
       />
-    </View>
+    </SafeAreaView>
   );
 }

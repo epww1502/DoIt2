@@ -40,7 +40,13 @@ type BucketState = {
   addItem: (input: BucketInput) => string;
   /** 여러 개를 한 번에 담는다 (함께한 것 다시 담기). 입력 순서대로 맨 위에 쌓인다 */
   addItems: (inputs: BucketInput[]) => string[];
-  updateItem: (id: string, input: BucketInput) => void;
+  /**
+   * 다른 곳(공간 id, null이면 '나만 보기')에 담는다. 지금 보고 있는 곳이면 addItems와 같다.
+   * 공간이면 서버 저장이 끝날 때까지 기다린다 (실패하면 던진다)
+   */
+  addItemsTo: (target: string | null, inputs: BucketInput[]) => Promise<void>;
+  /** 바꿀 칸만 넘겨도 된다 */
+  updateItem: (id: string, input: Partial<BucketInput>) => void;
   /** 여러 개를 한 번에 지운다 (사진도 같이) */
   removeItems: (ids: string[]) => void;
   /** 사진이 새로 바뀌었으면 서버에 올린 뒤 저장한다 */
@@ -227,6 +233,34 @@ export const useBucketStore = create<BucketState>()(
             }),
           });
           pushItems(cleared);
+        },
+
+        addItemsTo: async (target, inputs) => {
+          if (target === get().spaceId) {
+            get().addItems(inputs);
+            return;
+          }
+          const now = dayjs();
+          const created: BucketItem[] = inputs.map((input, i) => ({
+            ...input,
+            id: remote.newItemId(),
+            createdAt: now.subtract(i, 'millisecond').toISOString(),
+            done: null,
+          }));
+          if (target) {
+            await remote.upsertItems(created, target);
+            notifySpace(
+              target,
+              'added',
+              created.map((it) => it.id)
+            );
+          }
+          // 그 공간으로 바꾸면 바로 보이게 저장해 둔 목록에도 넣는다
+          const key = cacheKey(target);
+          const { cache } = get();
+          set({
+            cache: { ...cache, [key]: [...created, ...(cache[key] ?? [])] },
+          });
         },
 
         switchSpace: async (spaceId) => {

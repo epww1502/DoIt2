@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTogether } from '@/hooks/useTogether';
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
@@ -36,6 +37,7 @@ function toInput(it: BucketItem): BucketInput {
 
 /** 함께한 것 다시 담기: 함께한 것 중에서 여러 개 골라 버킷리스트에 한 번에 다시 담는다 */
 export default function RedoScreen() {
+  const together = useTogether();
   const items = useBucketStore((s) => s.items);
   const addItems = useBucketStore((s) => s.addItems);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
@@ -83,7 +85,7 @@ export default function RedoScreen() {
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <NavBar
-        title="함께한 것 다시 담기"
+        title={together ? '함께한 것 다시 담기' : '해낸 것 다시 담기'}
         right={
           selectable.length > 0 ? (
             <Pressable
@@ -102,12 +104,12 @@ export default function RedoScreen() {
         <EmptyState
           emoji="👣"
           title="아직 해본 게 없어요"
-          description="함께한 기록이 생기면 여기서 다시 담을 수 있어요."
+          description={`${together ? '함께한 ' : ''}기록이 생기면 여기서 다시 담을 수 있어요.`}
         />
       ) : (
         <>
           <Text variant="muted" size={13} className="px-5 pb-3">
-            고른 것들이 버킷리스트에 새로 담겨요. 함께한 기록은 그대로 남아요.
+            {`고른 것들이 버킷리스트에 새로 담겨요. ${together ? '함께한 ' : ''}기록은 그대로 남아요.`}
           </Text>
           <FlatList
             data={done}
@@ -143,7 +145,7 @@ export default function RedoScreen() {
                     <Text variant="muted" size={12} numberOfLines={1}>
                       {already
                         ? '이미 버킷리스트에 있어요'
-                        : `${dayjs(item.done!.date).format('YYYY년 M월 D일')}에 함께했어요`}
+                        : `${dayjs(item.done!.date).format('YYYY년 M월 D일')}에 ${together ? '함께했어요' : '해냈어요'}`}
                     </Text>
                   </View>
                   <View

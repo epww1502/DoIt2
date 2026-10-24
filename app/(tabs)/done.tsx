@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   ChartColumn,
   CircleCheck,
   GalleryVertical,
@@ -9,11 +10,13 @@ import {
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTogether } from '@/hooks/useTogether';
 import { showAlert } from '@/lib/dialog';
-import { Icon, Segmented, Text } from '@/components/atoms';
+import { ActionSheet, Icon, Segmented, Text } from '@/components/atoms';
+import { DoneCalendar } from '@/components/bucket/DoneCalendar';
 import { DoneCard, DoneRow } from '@/components/bucket/DoneCard';
 import {
   activeFilterCount,
@@ -35,9 +38,18 @@ import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useSelection } from '@/hooks/useSelection';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
-import { useSettingsStore } from '@/store/useSettingsStore';
+import { useSpace } from '@/store/useSpaceStore';
+import { shareBucketItems } from '@/lib/shareItems';
+import { type DoneView, useSettingsStore } from '@/store/useSettingsStore';
 
 type KindOption = 'all' | BucketKind;
+
+/** 보기 방식 이름·아이콘 */
+const VIEW_META: Record<DoneView, { label: string; icon: LucideIcon }> = {
+  card: { label: '사진 크게 보기', icon: GalleryVertical },
+  compact: { label: '간단히 보기', icon: List },
+  calendar: { label: '달력으로 보기', icon: CalendarDays },
+};
 
 const KIND_OPTIONS: SegmentedOption<KindOption>[] = [
   { value: 'all', label: '전체' },
@@ -50,6 +62,8 @@ export default function DoneScreen() {
   const removeItems = useBucketStore((state) => state.removeItems);
   const clearDoneMany = useBucketStore((state) => state.clearDoneMany);
   const [kind, setKind] = useState<KindOption>('all');
+  const together = useTogether();
+  const placesLabel = together ? '함께한 곳' : '다녀온 곳';
 
   // 최근에 한 순
   const done = useMemo(
@@ -72,6 +86,7 @@ export default function DoneScreen() {
   const doneView = useSettingsStore((s) => s.doneView);
   const setDoneView = useSettingsStore((s) => s.setDoneView);
   const compact = doneView === 'compact';
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const filterCount = activeFilterCount(filter);
   const shown = useMemo(
     () => byKind.filter((it) => matchesDoneFilter(it, filter)),
@@ -84,6 +99,27 @@ export default function DoneScreen() {
     .filter((it) => selection.selected.has(it.id))
     .map((it) => it.id);
   const allSelected = shown.length > 0 && selectedIds.length === shown.length;
+
+  // 고른 기록을 공유 코드로 (받는 사람에겐 새 버킷리스트로 담긴다)
+  const [sharing, setSharing] = useState(false);
+  const spaceId = useBucketStore((s) => s.spaceId);
+  const currentSpaceName = useSpace(spaceId)?.name;
+  const shareSelected = async () => {
+    if (sharing || selectedIds.length === 0) return;
+    const picked = shown.filter((it) => selection.selected.has(it.id));
+    setSharing(true);
+    try {
+      await shareBucketItems(
+        picked,
+        currentSpaceName ? `${currentSpaceName}에서 해본 것` : '내가 해본 것'
+      );
+      selection.clear();
+    } catch (e) {
+      showAlert(e instanceof Error ? e.message : '공유하지 못했어요');
+    } finally {
+      setSharing(false);
+    }
+  };
 
   // 함께한 것에서 지울 때는 '기록만 지우기'(버킷리스트로 돌아감)와 '항목까지 지우기'를 고른다
   const confirmDelete = () =>
@@ -126,18 +162,18 @@ export default function DoneScreen() {
       ) : (
         <ScreenHeader
           right={<SpaceSwitcher />}
-          title="함께한 것"
+          title={together ? '함께한 것' : '해낸 것'}
           subtitle={
             done.length > 0
-              ? `벌써 ${done.length}개나 같이 해냈어요`
-              : '같이 해낸 것들이 여기에 차곡차곡 쌓여요'
+              ? `벌써 ${done.length}개나 ${together ? '같이 ' : ''}해냈어요`
+              : `${together ? '같이 ' : ''}해낸 것들이 여기에 차곡차곡 쌓여요`
           }
         />
       )}
       {/* 빈 화면은 목록 밖에 둬야 화면 가운데에 온다 (버킷리스트 탭과 같은 구조) */}
       {done.length === 0 ? (
         <EmptyState
-          title="아직 함께한 게 없어요"
+          title={together ? '아직 함께한 게 없어요' : '아직 해낸 게 없어요'}
           description={
             "버킷리스트에서 하나를 고르고\n'가봤어요', '해봤어요'를 누르면 여기에 쌓여요."
           }
@@ -155,15 +191,15 @@ export default function DoneScreen() {
                   onChange={setKind}
                 />
               </View>
-              {/* 보기 모드 바꾸기: 지금 모드가 아닌 쪽 아이콘을 보여준다 */}
+              {/* 보기 방식 고르기: 지금 방식의 아이콘 */}
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={compact ? '사진 크게 보기' : '간단히 보기'}
-                onPress={() => setDoneView(compact ? 'card' : 'compact')}
+                accessibilityLabel={`보기 방식: ${VIEW_META[doneView].label}`}
+                onPress={() => setViewSheetOpen(true)}
                 className="h-10 w-10 items-center justify-center rounded-lg bg-accent active:opacity-70"
               >
                 <Icon
-                  as={compact ? GalleryVertical : List}
+                  as={VIEW_META[doneView].icon}
                   size={18}
                   className="text-muted-foreground"
                 />
@@ -221,8 +257,8 @@ export default function DoneScreen() {
                   icon={MapIcon}
                   label={
                     visitedCount > 0
-                      ? `함께한 곳 지도 · ${visitedCount}곳`
-                      : '함께한 곳 지도'
+                      ? `${placesLabel} 지도 · ${visitedCount}곳`
+                      : `${placesLabel} 지도`
                   }
                   onPress={() => router.push('/done/map')}
                 />
@@ -234,44 +270,90 @@ export default function DoneScreen() {
               </View>
             ) : null}
           </View>
-          <FlatList
-            data={shown}
-            keyExtractor={(item) => item.id}
-            extraData={selection.selected}
-            renderItem={({ item }) => (
-              <DoneItem
-                compact={compact}
-                item={item}
-                selecting={selection.selecting}
-                selected={selection.selected.has(item.id)}
-                onLongPress={() => selection.start(item.id)}
-                onToggle={() => selection.toggle(item.id)}
+          {doneView === 'calendar' ? (
+            <ScrollView
+              contentContainerClassName={cn(
+                'px-5',
+                selection.selecting ? 'pb-28' : 'pb-10'
+              )}
+            >
+              <DoneCalendar
+                items={shown}
+                renderItem={(item) => (
+                  <DoneRow
+                    item={item}
+                    selecting={selection.selecting}
+                    selected={selection.selected.has(item.id)}
+                    onLongPress={() => selection.start(item.id)}
+                    onToggle={() => selection.toggle(item.id)}
+                  />
+                )}
               />
-            )}
-            contentContainerClassName={cn(
-              'px-5',
-              compact ? 'gap-2' : 'gap-4',
-              selection.selecting ? 'pb-28' : 'pb-10'
-            )}
-            ListEmptyComponent={
-              <EmptyState
-                title="여기엔 아직 없어요"
-                description={
-                  filterCount > 0
-                    ? '필터 조건을 바꿔봐요.'
-                    : '다른 종류를 골라봐요.'
-                }
-              />
-            }
-          />
+            </ScrollView>
+          ) : (
+            <FlatList
+              data={shown}
+              keyExtractor={(item) => item.id}
+              extraData={selection.selected}
+              renderItem={({ item }) => (
+                <DoneItem
+                  compact={compact}
+                  item={item}
+                  selecting={selection.selecting}
+                  selected={selection.selected.has(item.id)}
+                  onLongPress={() => selection.start(item.id)}
+                  onToggle={() => selection.toggle(item.id)}
+                />
+              )}
+              contentContainerClassName={cn(
+                'px-5',
+                compact ? 'gap-2' : 'gap-4',
+                selection.selecting ? 'pb-28' : 'pb-10'
+              )}
+              ListEmptyComponent={
+                <EmptyState
+                  title="여기엔 아직 없어요"
+                  description={
+                    filterCount > 0
+                      ? '필터 조건을 바꿔봐요.'
+                      : '다른 종류를 골라봐요.'
+                  }
+                />
+              }
+            />
+          )}
           {selection.selecting ? (
             <SelectionDeleteBar
               count={selectedIds.length}
               onDelete={confirmDelete}
+              label="지우기"
+              secondaryLabel={
+                sharing ? '만드는 중…' : `${selectedIds.length}개 공유하기`
+              }
+              onSecondary={() => void shareSelected()}
             />
           ) : null}
         </>
       )}
+      <ActionSheet
+        visible={viewSheetOpen}
+        onClose={() => setViewSheetOpen(false)}
+        header={
+          <Text weight="700" size={17}>
+            보기 방식
+          </Text>
+        }
+        items={(Object.keys(VIEW_META) as DoneView[]).map((view) => ({
+          label:
+            view === doneView
+              ? `${VIEW_META[view].label} (지금)`
+              : VIEW_META[view].label,
+          onPress: () => {
+            selection.clear();
+            setDoneView(view);
+          },
+        }))}
+      />
       <DoneFilterSheet
         visible={filterOpen}
         items={byKind}

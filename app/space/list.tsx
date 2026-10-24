@@ -209,8 +209,10 @@ function SpaceManageRow({
         </View>
         <Text size={12} className="text-muted-foreground">
           {isCurrent
-            ? `${space.memberCount}명 · 보고 있는 공간`
-            : `${space.memberCount}명`}
+            ? `${space.is_personal ? '개인 공간' : `${space.memberCount}명`} · 보고 있는 공간`
+            : space.is_personal
+              ? '개인 공간'
+              : `${space.memberCount}명`}
         </Text>
       </View>
 

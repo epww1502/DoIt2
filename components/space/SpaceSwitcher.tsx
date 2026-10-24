@@ -115,7 +115,7 @@ function SpaceSheet({
                 emoji={s.emoji}
                 imagePath={s.image_path}
                 name={s.name}
-                detail={`${s.memberCount}명`}
+                detail={s.is_personal ? '개인 공간' : `${s.memberCount}명`}
                 selected={spaceId === s.id}
                 onPress={() => choose(s.id)}
               />

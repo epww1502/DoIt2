@@ -9,6 +9,7 @@ import {
 } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
+import { useTogether } from '@/hooks/useTogether';
 import { Icon, NavBar, Text } from '@/components/atoms';
 import { PhotoImage } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
@@ -36,6 +37,8 @@ type MapMessage =
 
 /** 함께한 곳 지도: 장소를 골라둔 기록들을 핀으로. 핀을 누르면 아래에 그 기록 */
 export default function DoneMapScreen() {
+  const together = useTogether();
+  const placesLabel = together ? '함께한 곳' : '다녀온 곳';
   const items = useBucketStore((s) => s.items);
   const insets = useSafeAreaInsets();
   const webRef = useRef<WebView<object>>(null);
@@ -123,7 +126,7 @@ export default function DoneMapScreen() {
   if (visited.length === 0) {
     return (
       <SafeAreaView edges={['top']} className="flex-1 bg-background">
-        <NavBar title="함께한 곳 지도" />
+        <NavBar title={`${placesLabel} 지도`} />
         <EmptyState
           title="지도에 찍을 곳이 아직 없어요"
           description={
@@ -137,7 +140,7 @@ export default function DoneMapScreen() {
   if (!KAKAO_JS_KEY || mapError) {
     return (
       <SafeAreaView edges={['top']} className="flex-1 bg-background">
-        <NavBar title="함께한 곳 지도" />
+        <NavBar title={`${placesLabel} 지도`} />
         <EmptyState
           title="지도를 열지 못했어요"
           description="인터넷 연결을 확인하고 다시 열어주세요."
@@ -148,7 +151,7 @@ export default function DoneMapScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <NavBar title={`함께한 곳 ${spots.length}곳`} />
+      <NavBar title={`${placesLabel} ${spots.length}곳`} />
       <View className="flex-1">
         <MapWebView
           ref={webRef}
@@ -168,7 +171,7 @@ export default function DoneMapScreen() {
             <>
               {selected.length > 1 ? (
                 <Text weight="700" size={14} className="mb-2">
-                  {`${selected[0].place?.name ?? '이곳'}에서 ${selected.length}번 함께했어요`}
+                  {`${selected[0].place?.name ?? '이곳'}에서 ${selected.length}번 ${together ? '함께했어요' : '다녀왔어요'}`}
                 </Text>
               ) : null}
               {/* 여러 개면 목록으로 (많으면 스크롤) */}

@@ -17,6 +17,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { useTogether } from '@/hooks/useTogether';
 import { themeColors } from '@/constants/colors';
 import { FONT_WEIGHTS } from '@/constants/fonts';
 import { useThemeMode } from '@/contexts/ThemeModeContext';
@@ -74,6 +75,7 @@ export default function TabLayout() {
   const { colorScheme } = useThemeMode();
   const theme = themeColors[colorScheme];
   const primary = usePrimaryColor();
+  const together = useTogether();
 
   return (
     <Tabs
@@ -95,7 +97,10 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="done"
-        options={{ title: '함께한 것', tabBarIcon: tabIcon(CircleCheck) }}
+        options={{
+          title: together ? '함께한 것' : '해낸 것',
+          tabBarIcon: tabIcon(CircleCheck),
+        }}
       />
       <Tabs.Screen
         name="pick"
