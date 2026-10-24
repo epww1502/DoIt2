@@ -34,6 +34,8 @@ type BucketState = {
   cache: Record<string, BucketItem[]>;
 
   addItem: (input: BucketInput) => string;
+  /** 여러 개를 한 번에 담는다 (해본 것 다시 담기). 입력 순서대로 맨 위에 쌓인다 */
+  addItems: (inputs: BucketInput[]) => string[];
   updateItem: (id: string, input: BucketInput) => void;
   /** 여러 개를 한 번에 지운다 (사진도 같이) */
   removeItems: (ids: string[]) => void;
@@ -108,17 +110,20 @@ export const useBucketStore = create<BucketState>()(
         items: [],
         cache: {},
 
-        addItem: (input) => {
-          const id = remote.newItemId();
-          const item: BucketItem = {
+        addItem: (input) => get().addItems([input])[0],
+
+        addItems: (inputs) => {
+          // 같은 시각으로 만들면 순서가 섞일 수 있어서 1ms씩 차이를 둔다 (먼저 고른 게 위로)
+          const now = dayjs();
+          const created: BucketItem[] = inputs.map((input, i) => ({
             ...input,
-            id,
-            createdAt: dayjs().toISOString(),
+            id: remote.newItemId(),
+            createdAt: now.subtract(i, 'millisecond').toISOString(),
             done: null,
-          };
-          set({ items: [item, ...get().items] });
-          pushItems([item]);
-          return id;
+          }));
+          set({ items: [...created, ...get().items] });
+          pushItems(created);
+          return created.map((it) => it.id);
         },
 
         updateItem: (id, input) => {

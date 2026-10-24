@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, RotateCcw } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,6 +35,7 @@ export default function BucketListScreen() {
   const doneCount = items.length - todo.length;
 
   const goNew = () => router.push('/item/new');
+  const goRedo = () => router.push('/item/redo');
 
   // 길게 눌러 여러 개 고르기 (보이는 항목 중에서만 센다)
   const selection = useSelection();
@@ -127,6 +128,9 @@ export default function BucketListScreen() {
           }
           actionLabel={items.length === 0 ? '첫 버킷리스트 담기' : '새로 담기'}
           onAction={goNew}
+          // 해본 게 있으면 여러 개 골라 한 번에 다시 담을 수 있다
+          secondaryLabel={doneCount > 0 ? '해본 것 다시 담기' : undefined}
+          onSecondary={goRedo}
         />
       ) : (
         <>
@@ -146,6 +150,24 @@ export default function BucketListScreen() {
               />
             )}
             contentContainerClassName="gap-3 px-5 pb-28 pt-4"
+            ListFooterComponent={
+              doneCount > 0 && !selection.selecting ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={goRedo}
+                  className="flex-row items-center justify-center gap-1 py-3 active:opacity-60"
+                >
+                  <Icon
+                    as={RotateCcw}
+                    size={12}
+                    className="text-muted-foreground"
+                  />
+                  <Text size={12} className="text-muted-foreground">
+                    해본 것 다시 담기
+                  </Text>
+                </Pressable>
+              ) : undefined
+            }
             ListEmptyComponent={
               <EmptyState
                 emoji="🔍"

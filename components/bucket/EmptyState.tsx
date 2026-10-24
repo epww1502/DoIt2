@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Button, Text } from '@/components/atoms';
 
@@ -8,6 +8,9 @@ type EmptyStateProps = {
   description: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** 주 버튼 아래 보조 버튼 (작은 회색 글씨) */
+  secondaryLabel?: string;
+  onSecondary?: () => void;
 };
 
 export function EmptyState({
@@ -16,6 +19,8 @@ export function EmptyState({
   description,
   actionLabel,
   onAction,
+  secondaryLabel,
+  onSecondary,
 }: EmptyStateProps) {
   return (
     <View className="flex-1 items-center justify-center gap-2 px-8 py-16">
@@ -33,6 +38,18 @@ export function EmptyState({
           onPress={onAction}
           className="mt-4"
         />
+      ) : null}
+      {secondaryLabel && onSecondary ? (
+        <Pressable
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={onSecondary}
+          className="mt-2 px-3 py-2 active:opacity-60"
+        >
+          <Text size={13} className="text-muted-foreground">
+            {secondaryLabel}
+          </Text>
+        </Pressable>
       ) : null}
     </View>
   );

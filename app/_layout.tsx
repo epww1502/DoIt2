@@ -62,6 +62,10 @@ function RootLayoutInner() {
             name="item/search-place"
             options={{ animation: 'slide_from_bottom' }}
           />
+          <Stack.Screen
+            name="item/redo"
+            options={{ animation: 'slide_from_bottom' }}
+          />
           <Stack.Screen name="space/index" />
           <Stack.Screen
             name="space/new"
