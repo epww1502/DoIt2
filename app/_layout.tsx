@@ -9,6 +9,8 @@ import '../global.css';
 import '@/lib/date';
 
 import { DialogHost } from '@/components/atoms/DialogHost';
+import { ConnectionSync } from '@/components/sync/ConnectionSync';
+import { OfflineBanner } from '@/components/sync/OfflineBanner';
 import { PushSync } from '@/components/sync/PushSync';
 import { SpaceSync } from '@/components/sync/SpaceSync';
 import { VersionGate } from '@/components/sync/VersionGate';
@@ -52,6 +54,8 @@ function RootLayoutInner() {
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       {/* 로그인·공간 확인·실시간 동기화 (화면 없음) */}
       <SpaceSync />
+      {/* 오프라인이면 다시 연결을 시도하고, 연결되면 밀린 변경을 올린다 (화면 없음) */}
+      <ConnectionSync />
       {/* 알림 등록·알림 눌러 열기 (화면 없음) */}
       <PushSync />
       {/* showAlert 팝업 (기본 Alert 대신) */}
@@ -59,6 +63,8 @@ function RootLayoutInner() {
       {/* 설치된 빌드가 너무 오래됐으면 스토어 업데이트 안내 */}
       <VersionGate />
       <View className="flex-1 bg-background" style={themeVars}>
+        {/* 오프라인 안내 띠: 화면 위를 차지해서 아래 화면을 밀어 내린다 */}
+        <OfflineBanner />
         <Stack
           screenOptions={{
             headerShown: false,

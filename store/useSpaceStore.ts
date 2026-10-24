@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import { deletePhoto } from '@/lib/bucket/photo';
 import { deleteMyAccount, signInWithAccountCode } from '@/lib/supabase/account';
+import { noteFailure } from '@/lib/connection';
 import { removePhoto, uploadPhoto } from '@/lib/supabase/bucketRemote';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import type { SpaceRow } from '@/lib/supabase/database.types';
@@ -87,6 +88,7 @@ export const useSpaceStore = create<SpaceState>((set, get) => ({
       set({ status: 'ready' });
     } catch (e) {
       console.warn('[space] init failed', e);
+      noteFailure(e);
       set({ status: 'error' });
     }
   },
@@ -238,7 +240,7 @@ export const useSpaceStore = create<SpaceState>((set, get) => ({
 
     // 바뀌었거나 뺀 예전 사진은 지운다
     if ('image_path' in changes && prev?.image_path) {
-      void removePhoto(prev.image_path);
+      void removePhoto(prev.image_path).catch(() => {});
     }
     set({
       spaces: get().spaces.map((s) =>

@@ -153,9 +153,11 @@ export async function uploadPhoto(localUri: string, spaceId: string) {
   return path;
 }
 
+/** 서버 사진을 지운다. 실패하면 던진다 (대기열이 나중에 다시 지운다) */
 export async function removePhoto(path: string | null | undefined) {
   if (!path) return;
-  await supabase.storage.from(PHOTO_BUCKET).remove([path]);
+  const { error } = await supabase.storage.from(PHOTO_BUCKET).remove([path]);
+  if (error) throw error;
 }
 
 /** 상대가 올린 사진처럼 휴대폰에 없는 사진을 볼 수 있는 임시 링크 */
