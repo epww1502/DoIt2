@@ -34,7 +34,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <ScreenHeader title="설정" subtitle="공간과 화면을 바꿀 수 있어요" />
-      <ScrollView contentContainerClassName="gap-4 px-5 pb-10">
+      <ScrollView contentContainerClassName="gap-4 px-5 pb-10 pt-3">
         <ProfileCard />
         <SpaceStatusCard />
 

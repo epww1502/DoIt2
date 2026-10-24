@@ -1,6 +1,7 @@
 import { requireOptionalNativeModule } from 'expo';
-import { Alert, Share } from 'react-native';
+import { Share } from 'react-native';
 
+import { showAlert } from '@/lib/dialog';
 import { hapticSelect } from '@/lib/haptics';
 
 /**
@@ -13,7 +14,7 @@ export async function copyText(text: string, doneMessage = '복사했어요') {
     const Clipboard = await import('expo-clipboard');
     await Clipboard.setStringAsync(text);
     hapticSelect();
-    Alert.alert(doneMessage, text);
+    showAlert(doneMessage, text);
     return;
   }
   await Share.share({ message: text });

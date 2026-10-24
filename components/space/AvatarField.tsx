@@ -1,5 +1,6 @@
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
+import { showAlert } from '@/lib/dialog';
 import { Text } from '@/components/atoms';
 import { pickPhoto } from '@/lib/bucket/photo';
 
@@ -32,7 +33,7 @@ export function AvatarField({
       const uri = await pickPhoto({ aspect: [1, 1] });
       if (uri) onPick(uri);
     } catch {
-      Alert.alert('사진을 불러오지 못했어요', '잠시 후 다시 시도해주세요.');
+      showAlert('사진을 불러오지 못했어요', '잠시 후 다시 시도해주세요.');
     }
   };
 

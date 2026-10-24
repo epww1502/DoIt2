@@ -1,5 +1,4 @@
-import { Alert } from 'react-native';
-
+import { showAlert } from '@/lib/dialog';
 import { LOCAL_KEY, useBucketStore } from '@/store/useBucketStore';
 import { type Space, useSpaceStore } from '@/store/useSpaceStore';
 
@@ -31,7 +30,7 @@ export async function enterSpace(spaceId: string, spaceName: string) {
   const count = localCount();
   if (count > 0) {
     const move = await new Promise<boolean>((resolve) =>
-      Alert.alert(
+      showAlert(
         `'나만 보기'의 ${count}개를 옮길까요?`,
         `이 휴대폰에만 있던 버킷리스트와 기록을 '${spaceName}'에 같이 올려요.`,
         [
@@ -49,7 +48,7 @@ export async function enterSpace(spaceId: string, spaceName: string) {
       try {
         await useBucketStore.getState().moveLocalTo(spaceId);
       } catch {
-        Alert.alert(
+        showAlert(
           '옮기지 못했어요',
           "인터넷 연결을 확인해주세요. '나만 보기'에 그대로 남아 있어요."
         );
@@ -74,7 +73,7 @@ export function confirmLeaveSpace(space: Space, onLeft?: () => void) {
       : space.owner_id === userId
         ? '공간장은 가장 먼저 들어온 멤버에게 넘어가요. 다시 들어오려면 초대 코드가 필요해요.'
         : '다시 들어오려면 초대 코드가 필요해요.';
-  Alert.alert(`'${space.name}'에서 나갈까요?`, detail, [
+  showAlert(`'${space.name}'에서 나갈까요?`, detail, [
     { text: '취소', style: 'cancel' },
     {
       text: '나가기',
@@ -87,7 +86,7 @@ export function confirmLeaveSpace(space: Space, onLeft?: () => void) {
           }
           onLeft?.();
         } catch (e) {
-          Alert.alert(e instanceof Error ? e.message : '나가지 못했어요');
+          showAlert(e instanceof Error ? e.message : '나가지 못했어요');
         }
       },
     },
@@ -111,7 +110,7 @@ export function confirmLeaveSpaces(spaces: Space[], onLeft?: () => void) {
     '다시 들어오려면 초대 코드가 필요해요.',
   ].filter(Boolean);
 
-  Alert.alert(`${spaces.length}개 공간에서 나갈까요?`, notes.join(' '), [
+  showAlert(`${spaces.length}개 공간에서 나갈까요?`, notes.join(' '), [
     { text: '취소', style: 'cancel' },
     {
       text: '나가기',
@@ -129,7 +128,7 @@ export function confirmLeaveSpaces(spaces: Space[], onLeft?: () => void) {
           }
         }
         if (failed.length > 0) {
-          Alert.alert(
+          showAlert(
             '일부 공간에서 나가지 못했어요',
             `${failed.join(', ')} · 잠시 후 다시 시도해주세요.`
           );

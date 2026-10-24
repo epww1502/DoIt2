@@ -1,12 +1,13 @@
 import dayjs from 'dayjs';
 import { router, useLocalSearchParams } from 'expo-router';
 import { MapPin, Pencil, Trash2 } from 'lucide-react-native';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
+import { showAlert } from '@/lib/dialog';
 import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { DonePhoto } from '@/components/bucket/DonePhoto';
@@ -47,7 +48,7 @@ export default function BucketDetailScreen() {
       : null;
 
   const confirmRemove = () => {
-    Alert.alert(
+    showAlert(
       '버킷리스트에서 지울까요?',
       '함께한 기록과 사진도 같이 지워져요.',
       [
@@ -65,7 +66,7 @@ export default function BucketDetailScreen() {
   };
 
   const confirmClearDone = () => {
-    Alert.alert('기록을 지울까요?', '다시 버킷리스트로 돌아가요.', [
+    showAlert('기록을 지울까요?', '다시 버킷리스트로 돌아가요.', [
       { text: '취소', style: 'cancel' },
       {
         text: '지우기',

@@ -1,15 +1,21 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, View } from 'react-native';
+import { Pressable, ScrollView, Share, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, NavBar, Text, TextField } from '@/components/atoms';
+import { showAlert } from '@/lib/dialog';
+import {
+  Button,
+  CopyableCode,
+  NavBar,
+  Text,
+  TextField,
+} from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { AvatarField } from '@/components/space/AvatarField';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { deletePhoto } from '@/lib/bucket/photo';
-import { copyText } from '@/lib/clipboard';
 import { issueAccountCode } from '@/lib/supabase/account';
 import { useProfileStore } from '@/store/useProfileStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
@@ -50,7 +56,7 @@ export default function ProfileScreen() {
       setAvatarUri(undefined);
       router.back();
     } catch (e) {
-      Alert.alert(e instanceof Error ? e.message : '저장하지 못했어요');
+      showAlert(e instanceof Error ? e.message : '저장하지 못했어요');
     } finally {
       setBusy(false);
     }
@@ -115,14 +121,14 @@ function AccountCodeSection() {
     try {
       setAccountCode({ userId, code: await issueAccountCode() });
     } catch (e) {
-      Alert.alert(e instanceof Error ? e.message : '코드를 만들지 못했어요');
+      showAlert(e instanceof Error ? e.message : '코드를 만들지 못했어요');
     } finally {
       setBusy(false);
     }
   };
 
   const confirmReissue = () =>
-    Alert.alert('새 코드를 만들까요?', '지금 코드는 더 이상 쓸 수 없게 돼요.', [
+    showAlert('새 코드를 만들까요?', '지금 코드는 더 이상 쓸 수 없게 돼요.', [
       { text: '취소', style: 'cancel' },
       { text: '새로 만들기', onPress: () => void issue() },
     ]);
@@ -138,19 +144,12 @@ function AccountCodeSection() {
       </Text>
       {code ? (
         <>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="계정 코드 복사"
-            onPress={() => void copyText(code, '계정 코드를 복사했어요')}
-            className="items-center gap-1 rounded-xl py-3 bg-background active:opacity-70"
-          >
-            <Text weight="800" size={22} className="tracking-[3px]">
-              {code}
-            </Text>
-            <Text size={11} className="text-muted-foreground">
-              눌러서 복사
-            </Text>
-          </Pressable>
+          <CopyableCode
+            code={code}
+            doneMessage="계정 코드를 복사했어요"
+            size={22}
+            className="rounded-xl"
+          />
           <Button
             label="다른 곳에 저장하기"
             size="md"

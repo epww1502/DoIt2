@@ -1,10 +1,11 @@
 import * as Location from 'expo-location';
 import { MapPin } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
+import { showAlert } from '@/lib/dialog';
 import { Button, Icon, Text } from '@/components/atoms';
 import { colors } from '@/constants/colors';
 import type { PlaceInfo } from '@/lib/bucket/types';
@@ -138,7 +139,7 @@ export function PlaceMapPicker({ results, onPick }: PlaceMapPickerProps) {
         longitude: center.longitude,
       });
     } catch {
-      Alert.alert(
+      showAlert(
         '주소를 찾지 못했어요',
         '인터넷 연결을 확인하고 다시 시도해주세요.'
       );

@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { showAlert } from '@/lib/dialog';
 import { Button, NavBar, Text, TextField } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
@@ -47,7 +48,7 @@ export default function NewSpaceScreen() {
         try {
           await updateSpace(space.id, { imageUri });
         } catch {
-          Alert.alert(
+          showAlert(
             '사진은 올리지 못했어요',
             '공간은 만들어졌어요. 공간 관리에서 사진을 다시 골라주세요.'
           );

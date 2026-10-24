@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { showAlert } from '@/lib/dialog';
 import { Button, NavBar, Text, TextField } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
@@ -42,7 +43,7 @@ export default function RestoreAccountScreen() {
         .switchSpace(first?.id ?? null)
         .catch(() => {});
       router.dismissAll();
-      Alert.alert(
+      showAlert(
         '계정을 불러왔어요',
         first ? `'${first.name}' 공간으로 돌아왔어요.` : undefined
       );
@@ -54,7 +55,7 @@ export default function RestoreAccountScreen() {
   };
 
   const confirm = () =>
-    Alert.alert(
+    showAlert(
       '이 계정으로 바꿀까요?',
       '지금 이 폰의 계정에서 빠져나와요. 지금 계정으로 돌아오려면 지금 계정의 계정 코드가 필요해요.',
       [

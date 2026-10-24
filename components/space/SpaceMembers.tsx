@@ -1,8 +1,9 @@
 import { router, useFocusEffect } from 'expo-router';
 import { ChevronRight, Ellipsis } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
+import { showAlert } from '@/lib/dialog';
 import { ActionSheet, Icon, Text } from '@/components/atoms';
 import {
   fetchSpaceMembers,
@@ -66,13 +67,13 @@ export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
       await action();
       afterChange();
     } catch (e) {
-      Alert.alert(e instanceof Error ? e.message : '하지 못했어요');
+      showAlert(e instanceof Error ? e.message : '하지 못했어요');
     }
   };
 
   const confirmTransfer = (m: MemberProfile) => {
     const name = displayName(m.nickname);
-    Alert.alert(
+    showAlert(
       `${name}님에게 공간장을 넘길까요?`,
       '넘기면 나는 일반 멤버가 돼요.',
       [
@@ -87,7 +88,7 @@ export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
 
   const confirmKick = (m: MemberProfile) => {
     const name = displayName(m.nickname);
-    Alert.alert(
+    showAlert(
       `${name}님을 내보낼까요?`,
       '다시 못 들어오게 하려면 초대 코드도 바꿔주세요.',
       [

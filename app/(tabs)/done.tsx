@@ -1,9 +1,10 @@
 import { CircleCheck } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { showAlert } from '@/lib/dialog';
 import { Segmented } from '@/components/atoms';
 import { DoneCard } from '@/components/bucket/DoneCard';
 import { EmptyState } from '@/components/bucket/EmptyState';
@@ -55,7 +56,7 @@ export default function DoneScreen() {
 
   // 함께한 것에서 지울 때는 '기록만 지우기'(버킷리스트로 돌아감)와 '항목까지 지우기'를 고른다
   const confirmDelete = () =>
-    Alert.alert(
+    showAlert(
       `${selectedIds.length}개를 어떻게 지울까요?`,
       "'기록만 지우기'를 고르면 버킷리스트로 다시 돌아가요.",
       [

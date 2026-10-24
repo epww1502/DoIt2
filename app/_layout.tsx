@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import '../global.css';
 import '@/lib/date';
 
+import { DialogHost } from '@/components/atoms/DialogHost';
 import { SpaceSync } from '@/components/sync/SpaceSync';
 import { hexToRgbTriple } from '@/constants/palettes';
 import { NAV_THEME } from '@/constants/theme';
@@ -42,6 +43,8 @@ function RootLayoutInner() {
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       {/* 로그인·공간 확인·실시간 동기화 (화면 없음) */}
       <SpaceSync />
+      {/* showAlert 팝업 (기본 Alert 대신) */}
+      <DialogHost />
       <View className="flex-1 bg-background" style={themeVars}>
         <Stack
           screenOptions={{

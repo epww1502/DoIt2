@@ -1,9 +1,16 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, View } from 'react-native';
+import { Pressable, ScrollView, Share, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, NavBar, Text, TextField } from '@/components/atoms';
+import { showAlert } from '@/lib/dialog';
+import {
+  Button,
+  CopyableCode,
+  NavBar,
+  Text,
+  TextField,
+} from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
@@ -13,7 +20,6 @@ import { SpaceMembers } from '@/components/space/SpaceMembers';
 import { confirmLeaveSpace } from '@/components/space/spaceFlow';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { deletePhoto } from '@/lib/bucket/photo';
-import { copyText } from '@/lib/clipboard';
 import { resetInviteCode } from '@/lib/supabase/account';
 import { useBucketStore } from '@/store/useBucketStore';
 import {
@@ -87,7 +93,7 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
       });
       setImageUri(undefined);
     } catch (e) {
-      Alert.alert(e instanceof Error ? e.message : '저장하지 못했어요');
+      showAlert(e instanceof Error ? e.message : '저장하지 못했어요');
     } finally {
       setBusy(false);
     }
@@ -96,7 +102,7 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
   const isOwner = useSpaceStore((s) => s.userId) === space.owner_id;
 
   const confirmResetCode = () =>
-    Alert.alert(
+    showAlert(
       '초대 코드를 바꿀까요?',
       '지금 코드로는 더 이상 들어올 수 없어요. 이미 들어온 멤버는 그대로예요.',
       [
@@ -108,7 +114,7 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
               await resetInviteCode(spaceId);
               await useSpaceStore.getState().refreshSpaces();
             } catch (e) {
-              Alert.alert(e instanceof Error ? e.message : '바꾸지 못했어요');
+              showAlert(e instanceof Error ? e.message : '바꾸지 못했어요');
             }
           },
         },
@@ -144,22 +150,11 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
             <Text variant="muted" size={13}>
               {space.memberCount}명 / 최대 {MAX_SPACE_MEMBERS}명
             </Text>
-            {/* 누르면 초대 코드가 복사된다 */}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`초대 코드 ${space.invite_code} 복사`}
-              onPress={() =>
-                void copyText(space.invite_code, '초대 코드를 복사했어요')
-              }
-              className="items-center gap-1 rounded-2xl px-6 py-3 bg-background active:opacity-70"
-            >
-              <Text weight="800" size={30} className="tracking-[6px]">
-                {space.invite_code}
-              </Text>
-              <Text size={11} className="text-muted-foreground">
-                눌러서 복사
-              </Text>
-            </Pressable>
+            <CopyableCode
+              code={space.invite_code}
+              doneMessage="초대 코드를 복사했어요"
+              size={30}
+            />
             <Text variant="muted" size={12} className="text-center">
               함께할 사람이 &apos;초대 코드로 들어가기&apos;에 이 코드를 넣으면
               들어와요

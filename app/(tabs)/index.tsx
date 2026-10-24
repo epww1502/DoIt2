@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import { ChevronRight, RotateCcw } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, View } from 'react-native';
+import { FlatList, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { showAlert } from '@/lib/dialog';
 import { Fab, Icon, ProgressBar, Text } from '@/components/atoms';
 import { BucketRow } from '@/components/bucket/BucketRow';
 import {
@@ -51,7 +52,7 @@ export default function BucketListScreen() {
     filtered.length > 0 && selectedIds.length === filtered.length;
 
   const confirmDelete = () =>
-    Alert.alert(
+    showAlert(
       `${selectedIds.length}개를 지울까요?`,
       '지운 항목은 되돌릴 수 없어요.',
       [

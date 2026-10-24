@@ -20,3 +20,4 @@ export { TextField } from './TextField';
 export { ProgressBar } from './ProgressBar';
 export { AppSwitch } from './AppSwitch';
 export { ActionSheet, type ActionSheetItem } from './ActionSheet';
+export { CopyableCode } from './CopyableCode';

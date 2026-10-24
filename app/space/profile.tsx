@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { showAlert } from '@/lib/dialog';
 import { AppSwitch, Button, NavBar, Text, TextField } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
@@ -103,7 +104,7 @@ function SpaceProfileForm({
       });
       router.back();
     } catch {
-      Alert.alert('저장하지 못했어요', '잠시 후 다시 시도해주세요.');
+      showAlert('저장하지 못했어요', '잠시 후 다시 시도해주세요.');
     } finally {
       if (avatarUri) deletePhoto(avatarUri);
       setBusy(false);

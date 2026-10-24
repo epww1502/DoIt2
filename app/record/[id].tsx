@@ -9,9 +9,10 @@ import {
   X,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { showAlert } from '@/lib/dialog';
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { TextArea } from '@/components/atoms/TextArea';
 import { BottomBar } from '@/components/bucket/BottomBar';
@@ -87,7 +88,7 @@ export default function RecordFormScreen() {
       // 새 사진은 아직 서버 경로가 없다 (저장할 때 올린다)
       setPhoto({ uri, path: null });
     } catch {
-      Alert.alert('사진을 불러오지 못했어요', '잠시 후 다시 시도해주세요.');
+      showAlert('사진을 불러오지 못했어요', '잠시 후 다시 시도해주세요.');
     }
   };
 
@@ -113,7 +114,7 @@ export default function RecordFormScreen() {
       });
       router.back();
     } catch {
-      Alert.alert(
+      showAlert(
         '저장하지 못했어요',
         '인터넷 연결을 확인하고 다시 시도해주세요.'
       );

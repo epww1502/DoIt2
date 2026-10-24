@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { ChevronDown, ChevronUp, Crown } from 'lucide-react-native';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { showAlert } from '@/lib/dialog';
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { Selectable } from '@/components/bucket/Selectable';
@@ -38,7 +39,7 @@ export default function SpaceListScreen() {
       .getState()
       .reorderSpaces(ids)
       .catch((e: unknown) =>
-        Alert.alert(e instanceof Error ? e.message : '순서를 바꾸지 못했어요')
+        showAlert(e instanceof Error ? e.message : '순서를 바꾸지 못했어요')
       );
   };
 
