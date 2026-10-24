@@ -48,6 +48,15 @@ set message = '사진 여러 장 올리기가 추가됐어요. 업데이트해�
 where platform = 'android';
 ```
 
+"스토어에서 업데이트" 버튼이 여는 주소는 `store_url`이다. 바꾸면 앱 배포 없이 바로 반영된다.
+(Play 스토어 주소면 Play 스토어 앱으로 열린다. 테스트 중에는 테스트 참여 링크나 APK 주소를 넣어도 된다)
+
+```sql
+update public.app_versions
+set store_url = 'https://play.google.com/store/apps/details?id=com.doit2.app'
+where platform = 'android';
+```
+
 ## 주의
 
 - `min_version`은 **스토어에 새 버전이 실제로 보인 뒤에** 올린다. 먼저 올리면 사람들이 업데이트할 게 없는데 앱을 못 쓰게 된다.

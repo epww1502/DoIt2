@@ -56,15 +56,17 @@ export async function checkRequiredUpdate(): Promise<RequiredUpdate | null> {
   }
 }
 
-/** 스토어 앱으로 연다. 안 되면 웹 주소로 */
+/**
+ * 서버 app_versions.store_url에 적힌 주소를 연다 (표에서 바꾸면 바로 반영된다).
+ * play.google.com 주소면 안드로이드가 Play 스토어 앱으로 열어준다.
+ * 주소가 잘못돼 못 열면 Play 스토어 앱의 DoIt2 페이지로 연다.
+ */
 export async function openStore(storeUrl: string) {
-  if (Platform.OS === 'android') {
-    try {
+  try {
+    await Linking.openURL(storeUrl);
+  } catch {
+    if (Platform.OS === 'android') {
       await Linking.openURL(`market://details?id=${ANDROID_PACKAGE}`);
-      return;
-    } catch {
-      // Play 스토어 앱이 없으면 아래 웹 주소로
     }
   }
-  await Linking.openURL(storeUrl);
 }
