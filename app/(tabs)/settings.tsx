@@ -12,7 +12,7 @@ import {
   Text,
 } from '@/components/atoms';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
-import { InboxButton } from '@/components/space/InboxButton';
+import { InboxCard } from '@/components/space/InboxCard';
 import { ProfileCard } from '@/components/space/ProfileCard';
 import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
 import { PALETTES } from '@/constants/palettes';
@@ -43,12 +43,9 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <ScreenHeader
-        title="설정"
-        subtitle="공간과 화면을 바꿀 수 있어요"
-        right={<InboxButton />}
-      />
+      <ScreenHeader title="설정" subtitle="공간과 화면을 바꿀 수 있어요" />
       <ScrollView contentContainerClassName="gap-4 px-5 pb-10 pt-3">
+        <InboxCard />
         <ProfileCard />
         <SpaceStatusCard />
 

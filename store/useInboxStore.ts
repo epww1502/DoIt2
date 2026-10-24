@@ -18,6 +18,8 @@ type InboxState = {
   load: () => Promise<void>;
   /** 실시간으로 새 알림이 오면 맨 위에 */
   add: (row: NotificationRow) => void;
+  /** 알림 하나를 읽음으로 */
+  markRead: (id: string) => Promise<void>;
   /** 안 읽은 서버 알림을 모두 읽음으로 */
   markAllRead: () => Promise<void>;
   clear: () => void;
@@ -48,6 +50,20 @@ export const useInboxStore = create<InboxState>((set, get) => ({
   add: (row) => {
     if (get().rows.some((r) => r.id === row.id)) return;
     set({ rows: [row, ...get().rows].slice(0, LIMIT) });
+  },
+
+  markRead: async (id) => {
+    const row = get().rows.find((r) => r.id === id);
+    if (!row || row.read_at) return;
+    const now = new Date().toISOString();
+    set({
+      rows: get().rows.map((r) => (r.id === id ? { ...r, read_at: now } : r)),
+    });
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read_at: now })
+      .eq('id', id);
+    if (error) noteFailure(error);
   },
 
   markAllRead: async () => {

@@ -21,11 +21,16 @@ export type LocalInboxEntry = {
 
 type LocalInboxState = {
   entries: LocalInboxEntry[];
-  /** 알림센터를 마지막으로 본 시각 (그 뒤에 울린 것이 '안 읽음') */
+  /** '모두 읽음'을 누른 시각 (그 뒤에 울린 것이 '안 읽음') */
   seenAt: number;
+  /** 하나씩 눌러서 읽은 알림 id */
+  readIds: string[];
   /** 앞으로 울릴 예약을 새 목록으로 바꾼다 (이미 울린 기록은 남긴다) */
   replaceUpcoming: (upcoming: LocalInboxEntry[]) => void;
+  /** 모두 읽음 */
   markSeen: () => void;
+  /** 하나 읽음 */
+  markRead: (id: string) => void;
   clear: () => void;
 };
 
@@ -37,6 +42,7 @@ export const useLocalInboxStore = create<LocalInboxState>()(
     (set, get) => ({
       entries: [],
       seenAt: 0,
+      readIds: [],
       replaceUpcoming: (upcoming) => {
         const now = Date.now();
         const past = get().entries.filter(
@@ -44,8 +50,13 @@ export const useLocalInboxStore = create<LocalInboxState>()(
         );
         set({ entries: [...past, ...upcoming] });
       },
-      markSeen: () => set({ seenAt: Date.now() }),
-      clear: () => set({ entries: [], seenAt: 0 }),
+      markSeen: () => set({ seenAt: Date.now(), readIds: [] }),
+      markRead: (id) => {
+        if (get().readIds.includes(id)) return;
+        // 오래된 id는 버려서 계속 쌓이지 않게
+        set({ readIds: [...get().readIds, id].slice(-200) });
+      },
+      clear: () => set({ entries: [], seenAt: 0, readIds: [] }),
     }),
     {
       name: 'doit2-local-inbox',

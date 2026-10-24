@@ -33,8 +33,12 @@ function fromRow(r: NotificationRow): InboxEntry {
   };
 }
 
-function fromLocal(e: LocalInboxEntry, seenAt: number): InboxEntry {
-  return { ...e, unread: e.at > seenAt };
+function fromLocal(
+  e: LocalInboxEntry,
+  seenAt: number,
+  readIds: string[]
+): InboxEntry {
+  return { ...e, unread: e.at > seenAt && !readIds.includes(e.id) };
 }
 
 /** 지금 시각 (1분마다 바뀐다: 예약 알림이 울린 시각이 지나면 목록에 나오게) */
@@ -52,14 +56,31 @@ export function useInboxEntries(): InboxEntry[] {
   const rows = useInboxStore((s) => s.rows);
   const local = useLocalInboxStore((s) => s.entries);
   const seenAt = useLocalInboxStore((s) => s.seenAt);
+  const readIds = useLocalInboxStore((s) => s.readIds);
   const now = useNowMinute();
   return [
     ...rows.map(fromRow),
-    ...firedLocalEntries(local, now).map((e) => fromLocal(e, seenAt)),
+    ...firedLocalEntries(local, now).map((e) => fromLocal(e, seenAt, readIds)),
   ].sort((a, b) => b.at - a.at);
 }
 
-/** 안 읽은 알림 수 (종 모양 배지) */
+/** 알림 하나 읽음 (서버 알림이든 폰 안 알림이든) */
+export function markEntryRead(entry: InboxEntry) {
+  if (!entry.unread) return;
+  if (entry.kind === 'goal' || entry.kind === 'weekend') {
+    useLocalInboxStore.getState().markRead(entry.id);
+  } else {
+    void useInboxStore.getState().markRead(entry.id);
+  }
+}
+
+/** 모두 읽음 */
+export function markAllEntriesRead() {
+  void useInboxStore.getState().markAllRead();
+  useLocalInboxStore.getState().markSeen();
+}
+
+/** 안 읽은 알림 수 (설정 알림센터 칸) */
 export function useUnreadCount() {
   return useInboxEntries().filter((e) => e.unread).length;
 }

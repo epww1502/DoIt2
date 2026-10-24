@@ -7,17 +7,22 @@ import {
   Star,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ErrorState, Icon, NavBar, Text } from '@/components/atoms';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { openFromNotification } from '@/components/sync/PushSync';
-import { useInboxEntries, type InboxEntry } from '@/hooks/useInbox';
+import {
+  markAllEntriesRead,
+  markEntryRead,
+  useInboxEntries,
+  type InboxEntry,
+} from '@/hooks/useInbox';
 import { cn } from '@/lib/utils';
 import { useInboxStore } from '@/store/useInboxStore';
-import { useLocalInboxStore } from '@/store/useLocalInboxStore';
+import { usePrimaryColor } from '@/store/useSettingsStore';
 
 const KIND_ICON: Record<InboxEntry['kind'], LucideIcon> = {
   added: Plus,
@@ -43,21 +48,16 @@ function timeLabel(at: number) {
 
 /**
  * 알림센터: 같은 공간 사람의 소식(담기·기록·평가)과 폰 안 알림(목표 날짜·주말 추천).
- * 들어오면 모두 읽음으로 바꾸고, 이번에 처음 본 것만 점으로 표시해 둔다.
+ * 안 읽은 알림은 배경을 깔아 구분하고, 누르면 그 알림만 읽음. 위 '모두 읽음'으로 한 번에.
  */
 export default function NotificationsScreen() {
   const entries = useInboxEntries();
   const status = useInboxStore((s) => s.status);
   const error = useInboxStore((s) => s.error);
-  // 들어온 순간 안 읽었던 것 (읽음 처리 뒤에도 이번엔 표시해 둔다)
-  const [freshIds] = useState(
-    () => new Set(entries.filter((e) => e.unread).map((e) => e.id))
-  );
+  const unreadCount = entries.filter((e) => e.unread).length;
 
+  // 들어오면 최신으로 다시 받는다
   useEffect(() => {
-    void useInboxStore.getState().markAllRead();
-    useLocalInboxStore.getState().markSeen();
-    // 다시 받아서 최신으로
     void useInboxStore.getState().load();
   }, []);
 
@@ -65,7 +65,29 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <NavBar title="알림" />
+      <NavBar
+        title="알림"
+        right={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: unreadCount === 0 }}
+            disabled={unreadCount === 0}
+            hitSlop={8}
+            onPress={markAllEntriesRead}
+            className="h-10 justify-center px-2 active:opacity-60"
+          >
+            <Text
+              weight="600"
+              size={14}
+              className={
+                unreadCount > 0 ? 'text-primary' : 'text-muted-foreground'
+              }
+            >
+              모두 읽음
+            </Text>
+          </Pressable>
+        }
+      />
       {entries.length === 0 ? (
         status === 'loading' || status === 'idle' ? (
           <View className="flex-1 items-center justify-center">
@@ -89,40 +111,46 @@ export default function NotificationsScreen() {
         <FlatList
           data={entries}
           keyExtractor={(e) => e.id}
-          contentContainerClassName="px-5 pb-10 pt-2"
-          ItemSeparatorComponent={() => <View className="h-px bg-border" />}
-          renderItem={({ item }) => (
-            <InboxRow entry={item} fresh={freshIds.has(item.id)} />
+          contentContainerClassName="pb-10 pt-2"
+          ItemSeparatorComponent={() => (
+            <View className="mx-5 h-px bg-border" />
           )}
+          renderItem={({ item }) => <InboxRow entry={item} />}
         />
       )}
     </SafeAreaView>
   );
 }
 
-function InboxRow({ entry, fresh }: { entry: InboxEntry; fresh: boolean }) {
+function InboxRow({ entry }: { entry: InboxEntry }) {
+  const primary = usePrimaryColor();
+  const unread = entry.unread;
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={() =>
+      accessibilityLabel={`${unread ? '안 읽음, ' : ''}${entry.body}`}
+      onPress={() => {
+        markEntryRead(entry);
         void openFromNotification({
           spaceId: entry.spaceId,
           itemId: entry.itemId,
-        })
-      }
-      className="flex-row gap-3 py-4 active:opacity-70"
+        });
+      }}
+      // 안 읽은 알림은 테마색을 아주 연하게 깔아 구분한다
+      style={unread ? { backgroundColor: `${primary}14` } : undefined}
+      className="flex-row gap-3 px-5 py-4 active:opacity-70"
     >
       <View
         className={cn(
           'h-10 w-10 items-center justify-center rounded-full',
-          fresh ? 'bg-primary' : 'bg-accent'
+          unread ? 'bg-primary' : 'bg-accent'
         )}
       >
         <Icon
           as={KIND_ICON[entry.kind]}
           size={18}
           className={
-            fresh ? 'text-primary-foreground' : 'text-muted-foreground'
+            unread ? 'text-primary-foreground' : 'text-muted-foreground'
           }
         />
       </View>
@@ -135,7 +163,7 @@ function InboxRow({ entry, fresh }: { entry: InboxEntry; fresh: boolean }) {
             {timeLabel(entry.at)}
           </Text>
         </View>
-        <Text size={15} weight={fresh ? '600' : '400'}>
+        <Text size={15} weight={unread ? '600' : '400'}>
           {entry.body}
         </Text>
       </View>
