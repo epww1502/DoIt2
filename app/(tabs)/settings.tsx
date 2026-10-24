@@ -16,6 +16,7 @@ import { ProfileCard } from '@/components/space/ProfileCard';
 import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
 import { PALETTES } from '@/constants/palettes';
 import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
+import { installedVersion } from '@/lib/appVersion';
 import { showAlert } from '@/lib/dialog';
 import {
   isPushSupported,
@@ -86,7 +87,7 @@ export default function SettingsScreen() {
         </Card>
 
         <Text variant="muted" size={12} className="mt-4 text-center">
-          DoIt2 · 두잇투 v0.1.0
+          DoIt2 · 두잇투 v{installedVersion()}
         </Text>
       </ScrollView>
     </SafeAreaView>

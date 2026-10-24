@@ -15,6 +15,30 @@ export type Database = {
   };
   public: {
     Tables: {
+      app_versions: {
+        Row: {
+          message: string | null;
+          min_version: string;
+          platform: string;
+          store_url: string;
+          updated_at: string;
+        };
+        Insert: {
+          message?: string | null;
+          min_version: string;
+          platform: string;
+          store_url: string;
+          updated_at?: string;
+        };
+        Update: {
+          message?: string | null;
+          min_version?: string;
+          platform?: string;
+          store_url?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       bucket_items: {
         Row: {
           category: string;

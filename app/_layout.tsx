@@ -11,6 +11,7 @@ import '@/lib/date';
 import { DialogHost } from '@/components/atoms/DialogHost';
 import { PushSync } from '@/components/sync/PushSync';
 import { SpaceSync } from '@/components/sync/SpaceSync';
+import { VersionGate } from '@/components/sync/VersionGate';
 import { hexToRgbTriple } from '@/constants/palettes';
 import { NAV_THEME } from '@/constants/theme';
 import { ThemeModeProvider, useThemeMode } from '@/contexts/ThemeModeContext';
@@ -55,6 +56,8 @@ function RootLayoutInner() {
       <PushSync />
       {/* showAlert 팝업 (기본 Alert 대신) */}
       <DialogHost />
+      {/* 설치된 빌드가 너무 오래됐으면 스토어 업데이트 안내 */}
+      <VersionGate />
       <View className="flex-1 bg-background" style={themeVars}>
         <Stack
           screenOptions={{
