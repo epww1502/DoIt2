@@ -16,6 +16,11 @@ import { DonePhoto, PhotoImage } from './DonePhoto';
 import { Selectable } from './Selectable';
 import { StarRating } from './StarRating';
 
+/** 날짜·실내 옆에 붙는 ' · 댓글 3개' (없으면 빈칸) */
+function commentText(count?: number) {
+  return count ? ` · 댓글 ${count}개` : '';
+}
+
 /** '함께한 것' 목록의 카드. done이 있는 항목만 넘긴다. 길게 누르면 여러 개 고르기 */
 export function DoneCard({
   item,
@@ -53,6 +58,7 @@ export function DoneCard({
         <Text variant="muted" size={13}>
           {dayjs(done.date).format('YYYY년 M월 D일 (dd)')}
           {` · ${settingTag(item.setting)}`}
+          {commentText(item.commentCount)}
           {item.location ? ` · ${item.location}` : ''}
         </Text>
         {done.review ? (
@@ -101,6 +107,7 @@ export function DoneRow({
         <Text variant="muted" size={12} numberOfLines={1}>
           {dayjs(done.date).format('YYYY.M.D')}
           {` · ${settingTag(item.setting)}`}
+          {commentText(item.commentCount)}
           {item.location ? ` · ${item.location}` : ''}
         </Text>
       </View>
