@@ -3,7 +3,7 @@ import { SendHorizontal, SmilePlus } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
 
-import { Icon, InlineError, Text } from '@/components/atoms';
+import { ActionSheet, Icon, InlineError, Text } from '@/components/atoms';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
 import { useItemSocial } from '@/hooks/useItemSocial';
 import { themeColors } from '@/constants/colors';
@@ -28,7 +28,9 @@ function commentTime(at: string) {
 
 /**
  * 공간 항목의 이모지 반응과 댓글.
- * 반응은 눌러서 켜고 끄고, 댓글은 아래 입력칸에서 남긴다. 내 댓글은 길게 눌러 지운다.
+ * 반응: 웃는 얼굴(+)에서 골라 남기고, 남겨진 반응을 누르면 내 반응을 남기거나 뺀다.
+ * 길게 누르면 누가 남겼는지 보인다.
+ * 댓글은 아래 입력칸에서 남긴다. 내 댓글은 길게 눌러 지운다.
  */
 export function ItemSocial({
   itemId,
@@ -46,6 +48,8 @@ export function ItemSocial({
   const { colorScheme } = useThemeMode();
   const theme = themeColors[colorScheme];
   const [pickerOpen, setPickerOpen] = useState(false);
+  /** 누가 눌렀는지 보고 있는 반응 */
+  const [whoFor, setWhoFor] = useState<ReactionEmoji | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -79,6 +83,7 @@ export function ItemSocial({
 
   const toggle = (emoji: ReactionEmoji) => {
     setPickerOpen(false);
+    setWhoFor(null);
     social
       .toggleReaction(emoji)
       .catch((e) => showErrorAlert('반응을 남기지 못했어요', e));
@@ -121,7 +126,11 @@ export function ItemSocial({
               key={c.emoji}
               accessibilityRole="button"
               accessibilityLabel={`${c.emoji} ${c.count}명${c.mine ? ', 내가 누름' : ''}`}
+              accessibilityHint="누르면 남기거나 빼고, 길게 누르면 누가 남겼는지 보여요"
+              // 짧게: 내 반응 남기기·빼기, 길게: 누가 남겼는지
               onPress={() => toggle(c.emoji)}
+              onLongPress={() => setWhoFor(c.emoji)}
+              delayLongPress={350}
               className={cn(
                 'h-9 flex-row items-center gap-1 rounded-full border px-3 active:opacity-70',
                 c.mine ? 'border-primary' : 'bg-card border-border'
@@ -166,6 +175,52 @@ export function ItemSocial({
           </View>
         ) : null}
       </View>
+
+      <ActionSheet
+        visible={whoFor !== null}
+        onClose={() => setWhoFor(null)}
+        header={
+          whoFor ? (
+            <View className="gap-4">
+              <View className="flex-row items-center gap-2">
+                <Text size={28}>{whoFor}</Text>
+                <Text weight="700" size={17}>
+                  {reactions.filter((r) => r.emoji === whoFor).length}명이
+                  남겼어요
+                </Text>
+              </View>
+              <View className="gap-3">
+                {reactions
+                  .filter((r) => r.emoji === whoFor)
+                  // 나를 맨 위에, 나머지는 남긴 순서대로
+                  .sort((a, b) =>
+                    a.user_id === social.userId
+                      ? -1
+                      : b.user_id === social.userId
+                        ? 1
+                        : a.created_at.localeCompare(b.created_at)
+                  )
+                  .map((r) => {
+                    const who = member(r.user_id);
+                    return (
+                      <View
+                        key={r.user_id}
+                        className="flex-row items-center gap-3"
+                      >
+                        <PersonAvatar imagePath={who.avatarPath} size={32} />
+                        <Text size={15} numberOfLines={1} className="flex-1">
+                          {who.name}
+                        </Text>
+                      </View>
+                    );
+                  })}
+              </View>
+            </View>
+          ) : null
+        }
+        // 보기만 한다 (남기기·빼기는 반응을 짧게 눌러서)
+        items={[]}
+      />
 
       {/* 댓글 */}
       <View className="gap-3">
