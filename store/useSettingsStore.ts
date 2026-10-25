@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import type { BucketSort } from '@/lib/bucket/search';
 import {
   DEFAULT_PALETTE,
   paletteHex,
@@ -34,6 +35,12 @@ type SettingsState = {
   /** 버킷리스트 보기: list(목록), compact(간단히), category(카테고리별), map(지도) */
   bucketView: BucketView;
   setBucketView: (value: BucketView) => void;
+  /** 버킷리스트 맨 위 '평가를 기다려요'를 접어 두었는지 */
+  awaitingCollapsed: boolean;
+  setAwaitingCollapsed: (value: boolean) => void;
+  /** 버킷리스트 정렬 */
+  bucketSort: BucketSort;
+  setBucketSort: (value: BucketSort) => void;
   /** 금요일 저녁 '이번 주말 뭐 할까?' 알림 */
   weekendReminder: boolean;
   setWeekendReminder: (value: boolean) => void;
@@ -59,6 +66,10 @@ export const useSettingsStore = create<SettingsState>()(
       setDoneView: (doneView) => set({ doneView }),
       bucketView: 'list',
       setBucketView: (bucketView) => set({ bucketView }),
+      awaitingCollapsed: false,
+      setAwaitingCollapsed: (awaitingCollapsed) => set({ awaitingCollapsed }),
+      bucketSort: 'recent',
+      setBucketSort: (bucketSort) => set({ bucketSort }),
       weekendReminder: true,
       setWeekendReminder: (weekendReminder) => set({ weekendReminder }),
       pushEnabled: true,
@@ -76,6 +87,8 @@ export const useSettingsStore = create<SettingsState>()(
         accountCode: state.accountCode,
         doneView: state.doneView,
         bucketView: state.bucketView,
+        awaitingCollapsed: state.awaitingCollapsed,
+        bucketSort: state.bucketSort,
         weekendReminder: state.weekendReminder,
         pushEnabled: state.pushEnabled,
       }),

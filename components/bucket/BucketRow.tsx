@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, MessageCircle } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
@@ -66,7 +66,10 @@ export function BucketRow({
       </View>
       {/* 고르기 모드에서는 체크 동그라미가 그 자리에 나온다 */}
       {!selection.selecting ? (
-        <Icon as={ChevronRight} size={20} className="text-muted-foreground" />
+        <View className="flex-row items-center gap-2">
+          <CommentBadge count={item.commentCount} />
+          <Icon as={ChevronRight} size={20} className="text-muted-foreground" />
+        </View>
       ) : null}
     </Selectable>
   );
@@ -94,9 +97,12 @@ export function BucketRowCompact({
         <GoalBadge item={item} />
       </View>
       {!selection.selecting ? (
-        <Text size={11} className="text-muted-foreground">
-          {settingTag(item.setting)}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <CommentBadge count={item.commentCount} />
+          <Text size={11} className="text-muted-foreground">
+            {settingTag(item.setting)}
+          </Text>
+        </View>
       ) : null}
     </Selectable>
   );
@@ -120,6 +126,36 @@ function GoalBadge({ item }: { item: BucketItem }) {
       >
         {goalDday(item.goal.date)}
       </Text>
+    </View>
+  );
+}
+
+/** 말풍선 안에 댓글 수 (10개부터는 9+). 댓글이 없으면 그리지 않는다 */
+export function CommentBadge({ count }: { count?: number }) {
+  if (!count) return null;
+  const label = count > 9 ? '9+' : String(count);
+  return (
+    <View
+      accessibilityLabel={`댓글 ${count}개`}
+      className="items-center justify-center"
+      style={{ width: 26, height: 26 }}
+    >
+      <Icon
+        as={MessageCircle}
+        size={26}
+        strokeWidth={1.25}
+        className="text-muted-foreground"
+      />
+      {/* 말풍선 꼬리만큼 살짝 위로 올려 가운데에 맞춘다 */}
+      <View className="absolute inset-0 items-center justify-center pb-px">
+        <Text
+          weight="700"
+          size={label.length > 1 ? 8 : 10}
+          className="text-muted-foreground"
+        >
+          {label}
+        </Text>
+      </View>
     </View>
   );
 }

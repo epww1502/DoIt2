@@ -8,6 +8,7 @@ import {
   Map as MapIcon,
   Rows3,
   RotateCcw,
+  Search,
   type LucideIcon,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
@@ -16,7 +17,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
 import { showAlert } from '@/lib/dialog';
-import { ActionSheet, Fab, Icon, ProgressBar, Text } from '@/components/atoms';
+import {
+  ActionSheet,
+  Chip,
+  Fab,
+  Icon,
+  ProgressBar,
+  Text,
+  TextField,
+} from '@/components/atoms';
 import { BucketRow, BucketRowCompact } from '@/components/bucket/BucketRow';
 import { ItemsMap } from '@/components/bucket/ItemsMap';
 import {
@@ -51,6 +60,12 @@ import { useSpace, useSpaceStore } from '@/store/useSpaceStore';
 import { shareBucketItems } from '@/lib/shareItems';
 import { useImportSources } from '@/hooks/useImportSources';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
+import {
+  BUCKET_SORT_META,
+  matchesQuery,
+  sortItems,
+  type BucketSort,
+} from '@/lib/bucket/search';
 import { itemStatus } from '@/lib/bucket/reviews';
 
 /** 보기 방식 이름·아이콘 */
@@ -72,6 +87,15 @@ export default function BucketListScreen() {
   const sync = useListSync();
   const removeItems = useBucketStore((state) => state.removeItems);
   const [filter, setFilter] = useState<BucketFilter>(ALL_FILTER);
+  // 검색 (돋보기를 누르면 검색칸이 열린다)
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const bucketSort = useSettingsStore((s) => s.bucketSort);
+  const setBucketSort = useSettingsStore((s) => s.setBucketSort);
+  const closeSearch = () => {
+    setQuery('');
+    setSearchOpen(false);
+  };
 
   const todo = useMemo(() => items.filter((it) => !it.done), [items]);
   // 공간에서 다른 사람이 먼저 기록해 내 평가를 기다리는 항목 (맨 위에 따로)
@@ -80,8 +104,14 @@ export default function BucketListScreen() {
     (it) => itemStatus(it, reviewCtx) === 'awaiting'
   );
   const filtered = useMemo(
-    () => todo.filter((it) => matchesFilter(it, filter)),
-    [todo, filter]
+    () =>
+      sortItems(
+        todo.filter(
+          (it) => matchesFilter(it, filter) && matchesQuery(it, query)
+        ),
+        bucketSort
+      ),
+    [todo, filter, query, bucketSort]
   );
   const doneCount = items.length - todo.length;
 
@@ -194,7 +224,12 @@ export default function BucketListScreen() {
   const awaitingHeader = showAwaiting ? (
     <AwaitingReviews items={awaiting} className="" />
   ) : undefined;
-  const listEmpty = (
+  const listEmpty = query.trim() ? (
+    <EmptyState
+      title={`'${query.trim()}'에 맞는 게 없어요`}
+      description="다른 말로 찾아보거나 카테고리를 바꿔봐요."
+    />
+  ) : (
     <EmptyState
       title="여기엔 아직 없어요"
       description="다른 걸 골라보거나 새로 담아봐요."
@@ -302,20 +337,67 @@ export default function BucketListScreen() {
             value={filter}
             onChange={setFilter}
             right={
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`보기 방식: ${BUCKET_VIEW_META[bucketView].label}`}
-                onPress={() => setViewSheetOpen(true)}
-                className="h-10 w-10 items-center justify-center rounded-lg bg-accent active:opacity-70"
-              >
-                <Icon
-                  as={BUCKET_VIEW_META[bucketView].icon}
-                  size={18}
-                  className="text-muted-foreground"
-                />
-              </Pressable>
+              <View className="flex-row gap-2">
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={searchOpen ? '검색 닫기' : '검색'}
+                  onPress={() =>
+                    searchOpen ? closeSearch() : setSearchOpen(true)
+                  }
+                  className={cn(
+                    'h-10 w-10 items-center justify-center rounded-lg active:opacity-70',
+                    searchOpen ? 'bg-primary' : 'bg-accent'
+                  )}
+                >
+                  <Icon
+                    as={Search}
+                    size={18}
+                    className={
+                      searchOpen
+                        ? 'text-primary-foreground'
+                        : 'text-muted-foreground'
+                    }
+                  />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`보기 방식: ${BUCKET_VIEW_META[bucketView].label}`}
+                  onPress={() => setViewSheetOpen(true)}
+                  className="h-10 w-10 items-center justify-center rounded-lg bg-accent active:opacity-70"
+                >
+                  <Icon
+                    as={BUCKET_VIEW_META[bucketView].icon}
+                    size={18}
+                    className="text-muted-foreground"
+                  />
+                </Pressable>
+              </View>
             }
           />
+          {searchOpen ? (
+            <View className="flex-row items-center gap-2 px-5 pt-3">
+              <View className="flex-1">
+                <TextField
+                  variant="search"
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="제목, 메모, 장소로 찾기"
+                  autoFocus
+                  returnKeyType="search"
+                />
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                onPress={closeSearch}
+                hitSlop={8}
+                className="px-1 active:opacity-60"
+              >
+                <Text weight="600" size={14} className="text-muted-foreground">
+                  닫기
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
           {bucketView === 'map' && awaiting.length > 0 ? (
             <Pressable
               accessibilityRole="button"
@@ -427,9 +509,26 @@ export default function BucketListScreen() {
         visible={viewSheetOpen}
         onClose={() => setViewSheetOpen(false)}
         header={
-          <Text weight="700" size={17}>
-            보기 방식
-          </Text>
+          <View className="gap-4">
+            <View className="gap-2">
+              <Text weight="700" size={17}>
+                정렬
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {(Object.keys(BUCKET_SORT_META) as BucketSort[]).map((sort) => (
+                  <Chip
+                    key={sort}
+                    label={BUCKET_SORT_META[sort].label}
+                    selected={sort === bucketSort}
+                    onPress={() => setBucketSort(sort)}
+                  />
+                ))}
+              </View>
+            </View>
+            <Text weight="700" size={17}>
+              보기 방식
+            </Text>
+          </View>
         }
         items={(Object.keys(BUCKET_VIEW_META) as BucketView[]).map((view) => ({
           label:

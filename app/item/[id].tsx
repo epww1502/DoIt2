@@ -15,7 +15,9 @@ import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { MapAppButtons } from '@/components/bucket/MapAppButtons';
+import { ItemSocial } from '@/components/bucket/ItemSocial';
 import { ReviewsSection } from '@/components/bucket/ReviewsSection';
+import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { StarRating } from '@/components/bucket/StarRating';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { goalDday } from '@/components/bucket/goalDday';
@@ -40,6 +42,10 @@ export default function BucketDetailScreen() {
   const reviewCtx = useReviewCtx();
   const inSpace = reviewCtx.inSpace;
   const insets = useSafeAreaInsets();
+  // 댓글 입력칸이 키보드에 가리지 않게
+  const { keyboardHeight, scrollRef, onScroll, ensureFocusedVisible } =
+    useKeyboardAwareForm();
+  const spaceId = useBucketStore((s) => s.spaceId);
 
   if (!item) {
     return (
@@ -143,10 +149,14 @@ export default function BucketDetailScreen() {
       />
 
       <ScrollView
+        ref={scrollRef}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled"
         contentContainerClassName="gap-6 px-5"
-        // 아래 버튼이 없을 때(기록 있음)는 휴대폰 아래 바만큼 더 띄운다
+        // 아래 버튼이 없을 때(기록 있음)는 휴대폰 아래 바만큼 더 띄운다. 키보드가 올라오면 그만큼 더
         contentContainerStyle={{
-          paddingBottom: (done ? insets.bottom : 0) + 40,
+          paddingBottom: (done ? insets.bottom : 0) + 40 + keyboardHeight,
         }}
       >
         <View className="items-center gap-3 pt-4">
@@ -279,9 +289,21 @@ export default function BucketDetailScreen() {
             </View>
           </View>
         ) : null}
+
+        {/* 공간 항목: 이모지 반응과 댓글 */}
+        {inSpace && spaceId ? (
+          <View className="border-t pt-6 border-border">
+            <ItemSocial
+              itemId={item.id}
+              spaceId={spaceId}
+              onInputFocus={ensureFocusedVisible}
+            />
+          </View>
+        ) : null}
       </ScrollView>
 
-      {!done ? (
+      {/* 댓글을 쓰는 동안(키보드가 올라와 있을 때)은 아래 버튼을 숨긴다 */}
+      {!done && keyboardHeight === 0 ? (
         <BottomBar>
           <Button label={`${meta.doneLabel} 기록 남기기`} onPress={goRecord} />
         </BottomBar>

@@ -100,6 +100,8 @@ type BucketState = {
   /** 실시간: 다른 사람(또는 나)이 바꾼 행 반영 */
   applyRemoteRow: (row: BucketItemRow) => void;
   applyRemoteDelete: (id: string) => void;
+  /** 실시간: 댓글이 달리거나 지워지면 목록의 댓글 수를 바꾼다 */
+  bumpCommentCount: (itemId: string, delta: number) => void;
   /** 실시간: 누가 평가를 남기거나 고치거나 지웠다 */
   applyRemoteReview: (row: ItemReviewRow) => void;
   applyRemoteReviewDelete: (old: {
@@ -658,6 +660,15 @@ export const useBucketStore = create<BucketState>()(
 
         applyRemoteDelete: (id) => {
           set({ items: get().items.filter((it) => it.id !== id) });
+        },
+
+        bumpCommentCount: (itemId, delta) => {
+          const target = findItem(itemId);
+          if (!target) return;
+          replaceItem(itemId, {
+            ...target,
+            commentCount: Math.max(0, (target.commentCount ?? 0) + delta),
+          });
         },
 
         applyRemoteReview: (row) => {

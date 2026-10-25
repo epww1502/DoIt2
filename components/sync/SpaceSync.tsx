@@ -123,6 +123,28 @@ export function SpaceSync() {
         },
         onReview
       )
+      // 댓글 수 (목록의 말풍선 숫자)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'item_comments',
+          filter: `space_id=eq.${spaceId}`,
+        },
+        (payload) => {
+          const itemId = (payload.new as { item_id?: string }).item_id;
+          if (itemId) useBucketStore.getState().bumpCommentCount(itemId, 1);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'item_comments' },
+        (payload) => {
+          const itemId = (payload.old as { item_id?: string }).item_id;
+          if (itemId) useBucketStore.getState().bumpCommentCount(itemId, -1);
+        }
+      )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'item_reviews' },

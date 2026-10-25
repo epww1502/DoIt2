@@ -201,6 +201,8 @@ export type BucketItem = {
   reviews?: ItemReview[];
   /** 목표 날짜 (선택). 정하지 않았으면 없다 */
   goal?: GoalInfo | null;
+  /** 공간 항목의 댓글 수 (목록에 말풍선 숫자로) */
+  commentCount?: number;
 };
 
 /** 목표 날짜 알림 시점: 일주일 전, 하루 전, 당일 아침 */

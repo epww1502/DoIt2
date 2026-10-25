@@ -6,6 +6,7 @@
 // - { spaceId, event: 'added', itemIds: string[] }  새로 담음 (여러 개면 한 번에)
 // - { spaceId, event: 'done',  itemIds: [string] }  기록을 처음 남김 (별점은 부른 사람의 평가)
 // - { spaceId, event: 'reviewed', itemIds: [string] }  다른 사람이 남긴 기록에 내 평가를 더함
+// - { spaceId, event: 'commented', itemIds: [string] }  항목에 댓글을 남김 (부른 사람의 최근 댓글)
 //
 // 막 바뀐 항목(최근 10분)만 알린다. 예전 항목으로 알림을 계속 보내는 걸 막으려고.
 // 받는 사람마다 notifications(알림함)에도 한 줄씩 남긴다 (푸시를 꺼둔 사람도 앱에서 볼 수 있게).
@@ -24,7 +25,7 @@ const admin = createClient(
 
 type Body = {
   spaceId?: string;
-  event?: 'added' | 'done' | 'reviewed';
+  event?: 'added' | 'done' | 'reviewed' | 'commented';
   itemIds?: string[];
 };
 
@@ -77,7 +78,7 @@ Deno.serve(async (req) => {
   const itemIds = (body.itemIds ?? []).slice(0, MAX_ITEMS);
   if (
     !spaceId ||
-    (event !== 'added' && event !== 'done' && event !== 'reviewed') ||
+    !['added', 'done', 'reviewed', 'commented'].includes(event ?? '') ||
     !itemIds.length
   ) {
     return json({ error: 'invalid_body' }, 400);
@@ -94,19 +95,31 @@ Deno.serve(async (req) => {
   const others = members.map((m) => m.user_id).filter((id) => id !== actor);
   if (others.length === 0) return json({ sent: 0 });
 
-  // 이 공간 항목과, 부른 사람이 남긴 평가
-  const [{ data: items }, { data: reviews }] = await Promise.all([
-    admin
-      .from('bucket_items')
-      .select('id, title, updated_at')
-      .eq('space_id', spaceId)
-      .in('id', itemIds),
-    admin
-      .from('item_reviews')
-      .select('item_id, rating, updated_at')
-      .eq('user_id', actor)
-      .in('item_id', itemIds),
-  ]);
+  // 이 공간 항목과, 부른 사람이 남긴 평가·최근 댓글
+  const [{ data: items }, { data: reviews }, { data: comments }] =
+    await Promise.all([
+      admin
+        .from('bucket_items')
+        .select('id, title, updated_at')
+        .eq('space_id', spaceId)
+        .in('id', itemIds),
+      admin
+        .from('item_reviews')
+        .select('item_id, rating, updated_at')
+        .eq('user_id', actor)
+        .in('item_id', itemIds),
+      admin
+        .from('item_comments')
+        .select('item_id, body, created_at')
+        .eq('user_id', actor)
+        .in('item_id', itemIds)
+        .order('created_at', { ascending: false })
+        .limit(MAX_ITEMS),
+    ]);
+  const commentOf = new Map<string, { body: string; created_at: string }>();
+  for (const c of comments ?? []) {
+    if (!commentOf.has(c.item_id)) commentOf.set(c.item_id, c);
+  }
   const reviewOf = new Map((reviews ?? []).map((r) => [r.item_id, r]));
   // 막 바뀐 것만 (평가 알림은 평가가 막 바뀌었는지로 본다)
   const isFresh = (at: string | undefined) =>
@@ -114,7 +127,9 @@ Deno.serve(async (req) => {
   const fresh = (items ?? []).filter((it) =>
     event === 'reviewed'
       ? isFresh(reviewOf.get(it.id)?.updated_at)
-      : isFresh(it.updated_at)
+      : event === 'commented'
+        ? isFresh(commentOf.get(it.id)?.created_at)
+        : isFresh(it.updated_at)
   );
   if (fresh.length === 0) return json({ sent: 0 });
 
@@ -131,6 +146,10 @@ Deno.serve(async (req) => {
     message = `${name}님이 ${quote(first.title)} 기록을 남겼어요${stars}`;
   } else if (event === 'reviewed') {
     message = `${name}님도 ${quote(first.title)}에 평가를 남겼어요${stars}`;
+  } else if (event === 'commented') {
+    const body = commentOf.get(first.id)?.body ?? '';
+    const short = body.length > 30 ? `${body.slice(0, 30)}…` : body;
+    message = `${name}님이 ${quote(first.title)}에 댓글을 남겼어요: “${short}”`;
   } else {
     message =
       fresh.length === 1

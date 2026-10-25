@@ -98,6 +98,87 @@ export type Database = {
           },
         ];
       };
+      item_comments: {
+        Row: {
+          body: string;
+          created_at: string;
+          id: string;
+          item_id: string;
+          space_id: string;
+          user_id: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          id?: string;
+          item_id: string;
+          space_id: string;
+          user_id: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          id?: string;
+          item_id?: string;
+          space_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'item_comments_item_id_fkey';
+            columns: ['item_id'];
+            isOneToOne: false;
+            referencedRelation: 'bucket_items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'item_comments_space_id_fkey';
+            columns: ['space_id'];
+            isOneToOne: false;
+            referencedRelation: 'spaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      item_reactions: {
+        Row: {
+          created_at: string;
+          emoji: string;
+          item_id: string;
+          space_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          emoji: string;
+          item_id: string;
+          space_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          emoji?: string;
+          item_id?: string;
+          space_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'item_reactions_item_id_fkey';
+            columns: ['item_id'];
+            isOneToOne: false;
+            referencedRelation: 'bucket_items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'item_reactions_space_id_fkey';
+            columns: ['space_id'];
+            isOneToOne: false;
+            referencedRelation: 'spaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       item_reviews: {
         Row: {
           created_at: string;
@@ -399,6 +480,10 @@ export type BucketItemRow = Database['public']['Tables']['bucket_items']['Row'];
 export type SpaceRow = Database['public']['Tables']['spaces']['Row'];
 export type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 export type ItemReviewRow = Database['public']['Tables']['item_reviews']['Row'];
+export type ItemCommentRow =
+  Database['public']['Tables']['item_comments']['Row'];
+export type ItemReactionRow =
+  Database['public']['Tables']['item_reactions']['Row'];
 export type NotificationRow =
   Database['public']['Tables']['notifications']['Row'];
 export type MemberProfile =

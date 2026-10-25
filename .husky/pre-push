@@ -38,4 +38,11 @@ run_npm run format:check || {
   exit 1
 }
 
+# 핵심 로직 테스트 (오프라인 대기열, 사람별 평가, 알림 예약)
+echo "🧪 Running tests..."
+run_npm test -- --silent || {
+  echo "❌ Tests failed. Please fix them and try again."
+  exit 1
+}
+
 echo "✅ All pre-push checks passed!"

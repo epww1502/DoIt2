@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Star } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Star } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -11,7 +11,7 @@ import { showAlert } from '@/lib/dialog';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useMemberLookup } from '@/store/useMembersStore';
-import { usePrimaryColor } from '@/store/useSettingsStore';
+import { usePrimaryColor, useSettingsStore } from '@/store/useSettingsStore';
 
 /** 처음에 보여줄 개수 (더 있으면 '모두 보기') */
 const PREVIEW_COUNT = 3;
@@ -33,9 +33,16 @@ export function AwaitingReviews({
   const member = useMemberLookup(spaceId);
   const primary = usePrimaryColor();
   const [showAll, setShowAll] = useState(false);
+  // 접어 두면 제목 한 줄만 (다음에 열어도 기억한다)
+  const collapsed = useSettingsStore((s) => s.awaitingCollapsed);
+  const setCollapsed = useSettingsStore((s) => s.setAwaitingCollapsed);
 
   if (items.length === 0) return null;
-  const shown = showAll ? items : items.slice(0, PREVIEW_COUNT);
+  const shown = collapsed
+    ? []
+    : showAll
+      ? items
+      : items.slice(0, PREVIEW_COUNT);
 
   const skip = (item: BucketItem) =>
     showAlert(
@@ -57,14 +64,30 @@ export function AwaitingReviews({
         className ?? 'mx-5 mb-4'
       )}
     >
-      <View className="gap-0.5">
-        <Text weight="700" size={15}>
-          평가를 기다려요 · {items.length}
-        </Text>
-        <Text variant="muted" size={12}>
-          다른 사람이 먼저 기록했어요. 내 별점과 소감도 남겨봐요.
-        </Text>
-      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: !collapsed }}
+        accessibilityLabel={`평가를 기다려요 ${items.length}개, ${collapsed ? '펼치기' : '접기'}`}
+        onPress={() => setCollapsed(!collapsed)}
+        hitSlop={6}
+        className="flex-row items-center gap-2 active:opacity-70"
+      >
+        <View className="flex-1 gap-0.5">
+          <Text weight="700" size={15}>
+            평가를 기다려요 · {items.length}
+          </Text>
+          {!collapsed ? (
+            <Text variant="muted" size={12}>
+              다른 사람이 먼저 기록했어요. 내 별점과 소감도 남겨봐요.
+            </Text>
+          ) : null}
+        </View>
+        <Icon
+          as={collapsed ? ChevronDown : ChevronUp}
+          size={20}
+          className="text-muted-foreground"
+        />
+      </Pressable>
 
       {shown.map((item) => {
         const reviews = visibleReviews(item);
@@ -159,7 +182,7 @@ export function AwaitingReviews({
         );
       })}
 
-      {items.length > PREVIEW_COUNT ? (
+      {!collapsed && items.length > PREVIEW_COUNT ? (
         <Pressable
           accessibilityRole="button"
           onPress={() => setShowAll((v) => !v)}

@@ -57,6 +57,8 @@ function toRemoteDone(done: DoneRecord | null): RemoteDone | null {
 /** 서버 항목 행 + 사람별 평가 (fetchItems가 함께 받아온다. 실시간 행에는 없다) */
 export type ItemRowWithReviews = BucketItemRow & {
   item_reviews?: ItemReviewRow[];
+  /** PostgREST 개수 집계: [{ count }] */
+  item_comments?: { count: number }[];
 };
 
 export function reviewFromRow(row: ItemReviewRow): ItemReview {
@@ -112,6 +114,9 @@ export function fromRow(
     reviews: row.item_reviews
       ? row.item_reviews.map(reviewFromRow)
       : (local?.reviews ?? []),
+    commentCount: row.item_comments
+      ? (row.item_comments[0]?.count ?? 0)
+      : (local?.commentCount ?? 0),
   };
 }
 
@@ -149,7 +154,7 @@ export async function fetchItems(
 ): Promise<ItemRowWithReviews[]> {
   const { data, error } = await supabase
     .from('bucket_items')
-    .select('*, item_reviews(*)')
+    .select('*, item_reviews(*), item_comments(count)')
     .eq('space_id', spaceId)
     .order('created_at', { ascending: false });
   if (error) throw error;

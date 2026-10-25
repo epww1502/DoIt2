@@ -103,7 +103,7 @@ export async function unregisterForPush() {
 /** 같은 공간의 다른 사람들에게 알린다. 실패해도 앱 동작에는 영향이 없다 */
 export function notifySpace(
   spaceId: string,
-  event: 'added' | 'done' | 'reviewed',
+  event: 'added' | 'done' | 'reviewed' | 'commented',
   itemIds: string[]
 ) {
   if (itemIds.length === 0) return;

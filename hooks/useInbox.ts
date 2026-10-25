@@ -11,7 +11,7 @@ import {
 /** 알림센터 한 줄 (서버 소식과 폰 안 알림을 합친 모양) */
 export type InboxEntry = {
   id: string;
-  kind: 'added' | 'done' | 'reviewed' | 'goal' | 'weekend';
+  kind: 'added' | 'done' | 'reviewed' | 'commented' | 'goal' | 'weekend';
   at: number;
   title: string;
   body: string;

@@ -18,6 +18,10 @@ type InboxState = {
   load: () => Promise<void>;
   /** 실시간으로 새 알림이 오면 맨 위에 */
   add: (row: NotificationRow) => void;
+  /** 실시간: 다른 폰에서 읽음 처리했거나 바뀐 알림 */
+  replace: (row: NotificationRow) => void;
+  /** 실시간: 지워진 알림 */
+  remove: (id: string) => void;
   /** 알림 하나를 읽음으로 */
   markRead: (id: string) => Promise<void>;
   /** 안 읽은 서버 알림을 모두 읽음으로 */
@@ -50,6 +54,14 @@ export const useInboxStore = create<InboxState>((set, get) => ({
   add: (row) => {
     if (get().rows.some((r) => r.id === row.id)) return;
     set({ rows: [row, ...get().rows].slice(0, LIMIT) });
+  },
+
+  replace: (row) => {
+    set({ rows: get().rows.map((r) => (r.id === row.id ? row : r)) });
+  },
+
+  remove: (id) => {
+    set({ rows: get().rows.filter((r) => r.id !== id) });
   },
 
   markRead: async (id) => {

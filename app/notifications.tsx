@@ -3,6 +3,7 @@ import {
   CalendarHeart,
   CircleCheck,
   Flag,
+  MessageCircle,
   Plus,
   Star,
   type LucideIcon,
@@ -28,6 +29,7 @@ const KIND_ICON: Record<InboxEntry['kind'], LucideIcon> = {
   added: Plus,
   done: CircleCheck,
   reviewed: Star,
+  commented: MessageCircle,
   goal: Flag,
   weekend: CalendarHeart,
 };
