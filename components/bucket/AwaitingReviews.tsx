@@ -112,8 +112,8 @@ export function AwaitingReviews({
               ) : null}
             </View>
 
-            {reviews.length > 0 ? (
-              <View className="flex-row flex-wrap gap-x-3 gap-y-1.5">
+            {reviews.length > 0 || item.commentCount ? (
+              <View className="flex-row flex-wrap items-center gap-x-3 gap-y-1.5">
                 {reviews.slice(0, 3).map((r) => {
                   const who = member(r.userId);
                   return (
@@ -144,6 +144,16 @@ export function AwaitingReviews({
                 {reviews.length > 3 ? (
                   <Text variant="muted" size={12}>
                     외 {reviews.length - 3}명
+                  </Text>
+                ) : null}
+                {/* 별점 바로 옆에 댓글 수 (사람 사이 간격 12px 대신 별점 안쪽과 같은 6px) */}
+                {item.commentCount ? (
+                  <Text
+                    variant="muted"
+                    size={12}
+                    className={reviews.length > 0 ? '-ml-1.5' : undefined}
+                  >
+                    댓글 {item.commentCount}개
                   </Text>
                 ) : null}
               </View>
