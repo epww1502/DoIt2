@@ -11,6 +11,8 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent
 FONTS = ROOT.parent / 'assets' / 'fonts'
 W, H = 1320, 2868  # iPhone 6.9인치
+# 6.3인치 칸용. 비율이 0.06%만 달라서 6.9인치 완성본을 그대로 줄인다
+SMALL = ('screenshots-6.3', (1206, 2622))
 BG = '#5AB0FF'
 FRAME = '#9ED0FF'
 
@@ -55,13 +57,17 @@ def make(name, title, sub):
     screen = Image.open(ROOT / 'raw' / f'{name}.png').convert('RGB').resize((SW, SH), Image.LANCZOS)
     canvas.paste(screen, (SX, SY), rounded_mask((SW, SH), RADIUS))
 
-    out = ROOT / 'screenshots' / f'{name}.png'
-    canvas.save(out)
-    assert Image.open(out).size == (W, H), f'{out} 크기가 {W}x{H}가 아니다'
-    return out
+    outs = []
+    for folder, size in [('screenshots', (W, H)), SMALL]:
+        out = ROOT / folder / f'{name}.png'
+        canvas.resize(size, Image.LANCZOS).save(out)
+        assert Image.open(out).size == size, f'{out} 크기가 {size}가 아니다'
+        outs.append(out)
+    return outs
 
 
 if __name__ == '__main__':
-    (ROOT / 'screenshots').mkdir(exist_ok=True)
+    for folder in ('screenshots', SMALL[0]):
+        (ROOT / folder).mkdir(exist_ok=True)
     for shot in SHOTS:
-        print(make(*shot))
+        print(*make(*shot), sep='\n')
