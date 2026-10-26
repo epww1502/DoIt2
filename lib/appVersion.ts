@@ -19,9 +19,10 @@ export type RequiredUpdate = {
 /**
  * 설치된 빌드의 버전. runtimeVersion 정책이 appVersion이라 앱 버전(app.json version)과 같다.
  * OTA로 화면 코드가 바뀌어도 이 값은 그대로라 "빌드" 버전을 나타낸다.
+ * runtimeVersion이 없는 iOS 빌드는 빈 문자열을 주므로 ?? 대신 ||로 앱 버전을 쓴다.
  */
 export function installedVersion() {
-  return Updates.runtimeVersion ?? Constants.expoConfig?.version ?? '0.0.0';
+  return Updates.runtimeVersion || Constants.expoConfig?.version || '0.0.0';
 }
 
 /** '0.10.1' 같은 버전을 숫자로 비교한다. a가 낮으면 음수 */
