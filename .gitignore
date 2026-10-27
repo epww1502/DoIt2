@@ -52,3 +52,6 @@ app-example
 # Firebase 서비스 계정 키 (FCM 알림용, 절대 커밋하지 않는다)
 *firebase-adminsdk*.json
 service-account*.json
+
+# App Review 녹화 영상 (용량이 커서 올리지 않음)
+app-store/recording/

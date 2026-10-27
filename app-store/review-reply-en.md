@@ -5,7 +5,7 @@
 아래 "답장" 영어 부분을 **App Store Connect 메시지 답장**과 **앱 심사 정보 > 메모** 두 곳에 모두 붙여넣는다 (Apple 요청).
 화면 녹화 파일은 답장에 첨부한다.
 
-## 화면 녹화 찍는 순서 (실제 iPhone, 최신 iOS)
+## 화면 녹화 찍는 순서 (실제 iPhone, 최신 iOS — 이번엔 실기기가 없어 시뮬레이터 Release 빌드로 찍음)
 
 설정 > 제어 센터에 "화면 기록"을 추가하고, 녹화를 시작한 뒤 아래 순서대로 진행한다.
 빠짐없이 보이는 게 중요하고, 길이는 3~5분이면 충분하다.
@@ -27,10 +27,10 @@
 ```
 Hello App Review team,
 
-Thank you for the review. Here is the information you requested. A screen recording captured on a physical iPhone running the latest iOS is attached. It starts from launching the app and shows account creation, the main features, shared spaces with comments, member removal, the account code (sign-in on another device), and account deletion.
+Thank you for the review. Here is the information you requested. A screen recording of the app (build 0.2.0 (3)) is attached. It starts from launching the app and shows account creation, the main features, shared spaces with comments, member removal, the account code (sign-in on another device), and account deletion.
 
 1. Screen recording
-Attached to this reply.
+Attached to this reply. We are a one-person team and did not have access to a physical iPhone at the time of recording, so it was captured in the iOS Simulator (iPhone 17 Pro Max, iOS 26.2) running a Release build made from the same source as the submitted build 0.2.0 (3). The app uses no device-only features in these flows (no camera capture, Face ID or purchases), so it behaves the same on a device. If a recording from a physical device is still required, please let us know and we will provide one.
 
 2. Purpose and target audience
 DoIt2 is a shared bucket list for couples, friends and families in Korea. People often say "let's go there someday" and then forget. DoIt2 lets them save places to visit and things to try in one list, pick one at random when they cannot decide what to do today (outdoor items are skipped when it rains), and record what they did together with a date, star rating, short review and photos. Done items can be looked back on as a list, calendar, map and yearly summary. The target audience is adults and teens in Korea who plan outings with a partner, friends or family. The app is free with no ads, no in-app purchases and no tracking.
