@@ -13,10 +13,12 @@ import {
   transferSpaceOwner,
 } from '@/lib/supabase/account';
 import type { MemberProfile } from '@/lib/supabase/database.types';
+import { fetchMyBlocks, unblockUser } from '@/lib/supabase/social';
 import { displayName } from '@/store/useProfileStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
 import { PersonAvatar } from './PersonAvatar';
+import { askBlock, askReport } from './spaceFlow';
 
 type SpaceMembersProps = {
   spaceId: string;
@@ -26,7 +28,7 @@ type SpaceMembersProps = {
 
 /**
  * 공간 관리: 누가 들어와 있는지. 이 공간에서 공개를 끈 사람은 '익명', 공간장은 왕관.
- * 공간장은 다른 멤버의 ⋯ 버튼으로 공간장을 넘겨주거나 내보낼 수 있다.
+ * 다른 멤버의 ⋯ 버튼으로 신고·차단(풀기)을 하고, 공간장은 공간장을 넘겨주거나 내보낼 수도 있다.
  */
 export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
   const [members, setMembers] = useState<MemberProfile[] | null>(null);
@@ -34,14 +36,17 @@ export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
   const [loadFailed, setLoadFailed] = useState(false);
   /** 선택지 시트를 연 멤버 */
   const [sheetFor, setSheetFor] = useState<MemberProfile | null>(null);
+  /** 내가 차단한 사람들 */
+  const [blocked, setBlocked] = useState<string[]>([]);
 
   /** 멤버 목록을 서버에서 다시 받는다. 돌려주는 함수를 부르면 늦게 온 응답은 버린다 */
   const load = useCallback(() => {
     let cancelled = false;
-    fetchSpaceMembers(spaceId)
-      .then((list) => {
+    Promise.all([fetchSpaceMembers(spaceId), fetchMyBlocks()])
+      .then(([list, blocks]) => {
         if (cancelled) return;
         setMembers(list);
+        setBlocked(blocks);
         setLoadFailed(false);
       })
       .catch((e: unknown) => {
@@ -182,24 +187,25 @@ export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
               size={36}
               crown={m.is_owner}
             />
-            <Text size={15} numberOfLines={1} className="flex-1">
-              {displayName(m.nickname)}
-            </Text>
-            {iAmOwner ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${displayName(m.nickname)} 관리`}
-                hitSlop={10}
-                onPress={() => setSheetFor(m)}
-                className="p-1 active:opacity-60"
-              >
-                <Icon
-                  as={Ellipsis}
-                  size={20}
-                  className="text-muted-foreground"
-                />
-              </Pressable>
-            ) : null}
+            <View className="flex-1">
+              <Text size={15} numberOfLines={1}>
+                {displayName(m.nickname)}
+              </Text>
+              {blocked.includes(m.user_id) ? (
+                <Text size={12} className="text-muted-foreground">
+                  차단함 · 댓글이 보이지 않아요
+                </Text>
+              ) : null}
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${displayName(m.nickname)} 관리`}
+              hitSlop={10}
+              onPress={() => setSheetFor(m)}
+              className="p-1 active:opacity-60"
+            >
+              <Icon as={Ellipsis} size={20} className="text-muted-foreground" />
+            </Pressable>
           </View>
         );
       })}
@@ -219,15 +225,45 @@ export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
         items={
           sheetFor
             ? [
+                ...(iAmOwner
+                  ? [
+                      {
+                        label: '공간장 넘겨주기',
+                        onPress: () => confirmTransfer(sheetFor),
+                      },
+                      {
+                        label: '내보내기',
+                        destructive: true,
+                        onPress: () => confirmKick(sheetFor),
+                      },
+                    ]
+                  : []),
                 {
-                  label: '공간장 넘겨주기',
-                  onPress: () => confirmTransfer(sheetFor),
+                  label: '신고하기',
+                  onPress: () =>
+                    askReport({
+                      spaceId,
+                      targetUserId: sheetFor.user_id,
+                      name: displayName(sheetFor.nickname),
+                      onBlocked: load,
+                    }),
                 },
-                {
-                  label: '내보내기',
-                  destructive: true,
-                  onPress: () => confirmKick(sheetFor),
-                },
+                blocked.includes(sheetFor.user_id)
+                  ? {
+                      label: '차단 풀기',
+                      onPress: () =>
+                        void run(() => unblockUser(sheetFor.user_id)),
+                    }
+                  : {
+                      label: '차단하기',
+                      destructive: true,
+                      onPress: () =>
+                        askBlock(
+                          sheetFor.user_id,
+                          displayName(sheetFor.nickname),
+                          load
+                        ),
+                    },
               ]
             : []
         }

@@ -98,6 +98,42 @@ export type Database = {
           },
         ];
       };
+      content_reports: {
+        Row: {
+          comment_body: string | null;
+          comment_id: string | null;
+          created_at: string;
+          id: string;
+          reason: string;
+          reporter_id: string | null;
+          resolved_at: string | null;
+          space_id: string;
+          target_user_id: string | null;
+        };
+        Insert: {
+          comment_body?: string | null;
+          comment_id?: string | null;
+          created_at?: string;
+          id?: string;
+          reason: string;
+          reporter_id?: string | null;
+          resolved_at?: string | null;
+          space_id: string;
+          target_user_id?: string | null;
+        };
+        Update: {
+          comment_body?: string | null;
+          comment_id?: string | null;
+          created_at?: string;
+          id?: string;
+          reason?: string;
+          reporter_id?: string | null;
+          resolved_at?: string | null;
+          space_id?: string;
+          target_user_id?: string | null;
+        };
+        Relationships: [];
+      };
       item_comments: {
         Row: {
           body: string;
@@ -360,6 +396,24 @@ export type Database = {
           name?: string;
           owner_id?: string | null;
           is_personal?: boolean;
+        };
+        Relationships: [];
+      };
+      user_blocks: {
+        Row: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at: string;
+        };
+        Insert: {
+          blocked_id: string;
+          blocker_id?: string;
+          created_at?: string;
+        };
+        Update: {
+          blocked_id?: string;
+          blocker_id?: string;
+          created_at?: string;
         };
         Relationships: [];
       };

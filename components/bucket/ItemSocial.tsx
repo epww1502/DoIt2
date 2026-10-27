@@ -5,7 +5,9 @@ import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
 
 import { ActionSheet, Icon, InlineError, Text } from '@/components/atoms';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
+import { askBlock, askReport } from '@/components/space/spaceFlow';
 import { useItemSocial } from '@/hooks/useItemSocial';
+import type { ItemCommentRow } from '@/lib/supabase/database.types';
 import { themeColors } from '@/constants/colors';
 import { FONT_WEIGHTS } from '@/constants/fonts';
 import { useThemeMode } from '@/contexts/ThemeModeContext';
@@ -30,7 +32,7 @@ function commentTime(at: string) {
  * 공간 항목의 이모지 반응과 댓글.
  * 반응: 웃는 얼굴(+)에서 골라 남기고, 남겨진 반응을 누르면 내 반응을 남기거나 뺀다.
  * 길게 누르면 누가 남겼는지 보인다.
- * 댓글은 아래 입력칸에서 남긴다. 내 댓글은 길게 눌러 지운다.
+ * 댓글은 아래 입력칸에서 남긴다. 내 댓글은 길게 눌러 지우고, 다른 사람 댓글은 길게 눌러 신고·차단한다.
  */
 export function ItemSocial({
   itemId,
@@ -52,6 +54,8 @@ export function ItemSocial({
   const [whoFor, setWhoFor] = useState<ReactionEmoji | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  /** 신고·차단 시트를 연 다른 사람 댓글 */
+  const [menuFor, setMenuFor] = useState<ItemCommentRow | null>(null);
 
   if (social.state.status === 'error' && !social.data) {
     return (
@@ -238,9 +242,11 @@ export function ItemSocial({
             return (
               <Pressable
                 key={c.id}
-                accessibilityRole={mine ? 'button' : undefined}
-                accessibilityHint={mine ? '길게 눌러 지우기' : undefined}
-                onLongPress={mine ? () => confirmDelete(c.id) : undefined}
+                accessibilityRole="button"
+                accessibilityHint={
+                  mine ? '길게 눌러 지우기' : '길게 눌러 신고하거나 차단하기'
+                }
+                onLongPress={() => (mine ? confirmDelete(c.id) : setMenuFor(c))}
                 delayLongPress={350}
                 className="flex-row gap-2.5"
               >
@@ -270,11 +276,51 @@ export function ItemSocial({
             );
           })
         )}
-        {comments.some((c) => c.user_id === social.userId) ? (
+        {comments.length > 0 ? (
           <Text variant="muted" size={11}>
-            내 댓글은 길게 눌러 지울 수 있어요
+            {comments.some((c) => c.user_id === social.userId)
+              ? '내 댓글은 길게 눌러 지우고, 다른 사람 댓글은 길게 눌러 신고·차단할 수 있어요'
+              : '댓글을 길게 눌러 신고하거나 차단할 수 있어요'}
           </Text>
         ) : null}
+        <ActionSheet
+          visible={menuFor !== null}
+          onClose={() => setMenuFor(null)}
+          header={
+            menuFor ? (
+              <Text size={14} numberOfLines={3}>
+                {member(menuFor.user_id).name}: {menuFor.body}
+              </Text>
+            ) : null
+          }
+          items={
+            menuFor
+              ? [
+                  {
+                    label: '댓글 신고하기',
+                    onPress: () =>
+                      askReport({
+                        spaceId,
+                        targetUserId: menuFor.user_id,
+                        name: member(menuFor.user_id).name,
+                        comment: { id: menuFor.id, body: menuFor.body },
+                        onBlocked: social.reload,
+                      }),
+                  },
+                  {
+                    label: `${member(menuFor.user_id).name}님 차단하기`,
+                    destructive: true,
+                    onPress: () =>
+                      askBlock(
+                        menuFor.user_id,
+                        member(menuFor.user_id).name,
+                        social.reload
+                      ),
+                  },
+                ]
+              : []
+          }
+        />
 
         {/* 입력칸 */}
         <View className="flex-row items-end gap-2 rounded-2xl border px-3 py-1.5 bg-card border-border">

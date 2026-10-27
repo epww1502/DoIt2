@@ -1,5 +1,11 @@
 import { showAlert } from '@/lib/dialog';
-import { errorMessage } from '@/lib/errors';
+import { errorMessage, showErrorAlert } from '@/lib/errors';
+import {
+  blockUser,
+  REPORT_REASONS,
+  reportContent,
+  type ReportReason,
+} from '@/lib/supabase/social';
 import { LOCAL_KEY, useBucketStore } from '@/store/useBucketStore';
 import { type Space, useSpaceStore } from '@/store/useSpaceStore';
 
@@ -138,4 +144,68 @@ export function confirmLeaveSpaces(spaces: Space[], onLeft?: () => void) {
       },
     },
   ]);
+}
+
+/**
+ * 신고 사유를 골라 신고한다 (App Store 1.2). 운영자가 24시간 안에 확인한다.
+ * comment가 있으면 그 댓글을, 없으면 사람을 신고한다.
+ */
+export function askReport(report: {
+  spaceId: string;
+  targetUserId: string;
+  name: string;
+  comment?: { id: string; body: string };
+  /** 신고 뒤 차단까지 하면 부른다 (목록을 다시 받게) */
+  onBlocked?: () => void;
+}) {
+  const { onBlocked, ...target } = report;
+  const send = (reason: ReportReason) =>
+    reportContent({ ...target, reason })
+      .then(() =>
+        showAlert(
+          '신고했어요',
+          '24시간 안에 확인하고 조치할게요. 더 보고 싶지 않다면 차단할 수도 있어요.',
+          [
+            { text: '닫기', style: 'cancel' },
+            {
+              text: '차단하기',
+              style: 'destructive',
+              onPress: () =>
+                askBlock(report.targetUserId, report.name, onBlocked),
+            },
+          ]
+        )
+      )
+      .catch((e) => showErrorAlert('신고하지 못했어요', e));
+  showAlert(
+    report.comment ? '댓글을 신고할까요?' : `${report.name}님을 신고할까요?`,
+    '신고 이유를 골라주세요.',
+    [
+      // 버튼이 3개 이상이면 팝업이 거꾸로 쌓으므로 뒤집어 넘겨 위에서부터 이 순서로 보이게 한다
+      ...[...REPORT_REASONS].reverse().map((r) => ({
+        text: r.label,
+        onPress: () => void send(r.value),
+      })),
+      { text: '취소', style: 'cancel' as const },
+    ]
+  );
+}
+
+/** 차단하면 그 사람의 댓글이 나에게 안 보인다. 멤버 목록에서 풀 수 있다 */
+export function askBlock(userId: string, name: string, onBlocked?: () => void) {
+  showAlert(
+    `${name}님을 차단할까요?`,
+    '차단하면 이 사람의 댓글이 보이지 않아요. 공간 멤버 목록에서 언제든 풀 수 있어요.',
+    [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '차단하기',
+        style: 'destructive',
+        onPress: () =>
+          blockUser(userId)
+            .then(onBlocked)
+            .catch((e) => showErrorAlert('차단하지 못했어요', e)),
+      },
+    ]
+  );
 }

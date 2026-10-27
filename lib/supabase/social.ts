@@ -74,3 +74,54 @@ export async function removeReaction(
     .eq('emoji', emoji);
   if (error) throw error;
 }
+
+/** 신고 사유 (서버 표의 check와 같게) */
+export const REPORT_REASONS = [
+  { value: 'spam', label: '스팸·광고' },
+  { value: 'abuse', label: '욕설·괴롭힘' },
+  { value: 'sexual', label: '음란·불쾌한 내용' },
+  { value: 'other', label: '기타' },
+] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number]['value'];
+
+/** 댓글이나 멤버를 신고한다. 운영자만 서버에서 본다 */
+export async function reportContent(report: {
+  spaceId: string;
+  targetUserId: string;
+  reason: ReportReason;
+  comment?: { id: string; body: string };
+}) {
+  const { error } = await supabase.from('content_reports').insert({
+    space_id: report.spaceId,
+    target_user_id: report.targetUserId,
+    reason: report.reason,
+    comment_id: report.comment?.id,
+    comment_body: report.comment?.body,
+  });
+  if (error) throw error;
+}
+
+/** 내가 차단한 사람들의 id */
+export async function fetchMyBlocks() {
+  const { data, error } = await supabase
+    .from('user_blocks')
+    .select('blocked_id');
+  if (error) throw error;
+  return data.map((b) => b.blocked_id);
+}
+
+/** 차단하면 그 사람의 댓글이 나에게 안 보인다 (서버 권한에서 걸러진다) */
+export async function blockUser(userId: string) {
+  const { error } = await supabase
+    .from('user_blocks')
+    .upsert({ blocked_id: userId }, { ignoreDuplicates: true });
+  if (error) throw error;
+}
+
+export async function unblockUser(userId: string) {
+  const { error } = await supabase
+    .from('user_blocks')
+    .delete()
+    .eq('blocked_id', userId);
+  if (error) throw error;
+}
