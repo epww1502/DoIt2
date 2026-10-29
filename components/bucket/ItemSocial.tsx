@@ -1,7 +1,18 @@
 import dayjs from 'dayjs';
-import { SendHorizontal, SmilePlus } from 'lucide-react-native';
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
+import {
+  Check,
+  Ellipsis,
+  SendHorizontal,
+  SmilePlus,
+} from 'lucide-react-native';
+import { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  TextInput,
+  View,
+  type TextInputInstance,
+} from 'react-native';
 
 import { ActionSheet, Icon, InlineError, Text } from '@/components/atoms';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
@@ -32,7 +43,8 @@ function commentTime(at: string) {
  * 공간 항목의 이모지 반응과 댓글.
  * 반응: 웃는 얼굴(+)에서 골라 남기고, 남겨진 반응을 누르면 내 반응을 남기거나 뺀다.
  * 길게 누르면 누가 남겼는지 보인다.
- * 댓글은 아래 입력칸에서 남긴다. 내 댓글은 길게 눌러 지우고, 다른 사람 댓글은 길게 눌러 신고·차단한다.
+ * 댓글은 아래 입력칸에서 남긴다. 내 댓글은 오른쪽 ⋯(또는 길게 누르기)로 고치거나 지운다 (고친 댓글은 '(수정됨)').
+ * 다른 사람 댓글은 길게 눌러 신고·차단한다.
  */
 export function ItemSocial({
   itemId,
@@ -54,8 +66,11 @@ export function ItemSocial({
   const [whoFor, setWhoFor] = useState<ReactionEmoji | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
-  /** 신고·차단 시트를 연 다른 사람 댓글 */
+  /** 고치는 중인 내 댓글 (입력칸이 그 댓글로 채워진다) */
+  const [editingId, setEditingId] = useState<string | null>(null);
+  /** 메뉴를 연 댓글 (내 것: 고치기·지우기, 다른 사람 것: 신고·차단) */
   const [menuFor, setMenuFor] = useState<ItemCommentRow | null>(null);
+  const inputRef = useRef<TextInputInstance>(null);
 
   if (social.state.status === 'error' && !social.data) {
     return (
@@ -97,14 +112,37 @@ export function ItemSocial({
     if (!draft.trim() || sending) return;
     setSending(true);
     try {
-      await social.sendComment(draft);
+      if (editingId) {
+        await social.editComment(editingId, draft);
+        setEditingId(null);
+      } else {
+        await social.sendComment(draft);
+      }
       setDraft('');
     } catch (e) {
       // 쓴 글은 그대로 두고 다시 보낼 수 있게
-      showErrorAlert('댓글을 남기지 못했어요', e, send);
+      showErrorAlert(
+        editingId ? '댓글을 고치지 못했어요' : '댓글을 남기지 못했어요',
+        e,
+        send
+      );
     } finally {
       setSending(false);
     }
+  };
+
+  const startEdit = (id: string) => {
+    const target = comments.find((c) => c.id === id);
+    if (!target) return;
+    setEditingId(id);
+    setDraft(target.body);
+    // 메뉴가 닫힌 뒤에 입력칸을 연다
+    setTimeout(() => inputRef.current?.focus(), 250);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setDraft('');
   };
 
   const confirmDelete = (id: string) =>
@@ -244,9 +282,11 @@ export function ItemSocial({
                 key={c.id}
                 accessibilityRole="button"
                 accessibilityHint={
-                  mine ? '길게 눌러 지우기' : '길게 눌러 신고하거나 차단하기'
+                  mine
+                    ? '길게 눌러 고치거나 지우기'
+                    : '길게 눌러 신고하거나 차단하기'
                 }
-                onLongPress={() => (mine ? confirmDelete(c.id) : setMenuFor(c))}
+                onLongPress={() => setMenuFor(c)}
                 delayLongPress={350}
                 className="flex-row gap-2.5"
               >
@@ -258,6 +298,7 @@ export function ItemSocial({
                     </Text>
                     <Text variant="muted" size={11}>
                       {commentTime(c.created_at)}
+                      {c.edited_at ? ' (수정됨)' : ''}
                     </Text>
                   </View>
                   <View
@@ -272,59 +313,111 @@ export function ItemSocial({
                     <Text size={14}>{c.body}</Text>
                   </View>
                 </View>
+                {/* 내 댓글: 고치기·지우기 메뉴 */}
+                {mine ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="댓글 메뉴"
+                    hitSlop={10}
+                    onPress={() => setMenuFor(c)}
+                    className="h-7 w-7 items-center justify-center self-start active:opacity-60"
+                  >
+                    <Icon
+                      as={Ellipsis}
+                      size={18}
+                      className="text-muted-foreground"
+                    />
+                  </Pressable>
+                ) : null}
               </Pressable>
             );
           })
         )}
-        {comments.length > 0 ? (
+        {comments.some((c) => c.user_id !== social.userId) ? (
           <Text variant="muted" size={11}>
-            {comments.some((c) => c.user_id === social.userId)
-              ? '내 댓글은 길게 눌러 지우고, 다른 사람 댓글은 길게 눌러 신고·차단할 수 있어요'
-              : '댓글을 길게 눌러 신고하거나 차단할 수 있어요'}
+            다른 사람 댓글을 길게 눌러 신고하거나 차단할 수 있어요
           </Text>
         ) : null}
+
+        {/* 고치는 중이면 입력칸 위에 안내와 취소 */}
+        {editingId ? (
+          <View className="flex-row items-center justify-between px-1">
+            <Text size={12} className="text-primary" weight="600">
+              댓글 고치는 중
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={cancelEdit}
+              hitSlop={8}
+              className="active:opacity-60"
+            >
+              <Text size={12} weight="600" className="text-muted-foreground">
+                취소
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {/* 댓글 메뉴: 내 것은 고치기·지우기, 다른 사람 것은 신고·차단 */}
         <ActionSheet
           visible={menuFor !== null}
           onClose={() => setMenuFor(null)}
           header={
-            menuFor ? (
+            menuFor && menuFor.user_id !== social.userId ? (
               <Text size={14} numberOfLines={3}>
                 {member(menuFor.user_id).name}: {menuFor.body}
               </Text>
             ) : null
           }
           items={
-            menuFor
-              ? [
-                  {
-                    label: '댓글 신고하기',
-                    onPress: () =>
-                      askReport({
-                        spaceId,
-                        targetUserId: menuFor.user_id,
-                        name: member(menuFor.user_id).name,
-                        comment: { id: menuFor.id, body: menuFor.body },
-                        onBlocked: social.reload,
-                      }),
-                  },
-                  {
-                    label: `${member(menuFor.user_id).name}님 차단하기`,
-                    destructive: true,
-                    onPress: () =>
-                      askBlock(
-                        menuFor.user_id,
-                        member(menuFor.user_id).name,
-                        social.reload
-                      ),
-                  },
-                ]
-              : []
+            !menuFor
+              ? []
+              : menuFor.user_id === social.userId
+                ? [
+                    {
+                      label: '고치기',
+                      onPress: () => startEdit(menuFor.id),
+                    },
+                    {
+                      label: '지우기',
+                      destructive: true,
+                      onPress: () => confirmDelete(menuFor.id),
+                    },
+                  ]
+                : [
+                    {
+                      label: '댓글 신고하기',
+                      onPress: () =>
+                        askReport({
+                          spaceId,
+                          targetUserId: menuFor.user_id,
+                          name: member(menuFor.user_id).name,
+                          comment: { id: menuFor.id, body: menuFor.body },
+                          onBlocked: social.reload,
+                        }),
+                    },
+                    {
+                      label: `${member(menuFor.user_id).name}님 차단하기`,
+                      destructive: true,
+                      onPress: () =>
+                        askBlock(
+                          menuFor.user_id,
+                          member(menuFor.user_id).name,
+                          social.reload
+                        ),
+                    },
+                  ]
           }
         />
 
         {/* 입력칸 */}
-        <View className="flex-row items-end gap-2 rounded-2xl border px-3 py-1.5 bg-card border-border">
+        <View
+          className={cn(
+            'flex-row items-end gap-2 rounded-2xl border px-3 py-1.5 bg-card',
+            editingId ? 'border-primary' : 'border-border'
+          )}
+        >
           <TextInput
+            ref={inputRef}
             value={draft}
             onChangeText={setDraft}
             placeholder="댓글 달기"
@@ -337,7 +430,7 @@ export function ItemSocial({
           />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="댓글 보내기"
+            accessibilityLabel={editingId ? '고친 댓글 저장' : '댓글 보내기'}
             disabled={!draft.trim() || sending}
             onPress={() => void send()}
             className="h-10 w-10 items-center justify-center active:opacity-60"
@@ -346,7 +439,7 @@ export function ItemSocial({
               <ActivityIndicator size="small" />
             ) : (
               <Icon
-                as={SendHorizontal}
+                as={editingId ? Check : SendHorizontal}
                 size={20}
                 className={draft.trim() ? 'text-primary' : 'text-muted'}
               />

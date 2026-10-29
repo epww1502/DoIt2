@@ -138,6 +138,7 @@ export type Database = {
         Row: {
           body: string;
           created_at: string;
+          edited_at: string | null;
           id: string;
           item_id: string;
           space_id: string;
@@ -146,6 +147,7 @@ export type Database = {
         Insert: {
           body: string;
           created_at?: string;
+          edited_at?: string | null;
           id?: string;
           item_id: string;
           space_id: string;
@@ -154,6 +156,7 @@ export type Database = {
         Update: {
           body?: string;
           created_at?: string;
+          edited_at?: string | null;
           id?: string;
           item_id?: string;
           space_id?: string;

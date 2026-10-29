@@ -41,6 +41,21 @@ export async function addComment(
   return data;
 }
 
+/** 내 댓글 고치기 (서버가 edited_at을 찍는다) */
+export async function updateComment(
+  id: string,
+  body: string
+): Promise<ItemCommentRow> {
+  const { data, error } = await supabase
+    .from('item_comments')
+    .update({ body })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteComment(id: string) {
   const { error } = await supabase.from('item_comments').delete().eq('id', id);
   if (error) throw error;

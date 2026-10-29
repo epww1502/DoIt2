@@ -13,6 +13,7 @@ import {
   deleteComment,
   fetchItemSocial,
   removeReaction,
+  updateComment,
   type ReactionEmoji,
 } from '@/lib/supabase/social';
 import { useLoad } from '@/hooks/useLoad';
@@ -55,6 +56,27 @@ export function useItemSocial(itemId: string, spaceId: string | null) {
           setData((d) =>
             d && !d.comments.some((c) => c.id === row.id)
               ? { ...d, comments: [...d.comments, row] }
+              : d
+          );
+        }
+      )
+      // 누가 댓글을 고쳤다
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'item_comments',
+          filter: `item_id=eq.${itemId}`,
+        },
+        (payload) => {
+          const row = payload.new as ItemCommentRow;
+          setData((d) =>
+            d
+              ? {
+                  ...d,
+                  comments: d.comments.map((c) => (c.id === row.id ? row : c)),
+                }
               : d
           );
         }
@@ -152,6 +174,33 @@ export function useItemSocial(itemId: string, spaceId: string | null) {
     notifySpace(spaceId, 'commented', [itemId]);
   };
 
+  /** 내 댓글 고치기. 실패하면 되돌리고 던진다 */
+  const editComment = async (id: string, body: string) => {
+    const text = body.trim();
+    if (!data || !text) return;
+    const before = data;
+    setData({
+      ...data,
+      comments: data.comments.map((c) =>
+        c.id === id
+          ? { ...c, body: text, edited_at: new Date().toISOString() }
+          : c
+      ),
+    });
+    try {
+      const row = await updateComment(id, text);
+      setData((d) =>
+        d
+          ? { ...d, comments: d.comments.map((c) => (c.id === id ? row : c)) }
+          : d
+      );
+    } catch (e) {
+      noteFailure(e);
+      setData(before);
+      throw e;
+    }
+  };
+
   const removeComment = async (id: string) => {
     if (!data) return;
     const before = data;
@@ -172,6 +221,7 @@ export function useItemSocial(itemId: string, spaceId: string | null) {
     reload,
     toggleReaction,
     sendComment,
+    editComment,
     removeComment,
   };
 }
