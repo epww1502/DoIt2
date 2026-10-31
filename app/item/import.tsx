@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, ErrorState, Icon, NavBar, Text } from '@/components/atoms';
+import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
@@ -235,9 +236,7 @@ function PickItems({
                     already && 'opacity-50'
                   )}
                 >
-                  <View className="h-11 w-11 items-center justify-center rounded-full bg-accent">
-                    <Text size={20}>{category.emoji}</Text>
-                  </View>
+                  <ItemIcon item={item} size={44} emojiSize={20} />
                   <View className="flex-1 gap-0.5">
                     <Text weight="600" size={15} numberOfLines={1}>
                       {item.title}

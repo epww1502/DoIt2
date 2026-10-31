@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
 import { NavBar, Text } from '@/components/atoms';
+import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { itemStatus, viewForMe } from '@/lib/bucket/reviews';
@@ -221,7 +222,7 @@ export default function DoneStatsScreen() {
                 }
                 className="flex-row items-center gap-3 active:opacity-70"
               >
-                <Text size={20}>{getCategory(it.category).emoji}</Text>
+                <ItemIcon item={it} size={32} emojiSize={20} bare />
                 <View className="flex-1 gap-0.5">
                   <Text weight="600" size={15} numberOfLines={1}>
                     {it.title}

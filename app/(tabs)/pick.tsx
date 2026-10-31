@@ -6,6 +6,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Icon, Text } from '@/components/atoms';
+import { ItemIcon } from '@/components/bucket/ItemIcon';
 import {
   ALL_FILTER,
   CategoryFilter,
@@ -326,7 +327,7 @@ export default function PickScreen() {
               >
                 {current && category ? (
                   <>
-                    <Text size={44}>{category.emoji}</Text>
+                    <ItemIcon item={current} size={88} emojiSize={44} bare />
                     <Text
                       weight="700"
                       size={24}

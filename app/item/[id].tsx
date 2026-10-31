@@ -10,6 +10,7 @@ import {
 import { useTogether } from '@/hooks/useTogether';
 import { showAlert } from '@/lib/dialog';
 import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
+import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
@@ -24,6 +25,7 @@ import { goalDday } from '@/components/bucket/goalDday';
 import {
   getCategory,
   GOAL_REMIND_META,
+  itemPhotos,
   KIND_META,
   SETTING_META,
 } from '@/lib/bucket/types';
@@ -65,6 +67,7 @@ export default function BucketDetailScreen() {
   }
 
   const category = getCategory(item.category);
+  const photos = itemPhotos(item);
   const meta = KIND_META[item.kind];
   const done = item.done;
   // 카카오에서 고른 장소가 있으면 그 장소로, 없으면 적어 둔 위치 글자로 검색해서 연다
@@ -160,9 +163,7 @@ export default function BucketDetailScreen() {
         }}
       >
         <View className="items-center gap-3 pt-4">
-          <View className="h-20 w-20 items-center justify-center rounded-full bg-accent">
-            <Text size={40}>{category.emoji}</Text>
-          </View>
+          <ItemIcon item={item} size={80} emojiSize={40} />
           <Badge variant="primary">
             <Text>
               {meta.label} · {category.label} ·{' '}
@@ -182,6 +183,13 @@ export default function BucketDetailScreen() {
             {dayjs(item.createdAt).format('YYYY년 M월 D일')}에 담았어요
           </Text>
         </View>
+
+        {/* 항목 사진 (첫 장이 대표). 옆으로 넘겨 본다 */}
+        {photos.length > 0 ? (
+          <View className="overflow-hidden rounded-2xl">
+            <DonePhotoGallery done={{ photoUri: null, photos }} />
+          </View>
+        ) : null}
 
         {item.goal ? (
           <View className="flex-row items-center gap-3 rounded-2xl p-4 bg-accent">

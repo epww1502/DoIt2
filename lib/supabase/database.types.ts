@@ -50,6 +50,7 @@ export type Database = {
           kind: string;
           location: string;
           memo: string;
+          photos: Json | null;
           place: Json | null;
           setting: string;
           space_id: string;
@@ -66,6 +67,7 @@ export type Database = {
           kind: string;
           location?: string;
           memo?: string;
+          photos?: Json | null;
           place?: Json | null;
           setting: string;
           space_id: string;
@@ -82,6 +84,7 @@ export type Database = {
           kind?: string;
           location?: string;
           memo?: string;
+          photos?: Json | null;
           place?: Json | null;
           setting?: string;
           space_id?: string;

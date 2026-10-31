@@ -113,6 +113,16 @@ export type RecordPhoto = { uri: string | null; path: string | null };
 /** 기록 하나에 넣을 수 있는 사진 수 */
 export const MAX_RECORD_PHOTOS = 5;
 
+/** 버킷리스트 항목 하나에 넣을 수 있는 사진 수 */
+export const MAX_ITEM_PHOTOS = 3;
+
+/** 항목 사진들 (첫 번째가 대표). 사진이 없으면 빈 목록 */
+export function itemPhotos(
+  item: Pick<BucketItem, 'photos'> | null | undefined
+): RecordPhoto[] {
+  return (item?.photos ?? []).filter((p) => p.uri || p.path);
+}
+
 /** 기록의 사진들 (예전 한 장짜리 기록도 목록으로) */
 export function recordPhotos(
   done: Pick<DoneRecord, 'photoUri' | 'photoPath' | 'photos'> | null | undefined
@@ -194,6 +204,8 @@ export type BucketItem = {
   /** 카카오에서 고른 장소. 예전 데이터에는 없다 */
   place?: PlaceInfo | null;
   memo: string;
+  /** 항목 사진 (최대 MAX_ITEM_PHOTOS). 첫 번째가 대표 사진이고 목록에서 이모지 대신 보인다 */
+  photos?: RecordPhoto[];
   createdAt: string;
   /** 함께한 기록(날짜·사진). 공간에서는 별점·소감은 reviews에 사람마다 따로 있다 */
   done: DoneRecord | null;
@@ -245,4 +257,5 @@ export type BucketInput = Pick<
   | 'place'
   | 'memo'
   | 'goal'
+  | 'photos'
 >;

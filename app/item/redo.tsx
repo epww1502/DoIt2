@@ -7,14 +7,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
+import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
-import {
-  getCategory,
-  type BucketInput,
-  type BucketItem,
-} from '@/lib/bucket/types';
+import { type BucketInput, type BucketItem } from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
 
@@ -119,7 +116,6 @@ export default function RedoScreen() {
             renderItem={({ item }) => {
               const already = todoKeys.has(sameKey(item));
               const isSelected = selected.has(item.id);
-              const category = getCategory(item.category);
               return (
                 <Pressable
                   accessibilityRole="checkbox"
@@ -135,9 +131,7 @@ export default function RedoScreen() {
                     already && 'opacity-50'
                   )}
                 >
-                  <View className="h-11 w-11 items-center justify-center rounded-full bg-accent">
-                    <Text size={20}>{category.emoji}</Text>
-                  </View>
+                  <ItemIcon item={item} size={44} emojiSize={20} />
                   <View className="flex-1 gap-0.5">
                     <Text weight="600" size={15} numberOfLines={1}>
                       {item.title}

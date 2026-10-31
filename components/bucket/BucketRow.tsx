@@ -3,6 +3,7 @@ import { ChevronRight, MessageCircle } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
+import { ItemIcon } from '@/components/bucket/ItemIcon';
 import {
   getCategory,
   KIND_META,
@@ -45,9 +46,7 @@ export function BucketRow({
       }
       className="flex-row items-center gap-3 rounded-2xl border p-4 bg-card border-border active:opacity-70"
     >
-      <View className="h-12 w-12 items-center justify-center rounded-full bg-accent">
-        <Text size={22}>{category.emoji}</Text>
-      </View>
+      <ItemIcon item={item} size={48} emojiSize={22} />
       <View className="flex-1 gap-0.5 pr-6">
         <View className="flex-row items-center gap-2">
           <Text
@@ -80,7 +79,6 @@ export function BucketRowCompact({
   item,
   ...selection
 }: { item: BucketItem } & SelectionProps) {
-  const category = getCategory(item.category);
   return (
     <Selectable
       {...selection}
@@ -89,7 +87,7 @@ export function BucketRowCompact({
       }
       className="flex-row items-center gap-2.5 rounded-xl border px-3 py-2.5 bg-card border-border active:opacity-70"
     >
-      <Text size={16}>{category.emoji}</Text>
+      <ItemIcon item={item} size={24} emojiSize={16} bare />
       <Text weight="500" size={15} numberOfLines={1} className="flex-shrink">
         {item.title}
       </Text>

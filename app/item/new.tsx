@@ -15,11 +15,14 @@ import { TextArea } from '@/components/atoms/TextArea';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { GoalField } from '@/components/bucket/GoalField';
+import { ItemPhotosField } from '@/components/bucket/ItemPhotosField';
 import { PlaceField } from '@/components/bucket/PlaceField';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
+import { deletePhoto } from '@/lib/bucket/photo';
 import {
   CATEGORIES_BY_KIND,
   DEFAULT_SETTING,
+  itemPhotos,
   KIND_META,
   SETTING_META,
   type BucketKind,
@@ -27,6 +30,7 @@ import {
   type CategoryKey,
   type GoalInfo,
   type PlaceInfo,
+  type RecordPhoto,
 } from '@/lib/bucket/types';
 import { KIND_ICON } from '@/components/bucket/kindIcons';
 import type { SegmentedOption } from '@/components/atoms/Segmented';
@@ -80,6 +84,20 @@ export default function BucketFormScreen() {
   const [memo, setMemo] = useState(editing?.memo ?? '');
   // 목표 날짜 (선택). 스위치를 켜야 보인다
   const [goal, setGoal] = useState<GoalInfo | null>(editing?.goal ?? null);
+  // 사진 (최대 3장, 첫 번째가 대표). uri: 이 휴대폰 파일, path: 서버에 올라간 사진
+  const [photos, setPhotos] = useState<RecordPhoto[]>(() =>
+    itemPhotos(editing)
+  );
+
+  /** 이번 화면에서 새로 고른 사진이면 파일을 지운다 (저장된 사진은 저장할 때 정리) */
+  const savedUris = new Set(itemPhotos(editing).map((p) => p.uri));
+  const discardNewPhoto = (photo: RecordPhoto) => {
+    if (photo.uri && !savedUris.has(photo.uri)) deletePhoto(photo.uri);
+  };
+  const cancel = () => {
+    for (const photo of photos) discardNewPhoto(photo);
+    router.back();
+  };
 
   // 장소 검색 화면에서 고르고 돌아오면 받아서 채운다
   const takePicked = usePlacePickStore((state) => state.take);
@@ -134,6 +152,7 @@ export default function BucketFormScreen() {
       place,
       memo: memo.trim(),
       goal,
+      photos,
     };
     if (editing) {
       updateItem(editing.id, input);
@@ -149,7 +168,10 @@ export default function BucketFormScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <NavBar title={editing ? '버킷리스트 수정' : '버킷리스트 담기'} />
+      <NavBar
+        title={editing ? '버킷리스트 수정' : '버킷리스트 담기'}
+        onBack={cancel}
+      />
       {/* 키보드 높이만큼 아래를 비워서 입력칸과 버튼을 키보드 위로 올린다 */}
       <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
         <ScrollView
@@ -177,6 +199,12 @@ export default function BucketFormScreen() {
               onFocus={ensureFocusedVisible}
             />
           </View>
+
+          <ItemPhotosField
+            photos={photos}
+            onChange={setPhotos}
+            onRemove={discardNewPhoto}
+          />
 
           <View>
             <FieldLabel>카테고리</FieldLabel>

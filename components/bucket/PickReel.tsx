@@ -11,7 +11,8 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { Text } from '@/components/atoms';
-import { getCategory, settingTag, type BucketItem } from '@/lib/bucket/types';
+import { ItemIcon } from '@/components/bucket/ItemIcon';
+import { settingTag, type BucketItem } from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
 
 /** 카드 한 장 너비와 간격 */
@@ -97,7 +98,6 @@ export function PickReel({ reel, pickedIndex, onEnd }: PickReelProps) {
         style={[{ gap: CARD_GAP }, stripStyle]}
       >
         {reel.map((item, i) => {
-          const category = getCategory(item.category);
           const isPicked = landed && i === pickedIndex;
           return (
             <Animated.View
@@ -115,7 +115,7 @@ export function PickReel({ reel, pickedIndex, onEnd }: PickReelProps) {
                   landed && !isPicked && 'opacity-40'
                 )}
               >
-                <Text size={40}>{category.emoji}</Text>
+                <ItemIcon item={item} size={56} emojiSize={40} bare />
                 <Text
                   weight="700"
                   size={15}

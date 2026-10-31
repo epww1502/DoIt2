@@ -7,6 +7,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { deletePhoto } from '@/lib/bucket/photo';
 import {
   DEFAULT_SETTING,
+  itemPhotos,
   recordPhotos,
   withRecordPhotos,
   type BucketInput,
@@ -135,7 +136,17 @@ async function withUploadedPhoto(
 ): Promise<DoneRecord | null> {
   if (!done) return done;
   const photos = recordPhotos(done);
-  if (!photos.some((p) => p.uri && !p.path)) return done;
+  const uploaded = await uploadPhotos(photos, spaceId, throwOnNetwork);
+  return uploaded === photos ? done : withRecordPhotos(done, uploaded);
+}
+
+/** 사진 목록 중 아직 서버에 없는 것을 올린다. 올릴 게 없으면 받은 목록 그대로 */
+async function uploadPhotos(
+  photos: RecordPhoto[],
+  spaceId: string,
+  throwOnNetwork: boolean
+): Promise<RecordPhoto[]> {
+  if (!photos.some((p) => p.uri && !p.path)) return photos;
   const uploaded: RecordPhoto[] = [];
   for (const photo of photos) {
     if (photo.path || !photo.uri) {
@@ -153,16 +164,42 @@ async function withUploadedPhoto(
       uploaded.push(photo);
     }
   }
-  return withRecordPhotos(done, uploaded);
+  return uploaded;
 }
 
-/** 기록의 사진을 휴대폰과 (공간이면) 서버에서 지운다 */
-function deleteRecordPhotos(done: DoneRecord | null, spaceId: string | null) {
-  const photos = recordPhotos(done);
+/** 항목 사진과 기록 사진 중 아직 서버에 없는 것을 올린다. 바뀐 게 없으면 받은 항목 그대로 */
+async function withUploadedItem(
+  item: BucketItem,
+  spaceId: string,
+  throwOnNetwork = false
+): Promise<BucketItem> {
+  const done = await withUploadedPhoto(item.done, spaceId, throwOnNetwork);
+  const photos = itemPhotos(item);
+  const uploaded = await uploadPhotos(photos, spaceId, throwOnNetwork);
+  if (done === item.done && uploaded === photos) return item;
+  return { ...item, done, photos: uploaded };
+}
+
+/** 사진들을 휴대폰과 (공간이면) 서버에서 지운다 */
+function deletePhotos(photos: RecordPhoto[], spaceId: string | null) {
   for (const photo of photos) deletePhoto(photo.uri);
   if (spaceId) {
     useOutboxStore.getState().queuePhotoRemoval(photos.map((p) => p.path));
   }
+}
+
+/** 기록의 사진을 휴대폰과 (공간이면) 서버에서 지운다 */
+function deleteRecordPhotos(done: DoneRecord | null, spaceId: string | null) {
+  deletePhotos(recordPhotos(done), spaceId);
+}
+
+/** 새 사진 목록에서 빠진 예전 사진만 골라낸다 */
+function removedPhotos(prev: RecordPhoto[], next: RecordPhoto[]) {
+  const keptUris = new Set(next.map((p) => p.uri).filter(Boolean));
+  const keptPaths = new Set(next.map((p) => p.path).filter(Boolean));
+  return prev.filter(
+    (p) => !(p.uri && keptUris.has(p.uri)) && !(p.path && keptPaths.has(p.path))
+  );
 }
 
 /** 올리는 중이면 같은 작업을 기다린다 (두 번 올리지 않게) */
@@ -241,8 +278,7 @@ export const useBucketStore = create<BucketState>()(
             continue;
           }
           // 오프라인일 때 고른 사진을 지금 올린다. 인터넷 문제로 못 올리면 다음에 다시
-          const done = await withUploadedPhoto(item.done, spaceId, true);
-          const next = done === item.done ? item : { ...item, done };
+          const next = await withUploadedItem(item, spaceId, true);
           if (next !== item) patchIn(spaceId, next);
           ready.push({ entry, item: next });
         }
@@ -386,6 +422,13 @@ export const useBucketStore = create<BucketState>()(
           const prev = findItem(id);
           if (!prev) return;
           const next = { ...prev, ...input };
+          // 빠진 항목 사진은 휴대폰·서버에서 지운다
+          if (input.photos) {
+            deletePhotos(
+              removedPhotos(itemPhotos(prev), itemPhotos(next)),
+              get().spaceId
+            );
+          }
           replaceItem(id, next);
           pushItems([next]);
         },
@@ -394,7 +437,10 @@ export const useBucketStore = create<BucketState>()(
           const idSet = new Set(ids);
           const targets = get().items.filter((it) => idSet.has(it.id));
           const { spaceId } = get();
-          for (const t of targets) deleteRecordPhotos(t.done, spaceId);
+          for (const t of targets) {
+            deleteRecordPhotos(t.done, spaceId);
+            deletePhotos(itemPhotos(t), spaceId);
+          }
           set({ items: get().items.filter((it) => !idSet.has(it.id)) });
 
           if (!spaceId) return;
@@ -533,6 +579,7 @@ export const useBucketStore = create<BucketState>()(
           const { items, cache } = get();
           for (const it of [...items, ...Object.values(cache).flat()]) {
             for (const photo of recordPhotos(it.done)) deletePhoto(photo.uri);
+            for (const photo of itemPhotos(it)) deletePhoto(photo.uri);
           }
           set({ spaceId: null, items: [], cache: {} });
           useOutboxStore.getState().clear();
@@ -547,9 +594,8 @@ export const useBucketStore = create<BucketState>()(
           const uploaded: BucketItem[] = [];
           for (const it of localItems) {
             uploaded.push({
-              ...it,
+              ...(await withUploadedItem(it, spaceId)),
               id: remote.ensureUuid(it.id),
-              done: await withUploadedPhoto(it.done, spaceId),
             });
           }
           await remote.upsertItems(uploaded, spaceId);

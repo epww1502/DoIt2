@@ -6,6 +6,7 @@ import { randomUUID } from '@/lib/uuid';
 import { File } from 'expo-file-system';
 
 import {
+  itemPhotos,
   recordPhotos,
   withRecordPhotos,
   type BucketItem,
@@ -16,6 +17,7 @@ import {
   type GoalInfo,
   type ItemReview,
   type PlaceInfo,
+  type RecordPhoto,
 } from '@/lib/bucket/types';
 
 import { supabase } from './client';
@@ -51,6 +53,26 @@ function toRemoteDone(done: DoneRecord | null): RemoteDone | null {
     photoPath: paths[0] ?? null,
     photos: paths.map((path) => ({ path })),
   };
+}
+
+/** 서버 photos 칸(경로 목록) → 사진 목록. 이 폰에 같은 사진 파일이 있으면 그 파일을 쓴다 */
+function photosFromRow(
+  value: Json | null | undefined,
+  local: RecordPhoto[]
+): RecordPhoto[] {
+  if (!Array.isArray(value)) return [];
+  const localUris = new Map(
+    local.filter((p) => p.path && p.uri).map((p) => [p.path!, p.uri])
+  );
+  return value
+    .filter((path): path is string => typeof path === 'string' && !!path)
+    .map((path) => ({ path, uri: localUris.get(path) ?? null }));
+}
+
+/** 사진 목록 → 서버 photos 칸 (아직 못 올린 사진은 빼고, 없으면 null) */
+function photosToRow(photos: RecordPhoto[]): Json {
+  const paths = photos.map((p) => p.path).filter((p): p is string => !!p);
+  return paths.length > 0 ? paths : null;
 }
 
 /** 서버 행 → 앱 항목. 이 휴대폰에 같은 사진 파일이 있으면 그대로 쓴다 */
@@ -108,6 +130,7 @@ export function fromRow(
     location: row.location,
     place: (row.place as PlaceInfo | null) ?? null,
     memo: row.memo,
+    photos: photosFromRow(row.photos, itemPhotos(local)),
     createdAt: row.created_at,
     done,
     goal: (row.goal as GoalInfo | null) ?? null,
@@ -131,6 +154,7 @@ function toRow(item: BucketItem, spaceId: string): ItemInsert {
     location: item.location,
     place: (item.place ?? null) as Json,
     memo: item.memo,
+    photos: photosToRow(itemPhotos(item)),
     done: toRemoteDone(item.done) as Json,
     goal: (item.goal ?? null) as Json,
     created_at: item.createdAt,

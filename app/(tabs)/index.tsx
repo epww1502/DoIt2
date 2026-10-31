@@ -27,6 +27,7 @@ import {
   TextField,
 } from '@/components/atoms';
 import { BucketRow, BucketRowCompact } from '@/components/bucket/BucketRow';
+import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { ItemsMap } from '@/components/bucket/ItemsMap';
 import {
   ALL_FILTER,
@@ -564,9 +565,7 @@ function MapItemCard({ item }: { item: BucketItem }) {
       }
       className="flex-row items-center gap-3 active:opacity-70"
     >
-      <View className="h-11 w-11 items-center justify-center rounded-full bg-accent">
-        <Text size={20}>{category.emoji}</Text>
-      </View>
+      <ItemIcon item={item} size={44} emojiSize={20} />
       <View className="flex-1 gap-0.5">
         <Text weight="700" size={15} numberOfLines={1}>
           {item.title}
