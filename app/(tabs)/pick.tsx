@@ -19,7 +19,7 @@ import { EmptyState } from '@/components/bucket/EmptyState';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { shownRating } from '@/lib/bucket/reviews';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
-import { PickReel } from '@/components/bucket/PickReel';
+import { PickFan } from '@/components/bucket/PickFan';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import {
   activePickFilterCount,
@@ -44,17 +44,6 @@ import { useBucketStore } from '@/store/useBucketStore';
 import { usePrimaryColor, useSettingsStore } from '@/store/useSettingsStore';
 import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 
-/** 애니메이션에서 뽑힌 카드 앞으로 지나가는 카드 수 */
-const REEL_BEFORE = 18;
-/** 뽑힌 카드 뒤에 더 붙이는 카드 수 (멈출 때 오른쪽이 비지 않게) */
-const REEL_AFTER = 5;
-
-type Reel = {
-  cards: BucketItem[];
-  /** cards 안에서 뽑힌 카드 위치 */
-  pickedIndex: number;
-};
-
 function randomOf<T>(list: T[], except?: T): T {
   if (list.length <= 1) return list[0];
   let next = list[Math.floor(Math.random() * list.length)];
@@ -62,27 +51,6 @@ function randomOf<T>(list: T[], except?: T): T {
     next = list[Math.floor(Math.random() * list.length)];
   }
   return next;
-}
-
-/**
- * 지나갈 카드들: 바로 옆 카드끼리는 겹치지 않게 섞고, 뽑힌 카드를 중간에 넣는다.
- * 뽑힌 카드 앞뒤도 같은 항목이 붙지 않게 한다.
- */
-function buildReel(candidates: BucketItem[], picked: BucketItem): Reel {
-  const cards: BucketItem[] = [];
-  let prev: BucketItem | undefined;
-  for (let i = 0; i < REEL_BEFORE; i++) {
-    // 뽑힌 카드 바로 앞은 뽑힌 것과 다르게
-    prev = randomOf(candidates, i === REEL_BEFORE - 1 ? picked : prev);
-    cards.push(prev);
-  }
-  cards.push(picked);
-  prev = picked;
-  for (let i = 0; i < REEL_AFTER; i++) {
-    prev = randomOf(candidates, prev);
-    cards.push(prev);
-  }
-  return { cards, pickedIndex: REEL_BEFORE };
 }
 
 export default function PickScreen() {
@@ -99,8 +67,9 @@ export default function PickScreen() {
   const [filter, setFilter] = useState<BucketFilter>(ALL_FILTER);
   const [currentId, setCurrentId] = useState<string | null>(null);
   /** 촤르륵 지나가는 중인 카드들. null이면 멈춰 있음 */
-  const [reel, setReel] = useState<Reel | null>(null);
-  const isShuffling = reel !== null;
+  // 카드를 펼쳐 뽑는 중이면 뽑힌 항목 (애니메이션이 끝나면 결과로)
+  const [drawing, setDrawing] = useState<BucketItem | null>(null);
+  const isShuffling = drawing !== null;
   const [includeOutdoor, setIncludeOutdoor] = useState(false);
   /** 이미 함께한 것도 다시 뽑을지 */
   const [includeDone, setIncludeDone] = useState(false);
@@ -178,7 +147,7 @@ export default function PickScreen() {
 
   /** 뽑는 범위가 바뀌면 지금 결과를 지운다 */
   const resetPick = () => {
-    setReel(null);
+    setDrawing(null);
     setCurrentId(null);
   };
 
@@ -215,15 +184,15 @@ export default function PickScreen() {
       return;
     }
     setCurrentId(null);
-    setReel(buildReel(candidates, picked));
+    setDrawing(picked);
   };
 
-  // 카드가 멈추면 마지막 카드가 결과
-  const onReelEnd = useCallback(() => {
+  // 가운데 카드가 뒤집히면 그게 결과
+  const onDrawEnd = useCallback(() => {
     hapticSuccess();
-    if (reel) setCurrentId(reel.cards[reel.pickedIndex].id);
-    setReel(null);
-  }, [reel]);
+    if (drawing) setCurrentId(drawing.id);
+    setDrawing(null);
+  }, [drawing]);
 
   // 이미 해본 것만 남아서 뽑을 게 없을 때 안내하려고
   const doneInFilter = items.filter(
@@ -309,13 +278,9 @@ export default function PickScreen() {
           </View>
           <CategoryFilter value={filter} onChange={changeFilter} />
 
-          {reel ? (
+          {drawing ? (
             <View className="flex-1 justify-center">
-              <PickReel
-                reel={reel.cards}
-                pickedIndex={reel.pickedIndex}
-                onEnd={onReelEnd}
-              />
+              <PickFan picked={drawing} onEnd={onDrawEnd} />
             </View>
           ) : (
             // 위 옵션이 늘어 공간이 좁아도 카드가 아래 버튼과 겹치지 않게 스크롤 안에 둔다
