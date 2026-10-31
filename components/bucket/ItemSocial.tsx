@@ -175,7 +175,7 @@ export function ItemSocial({
               delayLongPress={350}
               className={cn(
                 'h-9 flex-row items-center gap-1 rounded-full border px-3 active:opacity-70',
-                c.mine ? 'border-primary' : 'bg-card border-border'
+                c.mine ? 'border-primary' : 'border-border bg-card'
               )}
               style={c.mine ? { backgroundColor: `${primary}1F` } : undefined}
             >
@@ -412,7 +412,7 @@ export function ItemSocial({
         {/* 입력칸 */}
         <View
           className={cn(
-            'flex-row items-end gap-2 rounded-2xl border px-3 py-1.5 bg-card',
+            'flex-row items-end gap-2 rounded-2xl border bg-card px-3 py-1.5',
             editingId ? 'border-primary' : 'border-border'
           )}
         >

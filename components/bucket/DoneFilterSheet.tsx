@@ -112,7 +112,7 @@ function SheetBody({ items, value, onApply, onClose }: DoneFilterSheetProps) {
         className="absolute inset-0 bg-black/40"
       />
       <View
-        className="max-h-[85%] rounded-t-3xl pt-3 bg-background"
+        className="max-h-[85%] rounded-t-3xl bg-background pt-3"
         style={{ paddingBottom: insets.bottom + 12 }}
       >
         <View className="mb-2 h-1 w-10 self-center rounded-full bg-border" />
@@ -186,7 +186,7 @@ function SheetBody({ items, value, onApply, onClose }: DoneFilterSheetProps) {
           </FilterSection>
         </ScrollView>
 
-        <View className="flex-row gap-2 border-t px-5 pt-3 border-border">
+        <View className="flex-row gap-2 border-t border-border px-5 pt-3">
           <Pressable
             accessibilityRole="button"
             onPress={() => setDraft(EMPTY_DONE_FILTER)}

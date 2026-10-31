@@ -241,7 +241,7 @@ function RowButton({
       accessibilityRole="button"
       hitSlop={4}
       onPress={onPress}
-      className="h-8 items-center justify-center rounded-full px-3 bg-background active:opacity-70"
+      className="h-8 items-center justify-center rounded-full bg-background px-3 active:opacity-70"
     >
       <Text
         size={13}

@@ -299,7 +299,7 @@ function MapSearchStatus({
   let content: React.ReactNode = null;
   if (state.status === 'loading') {
     content = (
-      <View className="flex-row items-center gap-2 self-center rounded-full px-4 py-2 bg-background">
+      <View className="flex-row items-center gap-2 self-center rounded-full bg-background px-4 py-2">
         <ActivityIndicator size="small" />
         <Text size={13}>찾고 있어요</Text>
       </View>
@@ -318,7 +318,7 @@ function MapSearchStatus({
     );
   } else if (state.status === 'done' && state.results.length === 0) {
     content = (
-      <View className="self-center rounded-full px-4 py-2 bg-background">
+      <View className="self-center rounded-full bg-background px-4 py-2">
         <Text size={13}>검색 결과가 없어요 · 다른 이름으로 검색해봐요</Text>
       </View>
     );

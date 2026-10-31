@@ -104,7 +104,7 @@ export function DoneCalendar({ items, renderItem }: DoneCalendarProps) {
 
   return (
     <View className="gap-4">
-      <View className="gap-3 rounded-3xl border p-4 border-border">
+      <View className="gap-3 rounded-3xl border border-border p-4">
         {/* 옮기기 + 머리글 (누르면 한 단계 넓게) */}
         <View className="flex-row items-center justify-between">
           <Pressable

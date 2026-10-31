@@ -110,7 +110,7 @@ export function PickReel({ reel, pickedIndex, onEnd }: PickReelProps) {
             >
               <View
                 className={cn(
-                  'h-[176px] items-center justify-center gap-2 rounded-2xl p-3 bg-card',
+                  'h-[176px] items-center justify-center gap-2 rounded-2xl bg-card p-3',
                   isPicked ? 'border-2 border-primary' : 'border border-border',
                   landed && !isPicked && 'opacity-40'
                 )}

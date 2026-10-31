@@ -98,7 +98,7 @@ export function AwaitingReviews({
             onPress={() =>
               router.push({ pathname: '/item/[id]', params: { id: item.id } })
             }
-            className="gap-2.5 rounded-xl p-3 bg-background active:opacity-80"
+            className="gap-2.5 rounded-xl bg-background p-3 active:opacity-80"
           >
             <View className="flex-row items-center gap-2">
               <Text size={18}>{getCategory(item.category).emoji}</Text>

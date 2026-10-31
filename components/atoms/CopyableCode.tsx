@@ -29,7 +29,7 @@ export function CopyableCode({
       accessibilityLabel={`${code} 복사`}
       onPress={() => void copyText(code, doneMessage)}
       className={cn(
-        'flex-row items-center justify-center gap-3 rounded-2xl px-6 py-3 bg-background active:opacity-70',
+        'flex-row items-center justify-center gap-3 rounded-2xl bg-background px-6 py-3 active:opacity-70',
         className
       )}
     >

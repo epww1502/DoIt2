@@ -254,7 +254,7 @@ export default function BucketDetailScreen() {
             <Text weight="700" size={18}>
               {together ? '우리의 기록' : '나의 기록'}
             </Text>
-            <View className="overflow-hidden rounded-2xl border bg-card border-border">
+            <View className="overflow-hidden rounded-2xl border border-border bg-card">
               <DonePhotoGallery done={done} />
               <View className="gap-2 p-4">
                 <View className="flex-row items-center justify-between">
@@ -300,7 +300,7 @@ export default function BucketDetailScreen() {
 
         {/* 공간 항목: 이모지 반응과 댓글 */}
         {inSpace && spaceId ? (
-          <View className="border-t pt-6 border-border">
+          <View className="border-t border-border pt-6">
             <ItemSocial
               itemId={item.id}
               spaceId={spaceId}

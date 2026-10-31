@@ -212,7 +212,7 @@ export function PlaceMapPicker({ results, onPick }: PlaceMapPickerProps) {
       ) : null}
 
       <View
-        className="absolute bottom-0 left-0 right-0 gap-3 rounded-t-3xl px-5 pt-4 bg-background"
+        className="absolute bottom-0 left-0 right-0 gap-3 rounded-t-3xl bg-background px-5 pt-4"
         style={{ paddingBottom: insets.bottom + 12 }}
       >
         {selected ? (

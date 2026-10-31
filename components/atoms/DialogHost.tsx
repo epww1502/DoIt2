@@ -54,7 +54,7 @@ export function DialogHost() {
         {current ? (
           <View
             key={current.id}
-            className="w-full max-w-[340px] gap-5 rounded-3xl p-6 bg-background"
+            className="w-full max-w-[340px] gap-5 rounded-3xl bg-background p-6"
           >
             <View className="gap-2">
               <Text weight="700" size={18} className="text-center">

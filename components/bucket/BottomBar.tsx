@@ -30,7 +30,7 @@ export function BottomBar({ children }: { children: ReactNode }) {
 
   return (
     <View
-      className="gap-2 border-t px-5 pt-3 bg-background border-border"
+      className="gap-2 border-t border-border bg-background px-5 pt-3"
       style={{ paddingBottom: bottom }}
     >
       {children}

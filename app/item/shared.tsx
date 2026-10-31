@@ -235,7 +235,7 @@ function SaveShared({
                     'flex-row items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-4 active:opacity-70',
                     active
                       ? 'border-primary bg-primary'
-                      : 'bg-background border-border'
+                      : 'border-border bg-background'
                   )}
                 >
                   <SpaceAvatar emoji={t.emoji} imagePath={t.image} size={28} />
@@ -267,7 +267,7 @@ function SaveShared({
                 accessibilityState={{ checked: isSelected }}
                 onPress={() => toggle(i)}
                 className={cn(
-                  'flex-row items-center gap-3 rounded-2xl border p-4 bg-card',
+                  'flex-row items-center gap-3 rounded-2xl border bg-card p-4',
                   isSelected ? 'border-2 border-primary' : 'border-border'
                 )}
               >
@@ -289,7 +289,7 @@ function SaveShared({
                     'h-7 w-7 items-center justify-center rounded-full border-2',
                     isSelected
                       ? 'border-primary bg-primary'
-                      : 'bg-background border-muted'
+                      : 'border-muted bg-background'
                   )}
                 >
                   {isSelected ? (

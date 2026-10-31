@@ -113,7 +113,7 @@ function Calendar({ value, maxDate, onSelect, onClose }: CalendarProps) {
         className="absolute inset-0 bg-black/40"
       />
       <View
-        className="gap-4 rounded-t-3xl px-5 pt-5 bg-background"
+        className="gap-4 rounded-t-3xl bg-background px-5 pt-5"
         style={{ paddingBottom: insets.bottom + 12 }}
       >
         {/* 제목: 누르면 일 → 월 → 연으로 넓게 본다 */}

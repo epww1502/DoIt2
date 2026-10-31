@@ -51,7 +51,7 @@ export function VersionGate() {
       statusBarTranslucent
       navigationBarTranslucent
     >
-      <View className="flex-1 items-center justify-center gap-8 px-8 bg-background">
+      <View className="flex-1 items-center justify-center gap-8 bg-background px-8">
         <Image
           source={require('@/assets/images/icon.png')}
           style={{ width: 96, height: 96, borderRadius: 24 }}

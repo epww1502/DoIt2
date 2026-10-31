@@ -149,7 +149,7 @@ export function ItemsMap({
       {!ready ? <MapLoading /> : null}
 
       <View
-        className="absolute bottom-0 left-0 right-0 rounded-t-3xl px-5 pt-4 bg-background"
+        className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-background px-5 pt-4"
         style={{ paddingBottom: bottomInset + 12 }}
       >
         {selected ? (

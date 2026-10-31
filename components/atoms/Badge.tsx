@@ -6,7 +6,7 @@ import { Platform, View, ViewProps } from 'react-native';
 
 const badgeVariants = cva(
   cn(
-    'group shrink-0 flex-row items-center justify-center gap-1 overflow-hidden rounded-full border px-2 py-0.5 border-border',
+    'group shrink-0 flex-row items-center justify-center gap-1 overflow-hidden rounded-full border border-border px-2 py-0.5',
     Platform.select({
       web: 'aria-invalid:ring-destructive/20 aria-invalid:border-destructive [&>svg]:size-3 w-fit whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [&>svg]:pointer-events-none',
     })

@@ -159,7 +159,7 @@ function ReviewCard({
   return (
     <View
       className={cn(
-        'gap-2 rounded-2xl border bg-card border-border',
+        'gap-2 rounded-2xl border border-border bg-card',
         big ? 'p-5' : 'p-4'
       )}
     >

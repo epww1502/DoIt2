@@ -231,7 +231,7 @@ function PickItems({
                   disabled={already}
                   onPress={() => toggle(item.id)}
                   className={cn(
-                    'flex-row items-center gap-3 rounded-2xl border p-4 bg-card',
+                    'flex-row items-center gap-3 rounded-2xl border bg-card p-4',
                     isSelected ? 'border-2 border-primary' : 'border-border',
                     already && 'opacity-50'
                   )}
@@ -254,7 +254,7 @@ function PickItems({
                       'h-7 w-7 items-center justify-center rounded-full border-2',
                       isSelected
                         ? 'border-primary bg-primary'
-                        : 'bg-background border-muted'
+                        : 'border-muted bg-background'
                     )}
                   >
                     {isSelected ? (

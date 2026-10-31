@@ -95,7 +95,7 @@ function SpaceSheet({
           className="absolute inset-0 bg-black/40"
         />
         <View
-          className="max-h-[75%] gap-3 rounded-t-3xl pt-5 bg-background"
+          className="max-h-[75%] gap-3 rounded-t-3xl bg-background pt-5"
           style={{ paddingBottom: insets.bottom + 12 }}
         >
           <Text weight="700" size={18} className="px-5">
@@ -122,7 +122,7 @@ function SpaceSheet({
             ))}
           </ScrollView>
 
-          <View className="gap-1 border-t px-3 pt-2 border-border">
+          <View className="gap-1 border-t border-border px-3 pt-2">
             {online ? (
               <>
                 <ActionRow

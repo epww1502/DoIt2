@@ -262,7 +262,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <View className="gap-4 rounded-3xl border p-5 border-border">
+    <View className="gap-4 rounded-3xl border border-border p-5">
       <Text weight="700" size={16}>
         {title}
       </Text>

@@ -47,7 +47,7 @@ export function ActionSheet({
           className="absolute inset-0 bg-black/40"
         />
         <View
-          className="gap-1 rounded-t-3xl px-3 pt-3 bg-background"
+          className="gap-1 rounded-t-3xl bg-background px-3 pt-3"
           style={{ paddingBottom: insets.bottom + 12 }}
         >
           <View className="mb-2 h-1 w-10 self-center rounded-full bg-border" />

@@ -36,7 +36,7 @@ export function DoneCard({
       onPress={() =>
         router.push({ pathname: '/item/[id]', params: { id: item.id } })
       }
-      className="overflow-hidden rounded-2xl border bg-card border-border active:opacity-80"
+      className="overflow-hidden rounded-2xl border border-border bg-card active:opacity-80"
     >
       {recordPhotos(done).length > 0 ? (
         <DonePhoto done={done} />
@@ -89,7 +89,7 @@ export function DoneRow({
       }
       // 고르기 모드에선 오른쪽 위 체크 동그라미 자리를 비운다
       className={cn(
-        'flex-row items-center gap-3 rounded-2xl border p-3 bg-card border-border active:opacity-80',
+        'flex-row items-center gap-3 rounded-2xl border border-border bg-card p-3 active:opacity-80',
         selection.selecting && 'pr-12'
       )}
     >

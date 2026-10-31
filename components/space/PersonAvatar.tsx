@@ -58,7 +58,7 @@ export function PersonAvatar({
       {/* 사진 바깥으로 살짝 나오게 두고, 배경색 테두리로 사진과 떼어 보이게 한다 */}
       <View
         accessibilityLabel="공간장"
-        className="absolute items-center justify-center rounded-full border-2 bg-background border-background"
+        className="absolute items-center justify-center rounded-full border-2 border-background bg-background"
         style={{
           width: badge,
           height: badge,
