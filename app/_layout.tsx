@@ -18,9 +18,11 @@ import { SpaceSync } from '@/components/sync/SpaceSync';
 import { VersionGate } from '@/components/sync/VersionGate';
 import { hexToRgbTriple } from '@/constants/palettes';
 import { NAV_THEME } from '@/constants/theme';
+import { surfaceVars } from '@/constants/themeSurface';
 import { ThemeModeProvider, useThemeMode } from '@/contexts/ThemeModeContext';
 import { useFontsLoader } from '@/hooks/useFontsLoader';
 import { useStartupUpdate } from '@/hooks/useStartupUpdate';
+import { useSurface } from '@/hooks/useSurface';
 import { useBucketStoreHydrated } from '@/store/useBucketStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 
@@ -44,16 +46,34 @@ function RootLayoutInner() {
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);
-  // 설정에서 고른 테마색을 CSS 변수로 깔아서 bg-primary·text-primary 등이 모두 따라 바뀌게 한다
+  // 설정에서 고른 테마색을 CSS 변수로 깔아서 bg-primary·text-primary 등이 모두 따라 바뀌게 한다.
+  // 배경·카드·테두리도 테마색을 살짝 섞은 색이라 같이 바뀐다
+  const surface = useSurface();
   const themeVars = useMemo(
-    () => vars({ '--color-primary': hexToRgbTriple(primary) }),
-    [primary]
+    () =>
+      vars({
+        '--color-primary': hexToRgbTriple(primary),
+        ...surfaceVars(surface),
+      }),
+    [primary, surface]
   );
+  const navTheme = useMemo(() => {
+    const base = NAV_THEME[colorScheme ?? 'light'];
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background: surface.background,
+        card: surface.card,
+        border: surface.border,
+      },
+    };
+  }, [colorScheme, surface]);
 
   if (!ready) return null;
 
   return (
-    <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+    <ThemeProvider value={navTheme}>
       {/* 로그인·공간 확인·실시간 동기화 (화면 없음) */}
       <SpaceSync />
       {/* 오프라인이면 다시 연결을 시도하고, 연결되면 밀린 변경을 올린다 (화면 없음) */}
@@ -64,10 +84,6 @@ function RootLayoutInner() {
       <ReminderSync />
       {/* 알림센터: 같은 공간 소식 받기 (화면 없음) */}
       <InboxSync />
-      {/* showAlert 팝업 (기본 Alert 대신) */}
-      <DialogHost />
-      {/* 설치된 빌드가 너무 오래됐으면 스토어 업데이트 안내 */}
-      <VersionGate />
       <View className="flex-1 bg-background" style={themeVars}>
         {/* 오프라인 안내 띠: 화면 위를 차지해서 아래 화면을 밀어 내린다 */}
         <OfflineBanner />
@@ -123,6 +139,11 @@ function RootLayoutInner() {
             options={{ animation: 'slide_from_bottom' }}
           />
         </Stack>
+        {/* 팝업도 테마 변수 안에 둬야 테마색·바탕색을 따라간다 */}
+        {/* showAlert 팝업 (기본 Alert 대신) */}
+        <DialogHost />
+        {/* 설치된 빌드가 너무 오래됐으면 스토어 업데이트 안내 */}
+        <VersionGate />
       </View>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>

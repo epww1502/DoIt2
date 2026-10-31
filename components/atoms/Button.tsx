@@ -5,13 +5,14 @@ import { cn } from '@/lib/utils';
 
 import { Text } from './Text';
 
-const buttonVariants = cva('items-center justify-center rounded-xl', {
+// 아기자기한 테마: 알약 모양 버튼 (높이는 그대로)
+const buttonVariants = cva('items-center justify-center rounded-full', {
   variants: {
     variant: {
       // 메인 색 배경
       primary: 'bg-primary',
       // 테두리만
-      outline: 'border bg-background border-border',
+      outline: 'border border-border bg-card',
       // 텍스트만 ("나중에 할게요")
       ghost: 'bg-transparent',
       // 지우기처럼 되돌리기 어려운 동작

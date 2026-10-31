@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -26,6 +26,7 @@ type SelectableProps = {
   /** 고르기 모드에서 누르면 */
   onToggle: () => void;
   className?: string;
+  style?: StyleProp<ViewStyle>;
   children: ReactNode;
 };
 
@@ -40,6 +41,7 @@ export function Selectable({
   onLongPress,
   onToggle,
   className,
+  style,
   children,
 }: SelectableProps) {
   const scale = useSharedValue(1);
@@ -74,6 +76,7 @@ export function Selectable({
           onLongPress();
         }}
         className={cn(className, selected && 'border-2 border-primary')}
+        style={style}
       >
         {children}
         {selecting ? (
@@ -83,7 +86,7 @@ export function Selectable({
               'absolute right-3 top-3 h-7 w-7 items-center justify-center rounded-full border-2',
               selected
                 ? 'border-primary bg-primary'
-                : 'bg-background border-muted'
+                : 'border-muted bg-background'
             )}
           >
             {selected ? (

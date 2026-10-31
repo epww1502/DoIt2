@@ -68,6 +68,7 @@ import {
   type BucketSort,
 } from '@/lib/bucket/search';
 import { itemStatus } from '@/lib/bucket/reviews';
+import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 
 /** 보기 방식 이름·아이콘 */
 const BUCKET_VIEW_META: Record<
@@ -129,6 +130,9 @@ export default function BucketListScreen() {
 
   // 길게 눌러 여러 개 고르기 (보이는 항목 중에서만 센다)
   const selection = useSelection();
+  const tabBarSpace = useTabBarSpace();
+  // 목록 끝이 떠 있는 탭바와 + 버튼(또는 고르기 줄)에 가리지 않게
+  const listBottom = tabBarSpace + 88;
   const selectedIds = filtered
     .filter((it) => selection.selected.has(it.id))
     .map((it) => it.id);
@@ -423,6 +427,7 @@ export default function BucketListScreen() {
                     `${group[0].place?.name ?? '이곳'}에 ${group.length}개 담겨 있어요`
                   }
                   hint="핀을 누르면 그곳에 담아둔 걸 볼 수 있어요"
+                  bottomInset={tabBarSpace}
                 />
               ) : (
                 <EmptyState
@@ -456,7 +461,8 @@ export default function BucketListScreen() {
                   />
                 </View>
               )}
-              contentContainerClassName="px-5 pb-28"
+              contentContainerClassName="px-5"
+              contentContainerStyle={{ paddingBottom: listBottom }}
               ListHeaderComponent={
                 awaitingHeader ? (
                   <View className="pt-4">{awaitingHeader}</View>
@@ -481,9 +487,10 @@ export default function BucketListScreen() {
                 />
               )}
               contentContainerClassName={cn(
-                'px-5 pb-28 pt-4',
+                'px-5 pt-4',
                 bucketView === 'compact' ? 'gap-2' : 'gap-3'
               )}
+              contentContainerStyle={{ paddingBottom: listBottom }}
               ListHeaderComponent={awaitingHeader}
               ListFooterComponent={footer}
               ListEmptyComponent={listEmpty}
@@ -500,7 +507,10 @@ export default function BucketListScreen() {
               onSecondary={() => void shareSelected()}
             />
           ) : bucketView === 'map' ? null : (
-            <View className="absolute bottom-6 right-5">
+            <View
+              className="absolute right-5"
+              style={{ bottom: tabBarSpace + 12 }}
+            >
               <Fab accessibilityLabel="버킷리스트 담기" onPress={goNew} />
             </View>
           )}

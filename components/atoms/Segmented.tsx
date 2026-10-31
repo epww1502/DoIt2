@@ -25,7 +25,7 @@ export function Segmented<T extends string>({
   onChange,
 }: SegmentedProps<T>) {
   return (
-    <View className="h-10 flex-row rounded-lg p-[3px] bg-accent">
+    <View className="h-10 flex-row rounded-full p-[3px] bg-accent">
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -35,8 +35,8 @@ export function Segmented<T extends string>({
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
             className={cn(
-              'flex-1 flex-row items-center justify-center gap-1 rounded-md',
-              selected && 'border bg-background border-border'
+              'flex-1 flex-row items-center justify-center gap-1 rounded-full',
+              selected && 'border border-border bg-card'
             )}
           >
             {option.icon ? (

@@ -6,6 +6,26 @@ export const colors = {
   highlightBlue: '#4285F4',
   highlightRed: '#f28b82',
   homebg: '#F0F7FF',
+  /** 글자색: 어느 테마색 바탕에도 어울리는 살짝 따뜻한 먹색 */
+  ink: {
+    50: '#F7F5F3',
+    400: '#ABA59F',
+    500: '#7D7670',
+    900: '#2F2B28',
+  },
+  /** 아기자기한 테마의 따뜻한 크림·갈색 톤 (라이트 → 다크) */
+  cream: {
+    50: '#FFF8EF',
+    100: '#FFF1E2',
+    200: '#F6E6D6',
+    300: '#EAD6C2',
+    400: '#C9AD94',
+    500: '#8C6D53',
+    600: '#6E5240',
+    700: '#3A2F27',
+    800: '#2A221C',
+    900: '#1E1814',
+  },
   gray: {
     50: '#fafafc',
     100: '#e8e8ee',
@@ -172,36 +192,36 @@ export function getChartColor(index: number): string {
 
 export const themeColors = {
   light: {
-    background: colors.white,
-    homebg: colors.homebg,
-    foreground: colors.gray[900],
+    background: colors.cream[50],
+    homebg: colors.cream[100],
+    foreground: colors.ink[900],
 
     card: colors.white,
-    cardForeground: colors.gray[900],
+    cardForeground: colors.ink[900],
     blackWhite: colors.black,
     blackWhiteForeground: colors.white,
 
     popover: colors.white,
-    popoverForeground: colors.gray[900],
+    popoverForeground: colors.ink[900],
 
     primary: colors.primary,
     primaryForeground: colors.gray[50],
 
-    secondary: colors.gray[50],
-    secondaryForeground: colors.gray[900],
+    secondary: colors.cream[100],
+    secondaryForeground: colors.ink[900],
 
-    muted: colors.gray[300],
-    mutedForeground: colors.gray[500],
+    muted: colors.cream[300],
+    mutedForeground: colors.ink[500],
 
     accent: colors.gray[100],
-    accentForeground: colors.gray[900],
+    accentForeground: colors.ink[900],
 
     destructive: colors.red[500],
     destructiveForeground: colors.gray[50],
 
-    border: colors.gray[100],
-    input: colors.gray[200],
-    ring: colors.gray[400],
+    border: colors.cream[200],
+    input: colors.cream[300],
+    ring: colors.cream[400],
 
     // Chart UI
     chartLabel: colors.gray[400],
@@ -229,35 +249,35 @@ export const themeColors = {
   },
 
   dark: {
-    background: colors.gray[900],
-    foreground: colors.gray[50],
+    background: colors.cream[900],
+    foreground: colors.ink[50],
 
     homebg: colors.black,
-    card: colors.gray[800],
+    card: colors.cream[800],
     cardForeground: colors.gray[50],
     blackWhite: colors.white,
     blackWhiteForeground: colors.black,
 
-    popover: colors.gray[900],
+    popover: colors.cream[900],
     popoverForeground: colors.gray[50],
 
     primary: colors.primary,
     primaryForeground: colors.white,
 
-    secondary: colors.gray[800],
+    secondary: colors.cream[800],
     secondaryForeground: colors.gray[50],
 
-    muted: colors.gray[600],
-    mutedForeground: colors.gray[400],
+    muted: colors.cream[600],
+    mutedForeground: colors.ink[400],
 
-    accent: colors.gray[700],
+    accent: colors.cream[700],
     accentForeground: colors.gray[50],
 
     destructive: colors.red[500],
     destructiveForeground: colors.gray[50],
 
-    border: colors.gray[700],
-    input: colors.gray[800],
+    border: colors.cream[700],
+    input: colors.cream[800],
     ring: colors.gray[500],
 
     // Chart UI

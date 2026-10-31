@@ -1,3 +1,4 @@
+import { Jua_400Regular } from '@expo-google-fonts/jua';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -15,6 +16,8 @@ export function useFontsLoader() {
     'Pretendard-Bold': require('../assets/fonts/Pretendard-Bold.otf'),
     'Pretendard-ExtraBold': require('../assets/fonts/Pretendard-ExtraBold.otf'),
     'Pretendard-Black': require('../assets/fonts/Pretendard-Black.otf'),
+    // 제목·버튼·칩에 쓰는 동글동글한 글꼴
+    Jua: Jua_400Regular,
   });
 
   return { fontsLoaded, fontError };

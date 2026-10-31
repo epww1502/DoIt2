@@ -86,6 +86,7 @@ export function CategoryFilter({
             <Chip
               key={c.key}
               emoji={c.emoji}
+              category={c.key}
               label={c.label}
               selected={value.category === c.key}
               onPress={() => onChange({ ...value, category: c.key })}

@@ -44,6 +44,7 @@ import { useBucketStore } from '@/store/useBucketStore';
 import { useSpace } from '@/store/useSpaceStore';
 import { shareBucketItems } from '@/lib/shareItems';
 import { type DoneView, useSettingsStore } from '@/store/useSettingsStore';
+import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 
 type KindOption = 'all' | BucketKind;
 
@@ -104,6 +105,9 @@ export default function DoneScreen() {
 
   // 길게 눌러 여러 개 고르기 (보이는 카드 중에서만 센다)
   const selection = useSelection();
+  const tabBarSpace = useTabBarSpace();
+  // 목록 끝이 떠 있는 탭바(고르는 중엔 고르기 줄까지)에 가리지 않게
+  const listBottom = tabBarSpace + (selection.selecting ? 88 : 24);
   const selectedIds = shown
     .filter((it) => selection.selected.has(it.id))
     .map((it) => it.id);
@@ -237,7 +241,7 @@ export default function DoneScreen() {
                   }
                 />
                 {filterCount > 0 ? (
-                  <View className="min-w-5 absolute -right-1.5 -top-1.5 h-5 items-center justify-center rounded-full border-2 border-primary px-1 bg-background">
+                  <View className="min-w-5 absolute -right-1.5 -top-1.5 h-5 items-center justify-center rounded-full border-2 border-primary bg-background px-1">
                     <Text size={10} weight="700" className="text-primary">
                       {filterCount}
                     </Text>
@@ -283,10 +287,8 @@ export default function DoneScreen() {
           </View>
           {doneView === 'calendar' ? (
             <ScrollView
-              contentContainerClassName={cn(
-                'px-5',
-                selection.selecting ? 'pb-28' : 'pb-10'
-              )}
+              contentContainerClassName="px-5"
+              contentContainerStyle={{ paddingBottom: listBottom }}
             >
               <DoneCalendar
                 items={shown}
@@ -318,9 +320,9 @@ export default function DoneScreen() {
               )}
               contentContainerClassName={cn(
                 'px-5',
-                compact ? 'gap-2' : 'gap-4',
-                selection.selecting ? 'pb-28' : 'pb-10'
+                compact ? 'gap-2' : 'gap-4'
               )}
+              contentContainerStyle={{ paddingBottom: listBottom }}
               ListEmptyComponent={
                 <EmptyState
                   title="여기엔 아직 없어요"

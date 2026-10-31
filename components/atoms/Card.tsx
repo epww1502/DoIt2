@@ -1,16 +1,19 @@
 import { cn } from '@/lib/utils';
 import { Platform, View, type ViewProps } from 'react-native';
+
+import { SOFT_SHADOW } from '@/constants/shadow';
 import * as React from 'react';
 import { Text } from './Text';
 
 type CardProps = ViewProps &
   React.RefAttributes<React.ComponentRef<typeof View>>;
 
-function Card({ className, ...props }: CardProps) {
+function Card({ className, style, ...props }: CardProps) {
   return (
     <View
+      style={[SOFT_SHADOW, style]}
       className={cn(
-        'rounded-md border bg-card border-border',
+        'rounded-2xl border border-border bg-card',
         Platform.select({
           web: 'transition-shadow',
         }),

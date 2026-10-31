@@ -213,6 +213,7 @@ export default function BucketFormScreen() {
                 <Chip
                   key={c.key}
                   emoji={c.emoji}
+                  category={c.key}
                   label={c.label}
                   selected={category === c.key}
                   onPress={() => changeCategory(c.key)}

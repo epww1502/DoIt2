@@ -27,6 +27,7 @@ import {
   unregisterForPush,
 } from '@/lib/push';
 import { useSettingsStore } from '@/store/useSettingsStore';
+import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: 'system', label: '시스템' },
@@ -40,11 +41,15 @@ export default function SettingsScreen() {
   const setPickAnimation = useSettingsStore((s) => s.setPickAnimation);
   const haptics = useSettingsStore((s) => s.haptics);
   const setHaptics = useSettingsStore((s) => s.setHaptics);
+  const tabBarSpace = useTabBarSpace();
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <ScreenHeader title="설정" subtitle="공간과 화면을 바꿀 수 있어요" />
-      <ScrollView contentContainerClassName="gap-4 px-5 pb-10 pt-3">
+      <ScrollView
+        contentContainerClassName="gap-4 px-5 pt-3"
+        contentContainerStyle={{ paddingBottom: tabBarSpace + 24 }}
+      >
         <InboxCard />
         <ProfileCard />
         <SpaceStatusCard />

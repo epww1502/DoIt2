@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Icon, Text } from '@/components/atoms';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
+import { PlateDiceIcon } from '@/components/bucket/PlateDiceIcon';
+import { useSurface } from '@/hooks/useSurface';
 import {
   ALL_FILTER,
   CategoryFilter,
@@ -39,7 +41,8 @@ import {
 import { cn } from '@/lib/utils';
 import { weatherKey } from '@/lib/weather';
 import { useBucketStore } from '@/store/useBucketStore';
-import { useSettingsStore } from '@/store/useSettingsStore';
+import { usePrimaryColor, useSettingsStore } from '@/store/useSettingsStore';
+import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 
 /** 애니메이션에서 뽑힌 카드 앞으로 지나가는 카드 수 */
 const REEL_BEFORE = 18;
@@ -84,6 +87,9 @@ function buildReel(candidates: BucketItem[], picked: BucketItem): Reel {
 
 export default function PickScreen() {
   const items = useBucketStore((state) => state.items);
+  const primary = usePrimaryColor();
+  const tabBarSpace = useTabBarSpace();
+  const surface = useSurface();
   const reviewCtx = useReviewCtx();
   // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
   const sync = useListSync();
@@ -322,7 +328,7 @@ export default function PickScreen() {
                   'min-h-[200px] items-center justify-center gap-2 rounded-3xl border-2 p-5',
                   decided
                     ? 'border-primary bg-card'
-                    : 'border-dashed bg-card border-border'
+                    : 'border-dashed border-border bg-card'
                 )}
               >
                 {current && category ? (
@@ -365,7 +371,14 @@ export default function PickScreen() {
                 ) : (
                   <>
                     {/* 뽑을 게 없을 땐 아이콘 없이 안내 글만 */}
-                    {candidates.length > 0 ? <Text size={44}>🎲</Text> : null}
+                    {candidates.length > 0 ? (
+                      <PlateDiceIcon
+                        size={52}
+                        color={primary}
+                        cutout={surface.card}
+                        strokeWidth={1.6}
+                      />
+                    ) : null}
                     <Text variant="muted" className="text-center">
                       {candidates.length > 0
                         ? `${candidates.length}개 중에서 하나를 골라드릴게요`
@@ -383,7 +396,10 @@ export default function PickScreen() {
             </ScrollView>
           )}
 
-          <View className="gap-2 px-5 pb-6 pt-2">
+          <View
+            className="gap-2 px-5 pt-2"
+            style={{ paddingBottom: tabBarSpace + 12 }}
+          >
             {decided ? (
               <Button
                 label={current.kind === 'place' ? '여기 가자!' : '이거 하자!'}

@@ -3,6 +3,7 @@ import { ChevronRight, MessageCircle } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
+import { SOFT_SHADOW } from '@/constants/shadow';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
 import {
   getCategory,
@@ -44,7 +45,8 @@ export function BucketRow({
       onPress={() =>
         router.push({ pathname: '/item/[id]', params: { id: item.id } })
       }
-      className="flex-row items-center gap-3 rounded-2xl border p-4 bg-card border-border active:opacity-70"
+      className="flex-row items-center gap-3 rounded-2xl border border-border bg-card p-4 active:opacity-70"
+      style={SOFT_SHADOW}
     >
       <ItemIcon item={item} size={48} emojiSize={22} />
       <View className="flex-1 gap-0.5 pr-6">
@@ -85,7 +87,8 @@ export function BucketRowCompact({
       onPress={() =>
         router.push({ pathname: '/item/[id]', params: { id: item.id } })
       }
-      className="flex-row items-center gap-2.5 rounded-xl border px-3 py-2.5 bg-card border-border active:opacity-70"
+      className="flex-row items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 active:opacity-70"
+      style={SOFT_SHADOW}
     >
       <ItemIcon item={item} size={24} emojiSize={16} bare />
       <Text weight="500" size={15} numberOfLines={1} className="flex-shrink">

@@ -79,19 +79,16 @@ type TextProps = React.ComponentProps<typeof RNText> &
      * - `'300'`: Pretendard-Light
      * - `'400'`: Pretendard-Regular
      * - `'500'`: Pretendard-Medium
-     * - `'600'`: Pretendard-SemiBold
-     * - `'700'`: Pretendard-Bold
-     * - `'800'`: Pretendard-ExtraBold
-     * - `'900'`: Pretendard-Black
+     * - `'600'`~`'900'`: Jua (동글동글한 제목용 글꼴, 굵기 하나)
      */
     weight?: FontWeight;
     size?: number; // 폰트 크기 (px)
     /**
      * - `'default'`: Pretendard-Regular (400) - 16px - text-foreground - 기본 텍스트
-     * - `'display'`: Pretendard-Bold (700) - 24px - text-foreground - 가장 큰 텍스트
-     * - `'title'`: Pretendard-Bold (700) - 18px - text-blackWhite - 헤더 타이틀
-     * - `'heading'`: Pretendard-SemiBold (600) - 20px - text-foreground - 섹션 제목
-     * - `'subheading'`: Pretendard-SemiBold (600) - 18px - text-foreground - 서브 제목
+     * - `'display'`: Jua - 24px - text-foreground - 가장 큰 텍스트
+     * - `'title'`: Jua - 18px - text-blackWhite - 헤더 타이틀
+     * - `'heading'`: Jua - 20px - text-foreground - 섹션 제목
+     * - `'subheading'`: Jua - 18px - text-foreground - 서브 제목
      * - `'body'`: Pretendard-Regular (400) - 16px - text-foreground - 일반 본문
      * - `'caption'`: Pretendard-Medium (500) - 14px - text-muted-foreground - 캡션, 타임스탬프
      * - `'label'`: Pretendard-Medium (500) - 14px - text-primary - 라벨, 버튼 텍스트

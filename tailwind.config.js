@@ -8,6 +8,10 @@ const {
   paletteHex,
 } = require('./constants/palettes');
 const plugin = require('tailwindcss/plugin');
+const { themeSurface, surfaceVars } = require('./constants/themeSurface');
+
+/** 테마색을 섞은 바탕색: 앱에서 vars()로 덮어쓰고, 라이트/다크도 그 값이 정한다 */
+const surface = (name) => `rgb(var(--color-${name}) / <alpha-value>)`;
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -19,10 +23,10 @@ module.exports = {
       colors: {
         ...colors,
         // Theme colors (light mode 기본값)
-        background: themeColors.light.background,
+        background: surface('bg'),
         foreground: themeColors.light.foreground,
         card: {
-          DEFAULT: themeColors.light.card,
+          DEFAULT: surface('card'),
           foreground: themeColors.light.cardForeground,
         },
         popover: {
@@ -39,7 +43,7 @@ module.exports = {
           foreground: themeColors.light.secondaryForeground,
         },
         muted: {
-          DEFAULT: themeColors.light.muted,
+          DEFAULT: surface('muted'),
           foreground: themeColors.light.mutedForeground,
         },
         // 라이트 모드의 연한 배경(버튼·종류 고르기·입력칸 등)은 회색 대신 테마색을 아주 연하게.
@@ -52,19 +56,21 @@ module.exports = {
           DEFAULT: themeColors.light.destructive,
           foreground: themeColors.light.destructiveForeground,
         },
-        border: themeColors.light.border,
+        border: surface('border'),
         blackWhite: themeColors.light.blackWhite,
         blackWhiteForeground: themeColors.light.blackWhiteForeground,
-        input: themeColors.light.input,
+        input: surface('input'),
         ring: themeColors.light.ring,
         homebg: themeColors.light.homebg,
       },
+      // 아기자기한 테마: 모서리를 넉넉히 둥글게 (크기는 그대로)
       borderRadius: {
-        sm: '6px',
-        md: '8px',
-        lg: '10px',
-        xl: '14px',
-        '2xl': '18px',
+        sm: '8px',
+        md: '12px',
+        lg: '14px',
+        xl: '18px',
+        '2xl': '24px',
+        '3xl': '28px',
       },
       borderWidth: {
         hairline: hairlineWidth(),
@@ -102,6 +108,7 @@ module.exports = {
       addBase({
         ':root': {
           '--color-primary': hexToRgbTriple(paletteHex(DEFAULT_PALETTE)),
+          ...surfaceVars(themeSurface(paletteHex(DEFAULT_PALETTE), 'light')),
         },
       });
     }),
@@ -110,28 +117,19 @@ module.exports = {
 
       const utilities = {
         // Background colors
-        '.dark .bg-background': { backgroundColor: darkColors.background },
         '.dark .bg-foreground': { backgroundColor: darkColors.foreground },
-        '.dark .bg-card': { backgroundColor: darkColors.card },
         '.dark .bg-popover': { backgroundColor: darkColors.popover },
         '.dark .bg-secondary': { backgroundColor: darkColors.secondary },
-        '.dark .bg-muted': { backgroundColor: darkColors.muted },
         '.dark .bg-accent': { backgroundColor: darkColors.accent },
         '.dark .bg-destructive': { backgroundColor: darkColors.destructive },
         '.dark .bg-blackWhite': { backgroundColor: darkColors.blackWhite },
         '.dark .bg-blackWhiteForeground': {
           backgroundColor: darkColors.blackWhiteForeground,
         },
-        '.dark .bg-input': { backgroundColor: darkColors.input },
-        '.dark .bg-border': {
-          backgroundColor: darkColors.border,
-        },
         '.dark .bg-homebg': { backgroundColor: darkColors.homebg },
 
         // Text colors
-        '.dark .text-background': { color: darkColors.background },
         '.dark .text-foreground': { color: darkColors.foreground },
-        '.dark .text-card': { color: darkColors.card },
         '.dark .text-card-foreground': { color: darkColors.cardForeground },
         '.dark .text-popover': { color: darkColors.popover },
         '.dark .text-popover-foreground': {
@@ -144,7 +142,6 @@ module.exports = {
         '.dark .text-secondary-foreground': {
           color: darkColors.secondaryForeground,
         },
-        '.dark .text-muted': { color: darkColors.muted },
         '.dark .text-muted-foreground': { color: darkColors.mutedForeground },
         '.dark .text-accent': { color: darkColors.accent },
         '.dark .text-accent-foreground': { color: darkColors.accentForeground },
@@ -158,16 +155,11 @@ module.exports = {
         },
 
         // Border colors
-        '.dark .border-background': { borderColor: darkColors.background },
         '.dark .border-foreground': { borderColor: darkColors.foreground },
-        '.dark .border-card': { borderColor: darkColors.card },
         '.dark .border-secondary': { borderColor: darkColors.secondary },
-        '.dark .border-muted': { borderColor: darkColors.muted },
         '.dark .border-accent': { borderColor: darkColors.accent },
         '.dark .border-destructive': { borderColor: darkColors.destructive },
-        '.dark .border-border': { borderColor: darkColors.border },
         '.dark .border-blackWhite': { borderColor: darkColors.blackWhite },
-        '.dark .border-input': { borderColor: darkColors.input },
         // Ring colors
         '.dark .ring-ring': { '--tw-ring-color': darkColors.ring },
 

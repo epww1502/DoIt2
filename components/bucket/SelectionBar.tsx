@@ -1,6 +1,7 @@
 import { Pressable, View } from 'react-native';
 
 import { Button, Text } from '@/components/atoms';
+import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 
 type SelectionHeaderProps = {
   count: number;
@@ -51,8 +52,13 @@ export function SelectionDeleteBar({
   secondaryLabel?: string;
   onSecondary?: () => void;
 }) {
+  // 탭 화면에서는 떠 있는 탭바 위로 올린다
+  const tabBarSpace = useTabBarSpace();
   return (
-    <View className="absolute bottom-0 left-0 right-0 border-t px-5 pb-4 pt-3 bg-background border-border">
+    <View
+      className="absolute left-0 right-0 border-t border-border bg-background px-5 pt-3"
+      style={{ bottom: tabBarSpace, paddingBottom: 16 }}
+    >
       <View className="flex-row gap-2">
         {secondaryLabel && onSecondary ? (
           <Button
