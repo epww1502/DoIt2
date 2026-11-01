@@ -21,6 +21,7 @@ import {
   type ItemReview,
   type PlaceInfo,
   type RecordPhoto,
+  type RepeatInfo,
 } from '@/lib/bucket/types';
 
 import { supabase } from './client';
@@ -139,6 +140,7 @@ export function fromRow(
     createdBy: row.created_by ?? null,
     done,
     goal: (row.goal as GoalInfo | null) ?? null,
+    repeat: (row.repeat as RepeatInfo | null) ?? null,
     reviews: row.item_reviews
       ? row.item_reviews.map(reviewFromRow)
       : (local?.reviews ?? []),
@@ -168,6 +170,7 @@ function toRow(
     todos: (itemTodos(item).length > 0 ? itemTodos(item) : null) as Json,
     done: toRemoteDone(item.done) as Json,
     goal: (item.goal ?? null) as Json,
+    repeat: (item.repeat ?? null) as Json,
     created_at: item.createdAt,
   };
   if (!withTodos) delete row.todos;

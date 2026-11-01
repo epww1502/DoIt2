@@ -13,13 +13,13 @@ export const MAP_APPS: { key: MapApp; label: string }[] = [
 /** 네이버 지도 앱 링크에 넣는 우리 앱 이름 (app.json 번들 ID) */
 const NAVER_APP_NAME = 'com.doit2.app';
 
-type Target =
+export type MapTarget =
   | { type: 'place'; place: PlaceInfo }
   /** 카카오에서 고른 장소가 없을 때: 적어 둔 위치 글자로 검색 */
   | { type: 'search'; query: string };
 
 /** [앱 링크, 앱이 없을 때 열 웹 링크] */
-function links(app: MapApp, target: Target): [string, string] {
+function links(app: MapApp, target: MapTarget): [string, string] {
   const enc = encodeURIComponent;
 
   if (target.type === 'search') {
@@ -73,7 +73,7 @@ function links(app: MapApp, target: Target): [string, string] {
 }
 
 /** 지도 앱으로 연다. 앱이 없으면 웹 지도로 연다. */
-export async function openInMap(app: MapApp, target: Target) {
+export async function openInMap(app: MapApp, target: MapTarget) {
   const [appUrl, webUrl] = links(app, target);
   try {
     await Linking.openURL(appUrl);
@@ -86,14 +86,23 @@ export async function openInMap(app: MapApp, target: Target) {
  * 안드로이드: 폰에 깔린 지도 앱 중에서 고르는 시스템 선택 창으로 연다 (geo: 링크).
  * 여는 앱이 없으면 구글 웹 지도로 연다.
  */
-export async function openInSystemMap(place: PlaceInfo) {
-  const { latitude: lat, longitude: lng } = place;
-  const label = encodeURIComponent(place.name);
+export async function openInSystemMap(target: PlaceInfo | MapTarget) {
+  const t: MapTarget =
+    'type' in target ? target : { type: 'place', place: target };
+  // 장소 좌표가 없으면(적어 둔 위치 글자만) 그 글자로 검색
+  const [geo, web] =
+    t.type === 'place'
+      ? [
+          `geo:${t.place.latitude},${t.place.longitude}?q=${t.place.latitude},${t.place.longitude}(${encodeURIComponent(t.place.name)})`,
+          `https://www.google.com/maps/search/?api=1&query=${t.place.latitude},${t.place.longitude}`,
+        ]
+      : [
+          `geo:0,0?q=${encodeURIComponent(t.query)}`,
+          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.query)}`,
+        ];
   try {
-    await Linking.openURL(`geo:${lat},${lng}?q=${lat},${lng}(${label})`);
+    await Linking.openURL(geo);
   } catch {
-    await Linking.openURL(
-      `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
-    );
+    await Linking.openURL(web);
   }
 }

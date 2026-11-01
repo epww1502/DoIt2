@@ -51,6 +51,7 @@ export type Database = {
           location: string;
           memo: string;
           photos: Json | null;
+          repeat: Json | null;
           todos: Json | null;
           place: Json | null;
           setting: string;
@@ -69,6 +70,7 @@ export type Database = {
           location?: string;
           memo?: string;
           photos?: Json | null;
+          repeat?: Json | null;
           todos?: Json | null;
           place?: Json | null;
           setting: string;
@@ -87,6 +89,7 @@ export type Database = {
           location?: string;
           memo?: string;
           photos?: Json | null;
+          repeat?: Json | null;
           todos?: Json | null;
           place?: Json | null;
           setting?: string;
@@ -184,6 +187,33 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      comment_reactions: {
+        Row: {
+          comment_id: string;
+          created_at: string;
+          emoji: string;
+          item_id: string;
+          space_id: string;
+          user_id: string;
+        };
+        Insert: {
+          comment_id: string;
+          created_at?: string;
+          emoji: string;
+          item_id?: string;
+          space_id?: string;
+          user_id: string;
+        };
+        Update: {
+          comment_id?: string;
+          created_at?: string;
+          emoji?: string;
+          item_id?: string;
+          space_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       item_reactions: {
         Row: {
@@ -551,6 +581,8 @@ export type ItemCommentRow =
   Database['public']['Tables']['item_comments']['Row'];
 export type ItemReactionRow =
   Database['public']['Tables']['item_reactions']['Row'];
+export type CommentReactionRow =
+  Database['public']['Tables']['comment_reactions']['Row'];
 export type NotificationRow =
   Database['public']['Tables']['notifications']['Row'];
 export type MemberProfile =

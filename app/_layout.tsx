@@ -123,6 +123,7 @@ function RootLayoutInner() {
           <Stack.Screen name="space/list" />
           <Stack.Screen name="done/map" />
           <Stack.Screen name="done/stats" />
+          <Stack.Screen name="done/year" />
           <Stack.Screen
             name="share/[id]"
             options={{ animation: 'slide_from_bottom' }}

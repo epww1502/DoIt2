@@ -1,6 +1,13 @@
 import dayjs from 'dayjs';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Flag, MapPin, Pencil, Trash2 } from 'lucide-react-native';
+import {
+  ExternalLink,
+  Flag,
+  MapPin,
+  Pencil,
+  Repeat,
+  Trash2,
+} from 'lucide-react-native';
 import { Pressable, ScrollView, View } from 'react-native';
 import {
   SafeAreaView,
@@ -16,7 +23,6 @@ import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
 import { TodoChecklist } from '@/components/bucket/TodoChecklist';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
-import { MapAppButtons } from '@/components/bucket/MapAppButtons';
 import { ItemSocial } from '@/components/bucket/ItemSocial';
 import { ReviewsSection } from '@/components/bucket/ReviewsSection';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
@@ -26,11 +32,12 @@ import { goalDday } from '@/components/bucket/goalDday';
 import {
   getCategory,
   GOAL_REMIND_META,
+  isResting,
   itemPhotos,
   KIND_META,
   SETTING_META,
 } from '@/lib/bucket/types';
-import { openInMap } from '@/lib/mapLinks';
+import { openMapTarget } from '@/lib/openPlace';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 
 export default function BucketDetailScreen() {
@@ -49,6 +56,7 @@ export default function BucketDetailScreen() {
   const { keyboardHeight, scrollRef, onScroll, ensureFocusedVisible } =
     useKeyboardAwareForm();
   const spaceId = useBucketStore((s) => s.spaceId);
+  const updateItem = useBucketStore((s) => s.updateItem);
 
   if (!item) {
     return (
@@ -195,6 +203,43 @@ export default function BucketDetailScreen() {
         {/* 할 것 체크리스트 (없으면 '+ 할 것 추가'만) */}
         <TodoChecklist item={item} onRecord={goRecord} />
 
+        {/* 매년 하기 (쉬는 중이면 언제 다시 올라오는지와 지금 꺼내기) */}
+        {item.repeat && !done ? (
+          <View className="flex-row items-center gap-3 rounded-2xl p-4 bg-accent">
+            <Icon as={Repeat} size={18} className="text-primary" />
+            <View className="flex-1 gap-0.5">
+              <Text weight="600" size={15}>
+                매년 하기
+              </Text>
+              <Text variant="muted" size={12}>
+                {isResting(item, dayjs().format('YYYY-MM-DD'))
+                  ? `쉬는 중이에요. ${dayjs(item.repeat.restUntil).format('YYYY년 M월 D일')}에 목록에 다시 올라와요`
+                  : '해내면 내년 이맘때 한 달 전에 다시 올라와요'}
+              </Text>
+            </View>
+            {isResting(item, dayjs().format('YYYY-MM-DD')) ? (
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={6}
+                onPress={() =>
+                  updateItem(item.id, {
+                    repeat: { every: 'year', restUntil: null },
+                  })
+                }
+                className="rounded-full bg-primary px-3 py-1.5 active:opacity-70"
+              >
+                <Text
+                  weight="600"
+                  size={12}
+                  className="text-primary-foreground"
+                >
+                  지금 꺼내기
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
         {item.goal ? (
           <View className="flex-row items-center gap-3 rounded-2xl p-4 bg-accent">
             <Icon as={Flag} size={18} className="text-primary" />
@@ -219,9 +264,16 @@ export default function BucketDetailScreen() {
           </View>
         ) : null}
 
+        {/* 누르면 지도 앱으로 (안드로이드는 폰이 앱을 고르게, 아이폰은 지도 앱 목록) */}
         {mapTarget ? (
-          <View className="gap-3 rounded-2xl p-4 bg-accent">
-            <View className="gap-0.5">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="지도 앱에서 보기"
+            onPress={() => openMapTarget(mapTarget)}
+            className="flex-row items-center gap-3 rounded-2xl p-4 bg-accent active:opacity-70"
+          >
+            <Icon as={MapPin} size={18} className="text-primary" />
+            <View className="flex-1 gap-0.5">
               <Text weight="600" size={13} className="text-muted-foreground">
                 지도에서 보기
               </Text>
@@ -240,8 +292,8 @@ export default function BucketDetailScreen() {
                 </Text>
               )}
             </View>
-            <MapAppButtons onOpen={(app) => void openInMap(app, mapTarget)} />
-          </View>
+            <Icon as={ExternalLink} size={18} className="text-primary" />
+          </Pressable>
         ) : null}
 
         {item.memo ? (

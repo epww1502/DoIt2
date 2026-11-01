@@ -15,6 +15,7 @@ import { TextArea } from '@/components/atoms/TextArea';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { GoalField } from '@/components/bucket/GoalField';
+import { RepeatField } from '@/components/bucket/RepeatField';
 import { ItemPhotosField } from '@/components/bucket/ItemPhotosField';
 import { TodoListField } from '@/components/bucket/TodoListField';
 import { PlaceField } from '@/components/bucket/PlaceField';
@@ -31,6 +32,7 @@ import {
   type BucketSetting,
   type CategoryKey,
   type GoalInfo,
+  type RepeatInfo,
   type PlaceInfo,
   type ItemTodo,
   type RecordPhoto,
@@ -87,6 +89,9 @@ export default function BucketFormScreen() {
   const [memo, setMemo] = useState(editing?.memo ?? '');
   // 목표 날짜 (선택). 스위치를 켜야 보인다
   const [goal, setGoal] = useState<GoalInfo | null>(editing?.goal ?? null);
+  const [repeat, setRepeat] = useState<RepeatInfo | null>(
+    editing?.repeat ?? null
+  );
   // 사진 (최대 3장, 첫 번째가 대표). uri: 이 휴대폰 파일, path: 서버에 올라간 사진
   const [todos, setTodos] = useState<ItemTodo[]>(() => itemTodos(editing));
   const [photos, setPhotos] = useState<RecordPhoto[]>(() =>
@@ -174,6 +179,7 @@ export default function BucketFormScreen() {
       place,
       memo: memo.trim(),
       goal,
+      repeat,
       photos,
       // 빈 줄은 빼고 앞뒤 공백을 지운다
       todos: todos
@@ -293,6 +299,8 @@ export default function BucketFormScreen() {
           </View>
 
           <GoalField value={goal} onChange={setGoal} />
+
+          <RepeatField value={repeat} onChange={setRepeat} />
         </ScrollView>
 
         <BottomBar>

@@ -35,11 +35,13 @@ import { useTodayWeather } from '@/hooks/useTodayWeather';
 import { hapticSuccess } from '@/lib/haptics';
 import {
   getCategory,
+  isResting,
   itemTodos,
   KIND_META,
   settingTag,
   type BucketItem,
 } from '@/lib/bucket/types';
+import { todayKey } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import { weatherKey } from '@/lib/weather';
 import { useBucketStore } from '@/store/useBucketStore';
@@ -89,10 +91,12 @@ export default function PickScreen() {
       items.filter(
         (it) =>
           // 해본 것은 '이미 해본 것도 포함'을 켜고, 설정한 별점 이상일 때만
-          (!it.done ||
-            (includeDone &&
+          // 매년 하기 중 쉬는 것은 빼고
+          (!it.done
+            ? !isResting(it, todayKey())
+            : includeDone &&
               (redoMinRating <= 1 ||
-                (shownRating(it, reviewCtx) ?? 0) >= redoMinRating))) &&
+                (shownRating(it, reviewCtx) ?? 0) >= redoMinRating)) &&
           (settingFilter === 'all' || it.setting === settingFilter) &&
           matchesFilter(it, filter)
       ),

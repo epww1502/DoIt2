@@ -1,11 +1,13 @@
 import {
   CalendarDays,
   ChartColumn,
+  ChevronRight,
   CircleCheck,
   GalleryVertical,
   List,
   Map as MapIcon,
   SlidersHorizontal,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -40,6 +42,7 @@ import { KIND_ICON } from '@/components/bucket/kindIcons';
 import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useSelection } from '@/hooks/useSelection';
 import { cn } from '@/lib/utils';
+import { recapYear } from '@/lib/bucket/yearRecap';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useSpace } from '@/store/useSpaceStore';
 import { shareBucketItems } from '@/lib/shareItems';
@@ -83,6 +86,8 @@ export default function DoneScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [items, reviewCtx.userId, reviewCtx.inSpace]
   );
+  // 돌아볼 해 (1월엔 지난해). 기록이 없으면 띠를 숨긴다
+  const recap = useMemo(() => recapYear(done, new Date()), [done]);
   // 지도에 찍을 수 있는 (장소를 골라둔) 기록 수
   const visitedCount = done.filter((it) => it.place).length;
   // 종류만 거른 목록 (필터 시트에서 고를 수 있는 연도·카테고리를 여기서 뽑는다)
@@ -264,6 +269,37 @@ export default function DoneScreen() {
                   </Text>
                 </Pressable>
               </View>
+            ) : null}
+            {/* 올해의 우리 돌아보기 (여러 개 고를 땐 숨긴다) */}
+            {!selection.selecting && recap ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/done/year')}
+                className="flex-row items-center gap-3 rounded-2xl bg-primary px-4 py-3 active:opacity-80"
+              >
+                <Icon
+                  as={Sparkles}
+                  size={20}
+                  className="text-primary-foreground"
+                />
+                <View className="flex-1">
+                  <Text
+                    weight="700"
+                    size={15}
+                    className="text-primary-foreground"
+                  >
+                    {`${recap}년 ${together ? '우리 ' : ''}돌아보기`}
+                  </Text>
+                  <Text size={12} className="text-primary-foreground">
+                    한 해 동안 해낸 것을 카드로 넘겨 봐요
+                  </Text>
+                </View>
+                <Icon
+                  as={ChevronRight}
+                  size={18}
+                  className="text-primary-foreground"
+                />
+              </Pressable>
             ) : null}
             {/* 지도·추억 모아보기 (여러 개 고를 땐 숨긴다) */}
             {!selection.selecting ? (

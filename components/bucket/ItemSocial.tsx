@@ -44,7 +44,7 @@ function commentTime(at: string) {
  * 반응: 웃는 얼굴(+)에서 골라 남기고, 남겨진 반응을 누르면 내 반응을 남기거나 뺀다.
  * 길게 누르면 누가 남겼는지 보인다.
  * 댓글은 아래 입력칸에서 남긴다. 내 댓글은 오른쪽 ⋯(또는 길게 누르기)로 고치거나 지운다 (고친 댓글은 '(수정됨)').
- * 다른 사람 댓글은 길게 눌러 신고·차단한다.
+ * 다른 사람 댓글은 길게 눌러 신고·차단한다. 댓글을 길게 누르면 이모지 반응도 남길 수 있다.
  */
 export function ItemSocial({
   itemId,
@@ -88,7 +88,25 @@ export function ItemSocial({
     );
   }
 
-  const { comments, reactions } = social.data;
+  const { comments, reactions, commentReactions } = social.data;
+  /** 댓글 하나에 남겨진 반응 (이모지별 개수, 내가 눌렀는지) */
+  const reactionsOf = (commentId: string) =>
+    REACTION_EMOJIS.map((emoji) => {
+      const list = commentReactions.filter(
+        (r) => r.comment_id === commentId && r.emoji === emoji
+      );
+      return {
+        emoji,
+        count: list.length,
+        mine: list.some((r) => r.user_id === social.userId),
+      };
+    }).filter((c) => c.count > 0);
+  const toggleOnComment = (commentId: string, emoji: ReactionEmoji) => {
+    setMenuFor(null);
+    social
+      .toggleCommentReaction(commentId, emoji)
+      .catch((e) => showErrorAlert('반응을 남기지 못했어요', e));
+  };
   // 반응별 개수와 내가 눌렀는지
   const counts = REACTION_EMOJIS.map((emoji) => {
     const list = reactions.filter((r) => r.emoji === emoji);
@@ -283,8 +301,8 @@ export function ItemSocial({
                 accessibilityRole="button"
                 accessibilityHint={
                   mine
-                    ? '길게 눌러 고치거나 지우기'
-                    : '길게 눌러 신고하거나 차단하기'
+                    ? '길게 눌러 반응을 남기거나, 고치거나 지우기'
+                    : '길게 눌러 반응을 남기거나, 신고·차단하기'
                 }
                 onLongPress={() => setMenuFor(c)}
                 delayLongPress={350}
@@ -321,6 +339,39 @@ export function ItemSocial({
                   >
                     <Text size={14}>{c.body}</Text>
                   </View>
+                  {/* 댓글에 남긴 반응 (누르면 내 반응을 남기거나 뺀다) */}
+                  {reactionsOf(c.id).length > 0 ? (
+                    <View className="flex-row flex-wrap gap-1.5">
+                      {reactionsOf(c.id).map((rc) => (
+                        <Pressable
+                          key={rc.emoji}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${rc.emoji} ${rc.count}명${rc.mine ? ', 내가 누름' : ''}`}
+                          onPress={() => toggleOnComment(c.id, rc.emoji)}
+                          className={cn(
+                            'h-7 flex-row items-center gap-1 rounded-full border px-2 active:opacity-70',
+                            rc.mine ? 'border-primary' : 'border-border bg-card'
+                          )}
+                          style={
+                            rc.mine
+                              ? { backgroundColor: `${primary}1F` }
+                              : undefined
+                          }
+                        >
+                          <Text size={12}>{rc.emoji}</Text>
+                          <Text
+                            weight="600"
+                            size={11}
+                            className={
+                              rc.mine ? 'text-primary' : 'text-muted-foreground'
+                            }
+                          >
+                            {rc.count}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : null}
                 </View>
                 {/* 내 댓글: 고치기·지우기 메뉴 */}
                 {mine ? (
@@ -342,9 +393,11 @@ export function ItemSocial({
             );
           })
         )}
-        {comments.some((c) => c.user_id !== social.userId) ? (
+        {comments.length > 0 ? (
           <Text variant="muted" size={11}>
-            다른 사람 댓글을 길게 눌러 신고하거나 차단할 수 있어요
+            {comments.some((c) => c.user_id !== social.userId)
+              ? '댓글을 길게 눌러 반응을 남기거나, 신고·차단할 수 있어요'
+              : '댓글을 길게 눌러 반응을 남길 수 있어요'}
           </Text>
         ) : null}
 
@@ -371,10 +424,39 @@ export function ItemSocial({
           visible={menuFor !== null}
           onClose={() => setMenuFor(null)}
           header={
-            menuFor && menuFor.user_id !== social.userId ? (
-              <Text size={14} numberOfLines={3}>
-                {member(menuFor.user_id).name}: {menuFor.body}
-              </Text>
+            menuFor ? (
+              <View className="gap-3">
+                {menuFor.user_id !== social.userId ? (
+                  <Text size={14} numberOfLines={3}>
+                    {member(menuFor.user_id).name}: {menuFor.body}
+                  </Text>
+                ) : null}
+                {/* 이 댓글에 반응 남기기 */}
+                <View className="flex-row justify-between rounded-2xl px-2 py-1.5 bg-accent">
+                  {REACTION_EMOJIS.map((emoji) => {
+                    const mine = commentReactions.some(
+                      (r) =>
+                        r.comment_id === menuFor.id &&
+                        r.user_id === social.userId &&
+                        r.emoji === emoji
+                    );
+                    return (
+                      <Pressable
+                        key={emoji}
+                        accessibilityRole="button"
+                        accessibilityLabel={`댓글에 ${emoji} ${mine ? '빼기' : '남기기'}`}
+                        onPress={() => toggleOnComment(menuFor.id, emoji)}
+                        className={cn(
+                          'h-11 w-11 items-center justify-center rounded-full active:opacity-70',
+                          mine && 'bg-background'
+                        )}
+                      >
+                        <Text size={24}>{emoji}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
             ) : null
           }
           items={

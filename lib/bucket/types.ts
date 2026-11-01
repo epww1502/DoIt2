@@ -219,7 +219,46 @@ export type BucketItem = {
   goal?: GoalInfo | null;
   /** 공간 항목의 댓글 수 (목록에 말풍선 숫자로) */
   commentCount?: number;
+  /** 매년 하기 (예: 벚꽃 구경). 해내면 다음 해 것이 '쉬는 중'으로 새로 담긴다 */
+  repeat?: RepeatInfo | null;
 };
+
+/**
+ * 매년 하기. restUntil이 있으면 그날 전까지는 목록·뽑기에 안 보이고 쉰다
+ * (작년에 한 날의 한 달 전에 다시 올라온다)
+ */
+export type RepeatInfo = {
+  every: 'year';
+  /** YYYY-MM-DD. 이날부터 다시 보인다 */
+  restUntil?: string | null;
+};
+
+/** 다시 올라올 날: 한 날로부터 1년 뒤의 한 달 전 (적어도 내일) */
+export function nextRestUntil(doneDate: string, today: string) {
+  const d = new Date(`${doneDate}T00:00:00`);
+  d.setFullYear(d.getFullYear() + 1);
+  d.setDate(d.getDate() - 30);
+  const until = ymd(d);
+  const t = new Date(`${today}T00:00:00`);
+  t.setDate(t.getDate() + 1);
+  const tomorrow = ymd(t);
+  return until > tomorrow ? until : tomorrow;
+}
+
+function ymd(d: Date) {
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/** 매년 하기 항목이 아직 쉬는 중인지 (오늘은 YYYY-MM-DD) */
+export function isResting(
+  item: Pick<BucketItem, 'done' | 'repeat'>,
+  today: string
+) {
+  const until = item.repeat?.restUntil;
+  return !item.done && !!until && until > today;
+}
 
 /** 항목 안의 할 것 한 줄 */
 export type ItemTodo = {
@@ -309,4 +348,5 @@ export type BucketInput = Pick<
   | 'goal'
   | 'photos'
   | 'todos'
+  | 'repeat'
 >;

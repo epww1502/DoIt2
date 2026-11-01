@@ -18,6 +18,7 @@ import {
   applyTodoOps,
   itemTodos,
   newTodoId,
+  nextRestUntil,
   type TodoOp,
 } from '@/lib/bucket/types';
 import {
@@ -573,9 +574,43 @@ export const useBucketStore = create<BucketState>()(
             useOutboxStore.getState().queuePhotoRemoval(removedPaths);
           }
 
-          const item = { ...target, done: next };
+          // 매년 하기를 처음 해냈으면 다음 해 것을 '쉬는 중'으로 새로 담는다
+          // (이 항목은 일지에 남고 매년 하기 표시는 새 항목으로 넘어간다)
+          const renew = !prev && target.repeat ? target : null;
+          const item = renew
+            ? { ...target, done: next, repeat: null }
+            : { ...target, done: next };
           replaceItem(id, item);
           pushItems([item]);
+          if (renew) {
+            const copy: BucketItem = {
+              id: remote.newItemId(),
+              kind: renew.kind,
+              title: renew.title,
+              category: renew.category,
+              setting: renew.setting,
+              location: renew.location,
+              place: renew.place ?? null,
+              memo: renew.memo,
+              // 할 것은 체크를 풀어서
+              todos: itemTodos(renew).map((t) => ({
+                ...t,
+                id: newTodoId(),
+                done: false,
+              })),
+              createdAt: new Date().toISOString(),
+              done: null,
+              repeat: {
+                every: 'year',
+                restUntil: nextRestUntil(
+                  next.date,
+                  dayjs().format('YYYY-MM-DD')
+                ),
+              },
+            };
+            set({ items: [copy, ...get().items] });
+            pushItems([copy], undefined, true);
+          }
           if (spaceId) {
             // 별점·소감은 내 평가로. 처음 남긴 기록이면 'done', 남이 남긴 기록에 더하면 'reviewed' 알림
             const hadMine = Boolean(

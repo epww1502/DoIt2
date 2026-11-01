@@ -1,16 +1,61 @@
 /**
  * 버킷리스트 검색과 정렬.
  */
-import { getCategory, type BucketItem } from './types';
+import { getCategory, itemTodos, type BucketItem } from './types';
 
-export type BucketSort = 'recent' | 'oldest' | 'goal' | 'name';
+export type BucketSort = 'recent' | 'oldest' | 'goal' | 'progress' | 'name';
 
 export const BUCKET_SORT_META: Record<BucketSort, { label: string }> = {
   recent: { label: '최근에 담은 순' },
   oldest: { label: '오래된 순' },
   goal: { label: '목표 날짜 가까운 순' },
+  progress: { label: '할 것 많이 해둔 순' },
   name: { label: '이름 순' },
 };
+
+/** 목록에서 더 골라보기 (여러 개 고르면 모두 맞는 것만. 실내·실외는 둘 중 하나) */
+export type BucketExtra =
+  'todosLeft' | 'goal' | 'place' | 'indoor' | 'outdoor' | 'mine';
+
+export const BUCKET_EXTRA_META: Record<
+  BucketExtra,
+  { label: string; spaceOnly?: boolean }
+> = {
+  todosLeft: { label: '할 것 남은 것' },
+  goal: { label: '목표 날짜 있는 것' },
+  place: { label: '장소 있는 것' },
+  indoor: { label: '실내' },
+  outdoor: { label: '실외' },
+  mine: { label: '내가 담은 것', spaceOnly: true },
+};
+
+/** 할 것 진행률 (0~1). 할 것이 없으면 null */
+export function todoProgress(item: BucketItem) {
+  const todos = itemTodos(item);
+  if (todos.length === 0) return null;
+  return todos.filter((t) => t.done).length / todos.length;
+}
+
+export function matchesExtras(
+  item: BucketItem,
+  extras: BucketExtra[],
+  userId: string | null
+) {
+  if (extras.length === 0) return true;
+  const on = new Set(extras);
+  if (on.has('todosLeft') && !itemTodos(item).some((t) => !t.done)) {
+    return false;
+  }
+  if (on.has('goal') && !item.goal?.date) return false;
+  if (on.has('place') && !item.place && !item.location.trim()) return false;
+  if (on.has('indoor') !== on.has('outdoor')) {
+    if (item.setting !== (on.has('indoor') ? 'indoor' : 'outdoor')) {
+      return false;
+    }
+  }
+  if (on.has('mine') && (!userId || item.createdBy !== userId)) return false;
+  return true;
+}
 
 /** 띄어쓰기·대소문자 상관없이 비교하려고 */
 function normalize(text: string) {
@@ -39,6 +84,16 @@ export function sortItems(items: BucketItem[], sort: BucketSort) {
       return list.sort(
         (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)
       );
+    case 'progress':
+      // 할 것을 많이 해둔 것 먼저, 할 것이 없는 것은 최근에 담은 순으로 뒤에
+      return list.sort((a, b) => {
+        const pa = todoProgress(a);
+        const pb = todoProgress(b);
+        if (pa !== null && pb !== null && pa !== pb) return pb - pa;
+        if (pa !== null && pb === null) return -1;
+        if (pb !== null && pa === null) return 1;
+        return Date.parse(b.createdAt) - Date.parse(a.createdAt);
+      });
     case 'name':
       return list.sort((a, b) => a.title.localeCompare(b.title, 'ko'));
     case 'goal':

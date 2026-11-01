@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { router } from 'expo-router';
 import {
   ChevronRight,
@@ -8,7 +9,10 @@ import {
   Map as MapIcon,
   Rows3,
   RotateCcw,
+  Repeat as RepeatIcon,
   Search,
+  SlidersHorizontal,
+  X,
   type LucideIcon,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
@@ -54,17 +58,22 @@ import { type BucketView, useSettingsStore } from '@/store/useSettingsStore';
 import {
   CATEGORIES_BY_KIND,
   getCategory,
+  isResting,
   type BucketItem,
 } from '@/lib/bucket/types';
+import { todayKey } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import { useSpace, useSpaceStore } from '@/store/useSpaceStore';
 import { shareBucketItems } from '@/lib/shareItems';
 import { useImportSources } from '@/hooks/useImportSources';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
 import {
+  BUCKET_EXTRA_META,
   BUCKET_SORT_META,
+  matchesExtras,
   matchesQuery,
   sortItems,
+  type BucketExtra,
   type BucketSort,
 } from '@/lib/bucket/search';
 import { itemStatus } from '@/lib/bucket/reviews';
@@ -95,12 +104,35 @@ export default function BucketListScreen() {
   const [query, setQuery] = useState('');
   const bucketSort = useSettingsStore((s) => s.bucketSort);
   const setBucketSort = useSettingsStore((s) => s.setBucketSort);
+  // 더 골라보기 (할 것 남은 것, 실내 등). 앱을 다시 켜면 풀린다
+  const [extras, setExtras] = useState<BucketExtra[]>([]);
+  const userId = useSpaceStore((s) => s.userId);
+  // '나만 보기'에선 '내가 담은 것'을 빼고 센다
+  const activeExtras = useMemo(
+    () =>
+      together ? extras : extras.filter((e) => !BUCKET_EXTRA_META[e].spaceOnly),
+    [extras, together]
+  );
+  const toggleExtra = (extra: BucketExtra) =>
+    setExtras((list) =>
+      list.includes(extra) ? list.filter((e) => e !== extra) : [...list, extra]
+    );
   const closeSearch = () => {
     setQuery('');
     setSearchOpen(false);
   };
 
-  const todo = useMemo(() => items.filter((it) => !it.done), [items]);
+  // 매년 하기 중 쉬는 것(내년에 다시 올라올 것)은 목록에서 빼고 아래 링크로
+  const today = todayKey();
+  const resting = useMemo(
+    () => items.filter((it) => isResting(it, today)),
+    [items, today]
+  );
+  const todo = useMemo(
+    () => items.filter((it) => !it.done && !isResting(it, today)),
+    [items, today]
+  );
+  const [restingOpen, setRestingOpen] = useState(false);
   // 공간에서 다른 사람이 먼저 기록해 내 평가를 기다리는 항목 (맨 위에 따로)
   const reviewCtx = useReviewCtx();
   const awaiting = items.filter(
@@ -110,13 +142,17 @@ export default function BucketListScreen() {
     () =>
       sortItems(
         todo.filter(
-          (it) => matchesFilter(it, filter) && matchesQuery(it, query)
+          (it) =>
+            matchesFilter(it, filter) &&
+            matchesQuery(it, query) &&
+            matchesExtras(it, activeExtras, userId)
         ),
         bucketSort
       ),
-    [todo, filter, query, bucketSort]
+    [todo, filter, query, activeExtras, userId, bucketSort]
   );
-  const doneCount = items.length - todo.length;
+  const doneCount = items.length - todo.length - resting.length;
+  const shownCount = items.length - resting.length;
 
   const goNew = () => router.push('/item/new');
   const goRedo = () => router.push('/item/redo');
@@ -223,6 +259,13 @@ export default function BucketListScreen() {
         label="공유받은 목록 가져오기"
         onPress={goShared}
       />
+      {resting.length > 0 ? (
+        <FooterLink
+          icon={RepeatIcon}
+          label={`내년에 다시 할 것 ${resting.length}개`}
+          onPress={() => setRestingOpen(true)}
+        />
+      ) : null}
     </View>
   ) : undefined;
   // 평가를 기다리는 칸: 목록 맨 위에 넣어 같이 스크롤된다 (고르는 중에는 숨긴다)
@@ -230,17 +273,25 @@ export default function BucketListScreen() {
   const awaitingHeader = showAwaiting ? (
     <AwaitingReviews items={awaiting} className="" />
   ) : undefined;
-  const listEmpty = query.trim() ? (
-    <EmptyState
-      title={`'${query.trim()}'에 맞는 게 없어요`}
-      description="다른 말로 찾아보거나 카테고리를 바꿔봐요."
-    />
-  ) : (
-    <EmptyState
-      title="여기엔 아직 없어요"
-      description="다른 걸 골라보거나 새로 담아봐요."
-    />
-  );
+  const listEmpty =
+    activeExtras.length > 0 ? (
+      <EmptyState
+        title="고른 조건에 맞는 게 없어요"
+        description="조건을 몇 개 빼보세요."
+        actionLabel="조건 모두 빼기"
+        onAction={() => setExtras([])}
+      />
+    ) : query.trim() ? (
+      <EmptyState
+        title={`'${query.trim()}'에 맞는 게 없어요`}
+        description="다른 말로 찾아보거나 카테고리를 바꿔봐요."
+      />
+    ) : (
+      <EmptyState
+        title="여기엔 아직 없어요"
+        description="다른 걸 골라보거나 새로 담아봐요."
+      />
+    );
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
@@ -269,11 +320,11 @@ export default function BucketListScreen() {
 
       <SyncStaleNotice sync={sync} />
 
-      {items.length > 0 ? (
+      {shownCount > 0 ? (
         <View className="mx-5 mb-4 gap-2 rounded-2xl p-4 bg-accent">
           <View className="flex-row items-center justify-between">
             <Text weight="600" size={15}>
-              {items.length}개 중 {doneCount}개 해냈어요
+              {shownCount}개 중 {doneCount}개 해냈어요
             </Text>
             {/* 해낸 게 있으면 '일지' 탭으로 바로 */}
             {doneCount > 0 ? (
@@ -291,7 +342,7 @@ export default function BucketListScreen() {
               </Pressable>
             ) : null}
           </View>
-          <ProgressBar value={(doneCount / items.length) * 100} />
+          <ProgressBar value={(doneCount / Math.max(shownCount, 1)) * 100} />
         </View>
       ) : null}
 
@@ -367,7 +418,7 @@ export default function BucketListScreen() {
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`보기 방식: ${BUCKET_VIEW_META[bucketView].label}`}
+                  accessibilityLabel={`보기 방식·정렬·골라보기: ${BUCKET_VIEW_META[bucketView].label}${activeExtras.length > 0 ? `, 조건 ${activeExtras.length}개` : ''}`}
                   onPress={() => setViewSheetOpen(true)}
                   className="h-10 w-10 items-center justify-center rounded-lg bg-accent active:opacity-70"
                 >
@@ -376,6 +427,17 @@ export default function BucketListScreen() {
                     size={18}
                     className="text-muted-foreground"
                   />
+                  {activeExtras.length > 0 ? (
+                    <View className="min-w-5 absolute -right-1 -top-1 h-5 items-center justify-center rounded-full bg-primary px-1">
+                      <Text
+                        weight="700"
+                        size={11}
+                        className="text-primary-foreground"
+                      >
+                        {activeExtras.length}
+                      </Text>
+                    </View>
+                  ) : null}
                 </Pressable>
               </View>
             }
@@ -400,6 +462,43 @@ export default function BucketListScreen() {
               >
                 <Text weight="600" size={14} className="text-muted-foreground">
                   닫기
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {activeExtras.length > 0 ? (
+            <View className="flex-row flex-wrap items-center gap-2 px-5 pt-3">
+              <Icon
+                as={SlidersHorizontal}
+                size={14}
+                className="text-muted-foreground"
+              />
+              {activeExtras.map((extra) => (
+                <Pressable
+                  key={extra}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${BUCKET_EXTRA_META[extra].label} 조건 빼기`}
+                  onPress={() => toggleExtra(extra)}
+                  className="h-8 flex-row items-center gap-1 rounded-full bg-primary pl-3 pr-2 active:opacity-70"
+                >
+                  <Text
+                    weight="600"
+                    size={12}
+                    className="text-primary-foreground"
+                  >
+                    {BUCKET_EXTRA_META[extra].label}
+                  </Text>
+                  <Icon as={X} size={13} className="text-primary-foreground" />
+                </Pressable>
+              ))}
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={6}
+                onPress={() => setExtras([])}
+                className="px-1 active:opacity-60"
+              >
+                <Text weight="600" size={12} className="text-muted-foreground">
+                  모두 빼기
                 </Text>
               </Pressable>
             </View>
@@ -522,6 +621,26 @@ export default function BucketListScreen() {
         </>
       )}
       <ActionSheet
+        visible={restingOpen}
+        onClose={() => setRestingOpen(false)}
+        header={
+          <View className="gap-1">
+            <Text weight="700" size={17}>
+              내년에 다시 할 것
+            </Text>
+            <Text variant="muted" size={13}>
+              매년 하기로 담은 것 중 올해 해낸 것들이에요. 날이 되면 목록에 다시
+              올라와요.
+            </Text>
+          </View>
+        }
+        items={resting.map((it) => ({
+          label: `${it.title} · ${dayjs(it.repeat?.restUntil).format('M월 D일')}부터`,
+          onPress: () =>
+            router.push({ pathname: '/item/[id]', params: { id: it.id } }),
+        }))}
+      />
+      <ActionSheet
         visible={viewSheetOpen}
         onClose={() => setViewSheetOpen(false)}
         header={
@@ -539,6 +658,23 @@ export default function BucketListScreen() {
                     onPress={() => setBucketSort(sort)}
                   />
                 ))}
+              </View>
+            </View>
+            <View className="gap-2">
+              <Text weight="700" size={17}>
+                골라보기
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {(Object.keys(BUCKET_EXTRA_META) as BucketExtra[])
+                  .filter((e) => together || !BUCKET_EXTRA_META[e].spaceOnly)
+                  .map((extra) => (
+                    <Chip
+                      key={extra}
+                      label={BUCKET_EXTRA_META[extra].label}
+                      selected={activeExtras.includes(extra)}
+                      onPress={() => toggleExtra(extra)}
+                    />
+                  ))}
               </View>
             </View>
             <Text weight="700" size={17}>
