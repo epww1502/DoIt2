@@ -69,6 +69,7 @@ import {
 } from '@/lib/bucket/search';
 import { itemStatus } from '@/lib/bucket/reviews';
 import { useTabBarSpace } from '@/hooks/useTabBarSpace';
+import { CategoryIcon } from '@/components/bucket/CategoryIcon';
 
 /** 보기 방식 이름·아이콘 */
 const BUCKET_VIEW_META: Record<
@@ -195,7 +196,7 @@ export default function BucketListScreen() {
         .map((c) => ({
           key: `${kind}:${c.key}`,
           label: c.label,
-          emoji: c.emoji,
+          category: c.key,
           data: groups.get(`${kind}:${c.key}`)!,
         }))
     );
@@ -257,7 +258,7 @@ export default function BucketListScreen() {
       ) : (
         <ScreenHeader
           right={<SpaceSwitcher />}
-          title="버킷리스트"
+          title="우리의 버킷리스트"
           subtitle={
             items.length === 0
               ? `${together ? '같이 ' : ''}가고 싶은 곳, 해보고 싶은 것을 모아봐요`
@@ -274,11 +275,11 @@ export default function BucketListScreen() {
             <Text weight="600" size={15}>
               {items.length}개 중 {doneCount}개 해냈어요
             </Text>
-            {/* 해낸 게 있으면 '함께한 것' 탭으로 바로 */}
+            {/* 해낸 게 있으면 '일지' 탭으로 바로 */}
             {doneCount > 0 ? (
               <Pressable
                 accessibilityRole="link"
-                accessibilityLabel={`${doneLabel} 보러가기`}
+                accessibilityLabel="일지 보러가기"
                 hitSlop={8}
                 onPress={() => router.navigate('/done')}
                 className="flex-row items-center active:opacity-60"
@@ -443,12 +444,15 @@ export default function BucketListScreen() {
               extraData={selection.selected}
               stickySectionHeadersEnabled={false}
               renderSectionHeader={({ section }) => (
-                <Text weight="700" size={14} className="pb-1 pt-4">
-                  {`${section.emoji} ${section.label}`}
-                  <Text size={12} className="text-muted-foreground">
-                    {` · ${section.data.length}`}
+                <View className="flex-row items-center gap-1.5 pb-1 pt-4">
+                  <CategoryIcon category={section.category} size={16} />
+                  <Text weight="700" size={14}>
+                    {section.label}
+                    <Text size={12} className="text-muted-foreground">
+                      {` · ${section.data.length}`}
+                    </Text>
                   </Text>
-                </Text>
+                </View>
               )}
               renderItem={({ item }) => (
                 <View className="pb-2">
@@ -575,7 +579,7 @@ function MapItemCard({ item }: { item: BucketItem }) {
       }
       className="flex-row items-center gap-3 active:opacity-70"
     >
-      <ItemIcon item={item} size={44} emojiSize={20} />
+      <ItemIcon item={item} size={44} iconSize={20} />
       <View className="flex-1 gap-0.5">
         <Text weight="700" size={15} numberOfLines={1}>
           {item.title}

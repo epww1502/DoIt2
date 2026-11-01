@@ -212,7 +212,6 @@ export default function BucketFormScreen() {
               {categories.map((c) => (
                 <Chip
                   key={c.key}
-                  emoji={c.emoji}
                   category={c.key}
                   label={c.label}
                   selected={category === c.key}

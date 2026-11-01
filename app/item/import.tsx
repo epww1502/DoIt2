@@ -236,7 +236,7 @@ function PickItems({
                     already && 'opacity-50'
                   )}
                 >
-                  <ItemIcon item={item} size={44} emojiSize={20} />
+                  <ItemIcon item={item} size={44} iconSize={20} />
                   <View className="flex-1 gap-0.5">
                     <Text weight="600" size={15} numberOfLines={1}>
                       {item.title}

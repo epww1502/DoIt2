@@ -57,8 +57,8 @@ const VIEW_META: Record<DoneView, { label: string; icon: LucideIcon }> = {
 
 const KIND_OPTIONS: SegmentedOption<KindOption>[] = [
   { value: 'all', label: '전체' },
-  { value: 'place', label: '가본 곳', icon: KIND_ICON.place },
-  { value: 'activity', label: '해본 것', icon: CircleCheck },
+  { value: 'place', label: '탐방한 곳', icon: KIND_ICON.place },
+  { value: 'activity', label: '성공한 도전', icon: CircleCheck },
 ];
 
 export default function DoneScreen() {
@@ -175,7 +175,7 @@ export default function DoneScreen() {
       ) : (
         <ScreenHeader
           right={<SpaceSwitcher />}
-          title={together ? '함께한 것' : '해낸 것'}
+          title="차곡차곡 일지"
           subtitle={
             done.length > 0
               ? `벌써 ${done.length}개나 ${together ? '같이 ' : ''}해냈어요`
@@ -190,7 +190,7 @@ export default function DoneScreen() {
         <EmptyState
           title={together ? '아직 함께한 게 없어요' : '아직 해낸 게 없어요'}
           description={
-            "버킷리스트에서 하나를 고르고\n'가봤어요', '해봤어요'를 누르면 여기에 쌓여요."
+            "버킷리스트에서 하나를 고르고\n'탐방 완료', '도전 성공'을 누르면 여기에 쌓여요."
           }
           actionLabel="버킷리스트 보러 가기"
           onAction={() => router.navigate('/')}

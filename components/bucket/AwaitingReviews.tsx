@@ -6,12 +6,13 @@ import { Pressable, View } from 'react-native';
 import { Icon, Text } from '@/components/atoms';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
 import { visibleReviews } from '@/lib/bucket/reviews';
-import { getCategory, type BucketItem } from '@/lib/bucket/types';
+import { type BucketItem } from '@/lib/bucket/types';
 import { showAlert } from '@/lib/dialog';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useMemberLookup } from '@/store/useMembersStore';
 import { usePrimaryColor, useSettingsStore } from '@/store/useSettingsStore';
+import { CategoryIcon } from '@/components/bucket/CategoryIcon';
 
 /** 처음에 보여줄 개수 (더 있으면 '모두 보기') */
 const PREVIEW_COUNT = 3;
@@ -101,7 +102,7 @@ export function AwaitingReviews({
             className="gap-2.5 rounded-xl bg-background p-3 active:opacity-80"
           >
             <View className="flex-row items-center gap-2">
-              <Text size={18}>{getCategory(item.category).emoji}</Text>
+              <CategoryIcon category={item.category} size={18} />
               <Text weight="600" size={15} numberOfLines={1} className="flex-1">
                 {item.title}
               </Text>

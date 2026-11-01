@@ -15,7 +15,6 @@ import Animated, {
 import { PlateDiceIcon } from '@/components/bucket/PlateDiceIcon';
 import { useSurface } from '@/hooks/useSurface';
 import { TabBarSpaceContext } from '@/hooks/useTabBarSpace';
-import { useTogether } from '@/hooks/useTogether';
 import { themeColors } from '@/constants/colors';
 import { FONT_WEIGHTS } from '@/constants/fonts';
 import { SOFT_SHADOW } from '@/constants/shadow';
@@ -116,7 +115,6 @@ export default function TabLayout() {
   const { colorScheme } = useThemeMode();
   const theme = themeColors[colorScheme];
   const primary = usePrimaryColor();
-  const together = useTogether();
   const insets = useSafeAreaInsets();
   const surface = useSurface();
   const barHeight = PILL_TOP * 2 + PILL_HEIGHT + insets.bottom;
@@ -177,19 +175,19 @@ export default function TabLayout() {
       >
         <Tabs.Screen
           name="index"
-          options={{ title: '버킷리스트', tabBarIcon: tabIcon(ListChecks) }}
+          options={{ title: '목록', tabBarIcon: tabIcon(ListChecks) }}
         />
         <Tabs.Screen
           name="done"
           options={{
-            title: together ? '함께한 것' : '해낸 것',
+            title: '일지',
             tabBarIcon: tabIcon(CircleCheck),
           }}
         />
         <Tabs.Screen
           name="pick"
           options={{
-            title: '오늘 뭐 하지',
+            title: '추천',
             tabBarIcon: tabIcon(PlateDiceIcon),
           }}
         />

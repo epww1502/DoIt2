@@ -216,7 +216,7 @@ function PickedCard({
           className="items-center justify-center gap-2 rounded-2xl border-2 border-primary bg-card p-3"
           style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}
         >
-          <ItemIcon item={item} size={52} emojiSize={38} bare />
+          <ItemIcon item={item} size={52} iconSize={26} bare />
           <Text
             weight="700"
             size={15}

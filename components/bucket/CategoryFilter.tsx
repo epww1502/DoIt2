@@ -85,7 +85,6 @@ export function CategoryFilter({
           {CATEGORIES_BY_KIND[value.kind].map((c) => (
             <Chip
               key={c.key}
-              emoji={c.emoji}
               category={c.key}
               label={c.label}
               selected={value.category === c.key}

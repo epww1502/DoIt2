@@ -2,10 +2,11 @@ import { ImagePlus } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { showAlert } from '@/lib/dialog';
-import { Icon, Text } from '@/components/atoms';
+import { Icon } from '@/components/atoms';
 import { pickPhoto } from '@/lib/bucket/photo';
 import { cn } from '@/lib/utils';
 
+import { SpaceAvatar } from './SpaceAvatar';
 import { SPACE_EMOJIS } from './spaceFlow';
 
 type SpaceIconPickerProps = {
@@ -17,7 +18,7 @@ type SpaceIconPickerProps = {
   onPhoto: (uri: string) => void;
 };
 
-/** 공간 아이콘 고르기: 맨 앞 '사진' 버튼 + 이모지들. 이모지를 고르면 사진은 빠진다 */
+/** 공간 아이콘 고르기: 맨 앞 '사진' 버튼 + 아이콘들. 아이콘을 고르면 사진은 빠진다 */
 export function SpaceIconPicker({
   emoji,
   usingPhoto,
@@ -56,11 +57,11 @@ export function SpaceIconPicker({
             accessibilityState={{ selected }}
             onPress={() => onEmoji(e)}
             className={cn(
-              'h-12 w-12 items-center justify-center rounded-full bg-accent',
+              'h-12 w-12 items-center justify-center rounded-full',
               selected && 'border-2 border-primary'
             )}
           >
-            <Text size={22}>{e}</Text>
+            <SpaceAvatar emoji={e} size={selected ? 40 : 48} />
           </Pressable>
         );
       })}

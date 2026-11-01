@@ -19,11 +19,12 @@ import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { viewForMe } from '@/lib/bucket/reviews';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { FONT_WEIGHTS } from '@/constants/fonts';
-import { getCategory, KIND_META, recordPhotos } from '@/lib/bucket/types';
+import { KIND_META, recordPhotos } from '@/lib/bucket/types';
 import { showAlert } from '@/lib/dialog';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 import { useSpace } from '@/store/useSpaceStore';
+import { CategoryIcon } from '@/components/bucket/CategoryIcon';
 
 /** 카드 크기 (공유 이미지는 이 크기의 3배로 저장된다) */
 const CARD_WIDTH = 320;
@@ -69,8 +70,6 @@ export default function ShareCardScreen() {
       </SafeAreaView>
     );
   }
-
-  const category = getCategory(item.category);
 
   /** 카드를 PNG로 찍는다 (네이티브 부품이 없는 예전 앱에서 멈추지 않게 쓸 때만 불러온다) */
   const capture = async () => {
@@ -167,7 +166,11 @@ export default function ShareCardScreen() {
                 justifyContent: 'center',
               }}
             >
-              <RNText style={{ fontSize: 64 }}>{category.emoji}</RNText>
+              <CategoryIcon
+                category={item.category}
+                size={56}
+                color={primary}
+              />
             </View>
           )}
 

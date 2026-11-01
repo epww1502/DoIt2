@@ -79,7 +79,7 @@ export default function SettingsScreen() {
           <CardContent className="gap-4 p-5">
             <ToggleRow
               title="뽑기 애니메이션"
-              description="끄면 '오늘 뭐 하지'에서 바로 결과가 나와요"
+              description="끄면 추천 탭에서 바로 결과가 나와요"
               value={pickAnimation}
               onChange={setPickAnimation}
             />

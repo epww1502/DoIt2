@@ -3,18 +3,14 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { Text } from '@/components/atoms';
-import {
-  getCategory,
-  recordPhotos,
-  settingTag,
-  type BucketItem,
-} from '@/lib/bucket/types';
+import { recordPhotos, settingTag, type BucketItem } from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
 
 import type { SelectionProps } from './BucketRow';
 import { DonePhoto, PhotoImage } from './DonePhoto';
 import { Selectable } from './Selectable';
 import { StarRating } from './StarRating';
+import { CategoryIcon } from '@/components/bucket/CategoryIcon';
 
 /** 날짜·실내 옆에 붙는 ' · 댓글 3개' (없으면 빈칸) */
 function commentText(count?: number) {
@@ -28,7 +24,6 @@ export function DoneCard({
 }: { item: BucketItem } & SelectionProps) {
   const done = item.done;
   if (!done) return null;
-  const category = getCategory(item.category);
 
   return (
     <Selectable
@@ -42,7 +37,7 @@ export function DoneCard({
         <DonePhoto done={done} />
       ) : (
         <View className="h-24 items-center justify-center bg-accent">
-          <Text size={36}>{category.emoji}</Text>
+          <CategoryIcon category={item.category} size={36} />
         </View>
       )}
       <View className="gap-1.5 p-4">
@@ -78,7 +73,6 @@ export function DoneRow({
 }: { item: BucketItem } & SelectionProps) {
   const done = item.done;
   if (!done) return null;
-  const category = getCategory(item.category);
   const photo = recordPhotos(done)[0];
 
   return (
@@ -97,7 +91,7 @@ export function DoneRow({
         {photo ? (
           <PhotoImage photo={photo} style={{ width: 56, height: 56 }} />
         ) : (
-          <Text size={24}>{category.emoji}</Text>
+          <CategoryIcon category={item.category} size={24} />
         )}
       </View>
       <View className="flex-1 gap-1">

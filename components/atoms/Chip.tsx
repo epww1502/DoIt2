@@ -1,5 +1,6 @@
 import { Pressable } from 'react-native';
 
+import { CategoryIcon } from '@/components/bucket/CategoryIcon';
 import { categoryTint } from '@/constants/categoryTint';
 import { useThemeMode } from '@/contexts/ThemeModeContext';
 import type { CategoryKey } from '@/lib/bucket/types';
@@ -9,7 +10,7 @@ import { Text } from './Text';
 
 type ChipProps = {
   label: string;
-  /** 글자 앞에 붙는 이모지 */
+  /** 글자 앞에 붙는 이모지 (카테고리 칩은 이모지 대신 선 아이콘) */
   emoji?: string;
   selected?: boolean;
   /** 카테고리 칩이면 고르지 않았을 때 그 카테고리의 파스텔 색으로 */
@@ -45,7 +46,15 @@ export function Chip({
     >
       {/* 이모지와 글자를 한 Text에 넣으면, 안드로이드에서 이모지(✨ 등) 폭을 실제보다 좁게 재서
           글자가 둘째 줄로 밀려 잘린다. 따로 그리고 글자는 한 줄로 고정한다. */}
-      {emoji ? <Text size={14}>{emoji}</Text> : null}
+      {category ? (
+        <CategoryIcon
+          category={category}
+          size={15}
+          color={selected ? '#FFFFFF' : undefined}
+        />
+      ) : emoji ? (
+        <Text size={14}>{emoji}</Text>
+      ) : null}
       <Text size={14} weight="500" numberOfLines={1} className={textClass}>
         {label}
       </Text>

@@ -280,7 +280,7 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
             <TextField value={name} onChangeText={setName} maxLength={20} />
           </View>
           <View>
-            <FieldLabel>아이콘 (사진 또는 이모지)</FieldLabel>
+            <FieldLabel>아이콘 (사진 또는 그림)</FieldLabel>
             <SpaceIconPicker
               emoji={emoji}
               usingPhoto={usingPhoto}

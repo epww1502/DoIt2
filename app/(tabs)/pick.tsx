@@ -298,7 +298,7 @@ export default function PickScreen() {
               >
                 {current && category ? (
                   <>
-                    <ItemIcon item={current} size={88} emojiSize={44} bare />
+                    <ItemIcon item={current} size={88} iconSize={42} bare />
                     <Text
                       weight="700"
                       size={24}

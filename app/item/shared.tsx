@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { ItemIcon } from '@/components/bucket/ItemIcon';
 
 /** 공유받은 목록 가져오기: 코드 → 미리보기 → 담을 곳 고르기 → 새 버킷리스트로 담기 */
 export default function SharedListScreen() {
@@ -271,9 +272,7 @@ function SaveShared({
                   isSelected ? 'border-2 border-primary' : 'border-border'
                 )}
               >
-                <View className="h-11 w-11 items-center justify-center rounded-full bg-accent">
-                  <Text size={20}>{category.emoji}</Text>
-                </View>
+                <ItemIcon item={it} size={44} iconSize={20} bare />
                 <View className="flex-1 gap-0.5">
                   <Text weight="600" size={15} numberOfLines={1}>
                     {it.title}

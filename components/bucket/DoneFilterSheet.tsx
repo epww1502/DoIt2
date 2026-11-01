@@ -151,7 +151,7 @@ function SheetBody({ items, value, onApply, onClose }: DoneFilterSheetProps) {
                   <Chip
                     key={key}
                     label={c.label}
-                    emoji={c.emoji}
+                    category={key}
                     selected={draft.categories.includes(key)}
                     onPress={() => toggleCategory(key)}
                   />

@@ -12,9 +12,14 @@ import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { itemStatus, viewForMe } from '@/lib/bucket/reviews';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { StarRating } from '@/components/bucket/StarRating';
-import { getCategory, type BucketItem } from '@/lib/bucket/types';
+import {
+  getCategory,
+  type BucketItem,
+  type CategoryKey,
+} from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
+import { CategoryIcon } from '@/components/bucket/CategoryIcon';
 
 /** 월별 막대에 보여줄 개월 수 */
 const MONTHS = 12;
@@ -29,7 +34,7 @@ type Stats = {
   averageRating: number;
   firstDate: string;
   months: { key: string; label: string; count: number }[];
-  categories: { key: string; label: string; emoji: string; count: number }[];
+  categories: { key: CategoryKey; label: string; count: number }[];
   best: BucketItem[];
 };
 
@@ -59,7 +64,7 @@ function buildStats(done: BucketItem[]): Stats {
   const categories = [...categoryCount.entries()]
     .map(([key, count]) => {
       const c = getCategory(key as BucketItem['category']);
-      return { key, label: c.label, emoji: c.emoji, count };
+      return { key: c.key, label: c.label, count };
     })
     .sort((a, b) => b.count - a.count);
 
@@ -144,8 +149,8 @@ export default function DoneStatsScreen() {
 
         {/* 숫자 칸 */}
         <View className="flex-row gap-3">
-          <StatTile label="가본 곳" value={`${stats.places}`} />
-          <StatTile label="해본 것" value={`${stats.activities}`} />
+          <StatTile label="탐방한 곳" value={`${stats.places}`} />
+          <StatTile label="성공한 도전" value={`${stats.activities}`} />
           <StatTile label="평균 별점" value={stats.averageRating.toFixed(1)} />
         </View>
 
@@ -192,7 +197,7 @@ export default function DoneStatsScreen() {
           <View className="gap-2.5">
             {stats.categories.slice(0, 5).map((c) => (
               <View key={c.key} className="flex-row items-center gap-3">
-                <Text size={16}>{c.emoji}</Text>
+                <CategoryIcon category={c.key} size={18} />
                 <Text size={13} className="w-16" numberOfLines={1}>
                   {c.label}
                 </Text>
@@ -222,7 +227,7 @@ export default function DoneStatsScreen() {
                 }
                 className="flex-row items-center gap-3 active:opacity-70"
               >
-                <ItemIcon item={it} size={32} emojiSize={20} bare />
+                <ItemIcon item={it} size={32} iconSize={16} bare />
                 <View className="flex-1 gap-0.5">
                   <Text weight="600" size={15} numberOfLines={1}>
                     {it.title}

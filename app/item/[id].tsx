@@ -163,7 +163,7 @@ export default function BucketDetailScreen() {
         }}
       >
         <View className="items-center gap-3 pt-4">
-          <ItemIcon item={item} size={80} emojiSize={40} />
+          <ItemIcon item={item} size={80} iconSize={36} />
           <Badge variant="primary">
             <Text>
               {meta.label} · {category.label} ·{' '}

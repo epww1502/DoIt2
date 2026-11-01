@@ -9,7 +9,7 @@ import {
 import { LOCAL_KEY, useBucketStore } from '@/store/useBucketStore';
 import { type Space, useSpaceStore } from '@/store/useSpaceStore';
 
-/** 공간을 만들 때 고를 수 있는 이모지 */
+/** 공간을 만들 때 고를 수 있는 이모지 (화면에는 constants/spaceIcon.ts의 선 아이콘으로 보인다) */
 export const SPACE_EMOJIS = [
   '✨',
   '🧑‍🤝‍🧑',

@@ -1,14 +1,14 @@
-/** 가보기(장소) / 해보기(같이 해보고 싶은 일) */
+/** 탐방(가보고 싶은 장소) / 도전(해보고 싶은 일) */
 export type BucketKind = 'place' | 'activity';
 
 export type CategoryKey =
-  // 가보기
+  // 탐방
   | 'food'
   | 'cafe'
   | 'trip'
   | 'activity'
   | 'culture'
-  // 해보기
+  // 도전
   | 'cook'
   | 'exercise'
   | 'hobby'
@@ -68,22 +68,22 @@ export const KIND_META: Record<
   }
 > = {
   place: {
-    label: '가보기',
+    label: '탐방',
     emoji: '📍',
     question: '어디 가고 싶어요?',
     placeholder: '예) 성수동 그 파스타집',
-    doneLabel: '가봤어요',
-    whenQuestion: '언제 가봤어요?',
+    doneLabel: '탐방 완료',
+    whenQuestion: '언제 탐방했어요?',
     locationLabel: '위치 (선택)',
     locationPlaceholder: '예) 서울 성동구',
   },
   activity: {
-    label: '해보기',
-    emoji: '✅',
+    label: '도전',
+    emoji: '✨',
     question: '뭐 같이 해볼까요?',
     placeholder: '예) 같이 생파스타 만들어보기',
-    doneLabel: '해봤어요',
-    whenQuestion: '언제 해봤어요?',
+    doneLabel: '도전 성공',
+    whenQuestion: '언제 도전했어요?',
     locationLabel: '장소 (선택)',
     locationPlaceholder: '예) 우리 집, 한강공원',
   },
