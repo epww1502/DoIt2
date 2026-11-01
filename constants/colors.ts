@@ -13,6 +13,19 @@ export const colors = {
     500: '#7D7670',
     900: '#2F2B28',
   },
+  /**
+   * 다크 모드 바탕 회색 (따뜻한 크림을 그대로 어둡게 하면 갈색으로 보여서, 다크는 중립 회색).
+   * themeSurface.ts의 다크 바탕·카드·테두리와 같은 단계
+   */
+  night: {
+    50: '#F5F5F7',
+    400: '#A1A1AA',
+    600: '#55555C',
+    700: '#2E2E34',
+    750: '#26262B',
+    800: '#1E1E22',
+    900: '#141416',
+  },
   /** 아기자기한 테마의 따뜻한 크림·갈색 톤 (라이트 → 다크) */
   cream: {
     50: '#FFF8EF',
@@ -248,36 +261,37 @@ export const themeColors = {
     chartPalette: getChartColor,
   },
 
+  // 다크는 갈색 크림 대신 중립 회색 (바탕·카드는 themeSurface가 테마색을 살짝 섞는다)
   dark: {
-    background: colors.cream[900],
-    foreground: colors.ink[50],
+    background: colors.night[900],
+    foreground: colors.night[50],
 
     homebg: colors.black,
-    card: colors.cream[800],
+    card: colors.night[800],
     cardForeground: colors.gray[50],
     blackWhite: colors.white,
     blackWhiteForeground: colors.black,
 
-    popover: colors.cream[900],
+    popover: colors.night[800],
     popoverForeground: colors.gray[50],
 
     primary: colors.primary,
     primaryForeground: colors.white,
 
-    secondary: colors.cream[800],
+    secondary: colors.night[800],
     secondaryForeground: colors.gray[50],
 
-    muted: colors.cream[600],
-    mutedForeground: colors.ink[400],
+    muted: colors.night[600],
+    mutedForeground: colors.night[400],
 
-    accent: colors.cream[700],
+    accent: colors.night[750],
     accentForeground: colors.gray[50],
 
     destructive: colors.red[500],
     destructiveForeground: colors.gray[50],
 
-    border: colors.cream[700],
-    input: colors.cream[800],
+    border: colors.night[700],
+    input: colors.night[800],
     ring: colors.gray[500],
 
     // Chart UI

@@ -120,7 +120,10 @@ module.exports = {
         '.dark .bg-foreground': { backgroundColor: darkColors.foreground },
         '.dark .bg-popover': { backgroundColor: darkColors.popover },
         '.dark .bg-secondary': { backgroundColor: darkColors.secondary },
-        '.dark .bg-accent': { backgroundColor: darkColors.accent },
+        // 다크의 연한 배경도 라이트처럼 테마색을 옅게 (갈색·회색 대신)
+        '.dark .bg-accent': {
+          backgroundColor: 'rgb(var(--color-primary) / 0.16)',
+        },
         '.dark .bg-destructive': { backgroundColor: darkColors.destructive },
         '.dark .bg-blackWhite': { backgroundColor: darkColors.blackWhite },
         '.dark .bg-blackWhiteForeground': {
