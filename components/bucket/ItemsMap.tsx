@@ -2,8 +2,15 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
-import { Text } from '@/components/atoms';
-import type { BucketItem } from '@/lib/bucket/types';
+import { MapPin } from 'lucide-react-native';
+
+import { Icon, Text } from '@/components/atoms';
+import {
+  itemTodos,
+  type BucketItem,
+  type ItemTodo,
+  type PlaceInfo,
+} from '@/lib/bucket/types';
 import { KAKAO_MAP_BASE_URL, kakaoMapHtml } from '@/lib/kakaoMapHtml';
 
 import { EmptyState } from './EmptyState';
@@ -37,17 +44,49 @@ export function groupBySpot(items: BucketItem[]) {
   return [...byKey.values()];
 }
 
+/** 지도에 찍는 한 점: 항목의 장소, 또는 항목 안 할 것의 위치 */
+type MapEntry = { item: BucketItem; place: PlaceInfo; todo?: ItemTodo };
+
+/** 항목 장소(+ 할 것 위치)를 같은 자리끼리 묶는다 */
+function groupEntries(items: BucketItem[], withTodos: boolean) {
+  const byKey = new Map<string, MapEntry[]>();
+  const put = (entry: MapEntry) => {
+    const key = `${entry.place.latitude.toFixed(5)},${entry.place.longitude.toFixed(5)}`;
+    const list = byKey.get(key) ?? [];
+    // 같은 자리에 같은 항목이 두 번 들어가지 않게 (항목 장소 = 할 것 위치인 경우)
+    if (list.some((e) => e.item.id === entry.item.id)) return;
+    byKey.set(key, [...list, entry]);
+  };
+  for (const item of items) {
+    if (item.place) put({ item, place: item.place });
+    if (!withTodos) continue;
+    for (const todo of itemTodos(item)) {
+      if (todo.place) put({ item, place: todo.place, todo });
+    }
+  }
+  return [...byKey.values()];
+}
+
+/** 지도에 찍을 곳이 하나라도 있는지 (할 것 위치 포함) */
+export function hasMapSpot(items: BucketItem[], withTodos = false) {
+  return items.some(
+    (it) => it.place || (withTodos && itemTodos(it).some((t) => t.place))
+  );
+}
+
 type ItemsMapProps = {
   /** 핀으로 찍을 항목들 (장소가 없는 건 빠진다) */
   items: BucketItem[];
   /** 핀을 누르면 아래에 보여줄 한 항목 */
   renderItem: (item: BucketItem) => ReactNode;
-  /** 한 핀에 여러 개일 때 위에 보여줄 글 */
-  groupTitle: (group: BucketItem[]) => string;
+  /** 한 핀에 여러 개일 때 위에 보여줄 글 (placeName: 그 핀의 장소 이름) */
+  groupTitle: (group: BucketItem[], placeName: string) => string;
   /** 핀을 고르기 전 아래에 보여줄 안내 */
   hint: string;
   /** 아래 카드 밑 여백 (휴대폰 아래 바 등) */
   bottomInset?: number;
+  /** 할 것에 붙인 위치도 핀으로 찍는다 */
+  withTodos?: boolean;
 };
 
 /** 카카오 지도 위에 항목 핀. 핀을 누르면 아래 카드에 그 위치의 항목들 */
@@ -57,15 +96,19 @@ export function ItemsMap({
   groupTitle,
   hint,
   bottomInset = 0,
+  withTodos = false,
 }: ItemsMapProps) {
   const webRef = useRef<WebView<object>>(null);
   const lastMarkerPress = useRef(0);
   const map = useMapLoad();
   const ready = map.ready;
   /** 누른 핀의 항목들 */
-  const [selected, setSelected] = useState<BucketItem[] | null>(null);
+  const [selected, setSelected] = useState<MapEntry[] | null>(null);
 
-  const spots = useMemo(() => groupBySpot(items), [items]);
+  const spots = useMemo(
+    () => groupEntries(items, withTodos),
+    [items, withTodos]
+  );
 
   const html = useMemo(
     () =>
@@ -83,8 +126,8 @@ export function ItemsMap({
   useEffect(() => {
     if (!ready) return;
     const places = spots.map((group) => ({
-      latitude: group[0].place!.latitude,
-      longitude: group[0].place!.longitude,
+      latitude: group[0].place.latitude,
+      longitude: group[0].place.longitude,
     }));
     webRef.current?.injectJavaScript(
       `window.DoIt2.setMarkers(${JSON.stringify(places)}); true;`
@@ -156,7 +199,10 @@ export function ItemsMap({
           <>
             {selected.length > 1 ? (
               <Text weight="700" size={14} className="mb-2">
-                {groupTitle(selected)}
+                {groupTitle(
+                  selected.map((e) => e.item),
+                  selected[0].place.name
+                )}
               </Text>
             ) : null}
             {/* 여러 개면 목록으로 (많으면 스크롤) */}
@@ -165,8 +211,24 @@ export function ItemsMap({
               contentContainerClassName="gap-3"
               showsVerticalScrollIndicator={selected.length > 3}
             >
-              {selected.map((item) => (
-                <View key={item.id}>{renderItem(item)}</View>
+              {selected.map((entry) => (
+                <View key={entry.item.id} className="gap-1.5">
+                  {/* 할 것 위치로 찍힌 핀이면 어떤 할 것인지 위에 적는다 */}
+                  {entry.todo ? (
+                    <View className="flex-row items-center gap-1">
+                      <Icon as={MapPin} size={13} className="text-primary" />
+                      <Text
+                        weight="600"
+                        size={13}
+                        numberOfLines={1}
+                        className="shrink text-primary"
+                      >
+                        할 것 · {entry.todo.text} ({entry.place.name})
+                      </Text>
+                    </View>
+                  ) : null}
+                  {renderItem(entry.item)}
+                </View>
               ))}
             </ScrollView>
           </>

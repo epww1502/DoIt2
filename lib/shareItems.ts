@@ -1,12 +1,12 @@
 import { Share } from 'react-native';
 
-import type { BucketItem } from '@/lib/bucket/types';
+import { itemTodos, type BucketItem } from '@/lib/bucket/types';
 import { createSharedList } from '@/lib/supabase/share';
 
 /**
  * 항목들을 공유 코드로 만들어 공유 창(카카오톡 등)을 띄운다.
  * 아직 안 한 것·해본 것 모두 보낼 수 있고, 받는 사람에게는 새 버킷리스트로 담긴다
- * (기록·사진은 넘어가지 않는다). 실패하면 보여줄 문구를 담은 Error를 던진다.
+ * (기록·사진은 넘어가지 않는다. 할 것은 위치까지 넘어가고 체크는 풀린다). 실패하면 보여줄 문구를 담은 Error를 던진다.
  */
 export async function shareBucketItems(items: BucketItem[], title: string) {
   const code = await createSharedList(
@@ -19,6 +19,7 @@ export async function shareBucketItems(items: BucketItem[], title: string) {
       location: it.location,
       place: it.place ?? null,
       memo: it.memo,
+      todos: itemTodos(it).map((t) => ({ ...t, done: false })),
     }))
   );
   const preview = items

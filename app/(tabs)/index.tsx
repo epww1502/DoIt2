@@ -28,7 +28,7 @@ import {
 } from '@/components/atoms';
 import { BucketRow, BucketRowCompact } from '@/components/bucket/BucketRow';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
-import { ItemsMap } from '@/components/bucket/ItemsMap';
+import { hasMapSpot, ItemsMap } from '@/components/bucket/ItemsMap';
 import {
   ALL_FILTER,
   CategoryFilter,
@@ -420,12 +420,13 @@ export default function BucketListScreen() {
           ) : null}
           {bucketView === 'map' ? (
             <View className="mt-3 flex-1">
-              {filtered.some((it) => it.place) ? (
+              {hasMapSpot(filtered, true) ? (
                 <ItemsMap
                   items={filtered}
+                  withTodos
                   renderItem={(item) => <MapItemCard item={item} />}
-                  groupTitle={(group) =>
-                    `${group[0].place?.name ?? '이곳'}에 ${group.length}개 담겨 있어요`
+                  groupTitle={(group, placeName) =>
+                    `${placeName || '이곳'}에 ${group.length}개 담겨 있어요`
                   }
                   hint="핀을 누르면 그곳에 담아둔 걸 볼 수 있어요"
                   bottomInset={tabBarSpace}

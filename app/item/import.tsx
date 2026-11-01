@@ -15,7 +15,12 @@ import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
-import { getCategory, type BucketItem } from '@/lib/bucket/types';
+import {
+  getCategory,
+  itemTodos,
+  newTodoId,
+  type BucketItem,
+} from '@/lib/bucket/types';
 import { noteFailure } from '@/lib/connection';
 import { showAlert } from '@/lib/dialog';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
@@ -160,6 +165,12 @@ function PickItems({
         location: it.location,
         place: it.place ?? null,
         memo: it.memo,
+        // 할 것도 같이 가져오고, 체크는 풀어서 새로 시작한다
+        todos: itemTodos(it).map((t) => ({
+          ...t,
+          id: newTodoId(),
+          done: false,
+        })),
       }))
     );
     hapticSuccess();

@@ -1,6 +1,7 @@
-import { Check, MapPin, Plus } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { Check, MapPin, Plus, Route } from 'lucide-react-native';
 import { useState } from 'react';
-import { Platform, Pressable, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
 import { MAX_TODOS } from '@/components/bucket/TodoListField';
@@ -8,34 +9,10 @@ import { colors } from '@/constants/colors';
 import { FONT_WEIGHTS } from '@/constants/fonts';
 import { showAlert } from '@/lib/dialog';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
-import { MAP_APPS, openInMap, openInSystemMap } from '@/lib/mapLinks';
-import {
-  itemTodos,
-  KIND_META,
-  type BucketItem,
-  type PlaceInfo,
-} from '@/lib/bucket/types';
+import { openPlace } from '@/lib/openPlace';
+import { itemTodos, KIND_META, type BucketItem } from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
-
-/**
- * 할 것의 위치를 누르면 지도 앱으로 연다.
- * 안드로이드는 폰의 앱 선택 창이 뜨고, 아이폰은 그런 창이 없어 앱 목록을 보여준다.
- */
-function askOpenMap(place: PlaceInfo) {
-  if (Platform.OS === 'android') {
-    void openInSystemMap(place);
-    return;
-  }
-  showAlert(place.name, place.address, [
-    // 버튼이 세로로 쌓이면 거꾸로 그려지므로, 카카오맵이 맨 위에 오게 뒤집어 넘긴다
-    ...[...MAP_APPS].reverse().map((app) => ({
-      text: `${app.label}에서 보기`,
-      onPress: () => void openInMap(app.key, { type: 'place', place }),
-    })),
-    { text: '닫기', style: 'cancel' as const },
-  ]);
-}
 
 type TodoChecklistProps = {
   item: BucketItem;
@@ -94,11 +71,32 @@ export function TodoChecklist({ item, onRecord }: TodoChecklistProps) {
         <Text weight="600" size={13} className="text-muted-foreground">
           할 것
         </Text>
-        {todos.length > 0 ? (
-          <Text weight="700" size={13} className="text-primary">
-            {doneCount}/{todos.length}
-          </Text>
-        ) : null}
+        <View className="flex-row items-center gap-3">
+          {/* 위치를 정한 할 것이 둘 이상이면 순서대로 이은 코스 지도 */}
+          {todos.filter((t) => t.place).length >= 2 ? (
+            <Pressable
+              accessibilityRole="button"
+              hitSlop={6}
+              onPress={() =>
+                router.push({
+                  pathname: '/item/course',
+                  params: { id: item.id },
+                })
+              }
+              className="flex-row items-center gap-1 rounded-full px-2.5 py-1 bg-accent active:opacity-60"
+            >
+              <Icon as={Route} size={13} className="text-primary" />
+              <Text weight="600" size={12} className="text-primary">
+                코스 보기
+              </Text>
+            </Pressable>
+          ) : null}
+          {todos.length > 0 ? (
+            <Text weight="700" size={13} className="text-primary">
+              {doneCount}/{todos.length}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
       {todos.map((todo) => (
@@ -138,7 +136,7 @@ export function TodoChecklist({ item, onRecord }: TodoChecklistProps) {
               accessibilityRole="button"
               accessibilityLabel={`${todo.place.name} 지도에서 보기`}
               hitSlop={6}
-              onPress={() => askOpenMap(todo.place!)}
+              onPress={() => openPlace(todo.place!)}
               className="max-w-[128px] flex-row items-center gap-1 rounded-full px-2.5 py-1 bg-accent active:opacity-60"
             >
               <Icon as={MapPin} size={12} className="text-primary" />

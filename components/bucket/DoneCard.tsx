@@ -3,7 +3,13 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { Text } from '@/components/atoms';
-import { recordPhotos, settingTag, type BucketItem } from '@/lib/bucket/types';
+import { TodoPills } from '@/components/bucket/TodoPills';
+import {
+  itemTodos,
+  recordPhotos,
+  settingTag,
+  type BucketItem,
+} from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
 
 import type { SelectionProps } from './BucketRow';
@@ -61,6 +67,11 @@ export function DoneCard({
             “{done.review}”
           </Text>
         ) : null}
+        {/* 그날 체크한 할 것 */}
+        <TodoPills
+          todos={itemTodos(item).filter((t) => t.done)}
+          className="mt-1"
+        />
       </View>
     </Selectable>
   );

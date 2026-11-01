@@ -20,6 +20,7 @@ import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { shownRating } from '@/lib/bucket/reviews';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { PickFan } from '@/components/bucket/PickFan';
+import { TodoPills } from '@/components/bucket/TodoPills';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import {
   activePickFilterCount,
@@ -34,6 +35,7 @@ import { useTodayWeather } from '@/hooks/useTodayWeather';
 import { hapticSuccess } from '@/lib/haptics';
 import {
   getCategory,
+  itemTodos,
   KIND_META,
   settingTag,
   type BucketItem,
@@ -317,6 +319,11 @@ export default function PickScreen() {
                         .filter(Boolean)
                         .join(' · ')}
                     </Text>
+                    {/* 할 것이 있으면 무엇을 할지 같이 보여준다 */}
+                    <TodoPills
+                      todos={itemTodos(current)}
+                      className="mt-1 justify-center"
+                    />
                     {current.done ? (
                       <Text size={12} className="text-muted-foreground">
                         {dayjs(current.done.date).format('YYYY년 M월 D일')}에

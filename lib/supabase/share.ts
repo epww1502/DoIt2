@@ -2,7 +2,7 @@
  * 버킷리스트 공유: 고른 항목의 사본을 서버에 두고 6자리 코드로 나눠준다.
  * 받는 사람은 코드로 미리보기를 보고 원하는 곳에 새 항목으로 담는다.
  */
-import type { BucketInput } from '@/lib/bucket/types';
+import { itemTodos, newTodoId, type BucketInput } from '@/lib/bucket/types';
 
 import { supabase } from './client';
 import type { Json } from './database.types';
@@ -57,6 +57,15 @@ export async function getSharedList(code: string): Promise<SharedList | null> {
       location: it.location ?? '',
       place: it.place ?? null,
       memo: it.memo ?? '',
+      // 할 것은 새로 시작하니 체크를 풀고, id는 새로 만든다 (같은 목록을 두 번 가져와도 겹치지 않게)
+      todos: itemTodos({ todos: Array.isArray(it.todos) ? it.todos : [] })
+        .slice(0, 30)
+        .map((t) => ({
+          id: newTodoId(),
+          text: String(t.text).slice(0, 60),
+          done: false,
+          place: t.place ?? null,
+        })),
     }));
   return {
     title: row.title,

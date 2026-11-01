@@ -10,7 +10,7 @@ import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
 import { PERSONAL } from '@/components/space/SpaceSwitcher';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
-import { getCategory } from '@/lib/bucket/types';
+import { getCategory, itemTodos } from '@/lib/bucket/types';
 import { readCopiedText } from '@/lib/clipboard';
 import { showAlert } from '@/lib/dialog';
 import { showErrorAlert } from '@/lib/errors';
@@ -278,7 +278,13 @@ function SaveShared({
                     {it.title}
                   </Text>
                   <Text variant="muted" size={12} numberOfLines={1}>
-                    {[category.label, it.place?.name ?? it.location]
+                    {[
+                      category.label,
+                      it.place?.name ?? it.location,
+                      itemTodos(it).length > 0
+                        ? `할 것 ${itemTodos(it).length}개`
+                        : '',
+                    ]
                       .filter(Boolean)
                       .join(' · ')}
                   </Text>

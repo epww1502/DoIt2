@@ -212,6 +212,32 @@ function removedPhotos(prev: RecordPhoto[], next: RecordPhoto[]) {
   );
 }
 
+/**
+ * 할 것을 체크하면 잠깐 기다렸다가 한 번에 알린다 (연달아 체크해도 알림은 한 번).
+ * 그 사이 체크를 풀면 서버가 '지금도 체크된 것'만 골라 알린다.
+ */
+const TODO_NOTIFY_DELAY_MS = 20 * 1000;
+const todoNotify = new Map<
+  string,
+  {
+    spaceId: string;
+    todoIds: Set<string>;
+    timer: ReturnType<typeof setTimeout>;
+  }
+>();
+function scheduleTodoNotify(spaceId: string, itemId: string, todoId: string) {
+  const key = `${spaceId}:${itemId}`;
+  const prev = todoNotify.get(key);
+  if (prev) clearTimeout(prev.timer);
+  const todoIds = prev?.todoIds ?? new Set<string>();
+  todoIds.add(todoId);
+  const timer = setTimeout(() => {
+    todoNotify.delete(key);
+    notifySpace(spaceId, 'todo', [itemId], [...todoIds]);
+  }, TODO_NOTIFY_DELAY_MS);
+  todoNotify.set(key, { spaceId, todoIds, timer });
+}
+
 /** 서버에서 받은 항목에 아직 안 올라간 내 할 것 변경을 다시 얹는다 */
 function withPendingTodos(item: BucketItem, ops: TodoOp[] | undefined) {
   if (!ops || ops.length === 0) return item;
@@ -492,8 +518,12 @@ export const useBucketStore = create<BucketState>()(
           pushItems([next], undefined, todosChanged);
         },
 
-        checkTodo: (itemId, todoId, done) =>
-          changeTodos(itemId, [{ type: 'check', todoId, done }]),
+        checkTodo: (itemId, todoId, done) => {
+          changeTodos(itemId, [{ type: 'check', todoId, done }]);
+          // 체크했을 때만 같은 공간 사람들에게 알린다 (잠깐 모았다가)
+          const { spaceId } = get();
+          if (done && spaceId) scheduleTodoNotify(spaceId, itemId, todoId);
+        },
 
         addTodo: (itemId, text) =>
           changeTodos(itemId, [

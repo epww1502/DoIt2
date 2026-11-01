@@ -7,6 +7,8 @@
 // - { spaceId, event: 'done',  itemIds: [string] }  기록을 처음 남김 (별점은 부른 사람의 평가)
 // - { spaceId, event: 'reviewed', itemIds: [string] }  다른 사람이 남긴 기록에 내 평가를 더함
 // - { spaceId, event: 'commented', itemIds: [string] }  항목에 댓글을 남김 (부른 사람의 최근 댓글)
+// - { spaceId, event: 'todo', itemIds: [string], todoIds: string[] }  할 것을 체크함
+//   (지금도 체크돼 있는 것만 알린다. 알림함에는 예전 앱도 알아보게 kind 'done'으로 남긴다)
 //
 // 막 바뀐 항목(최근 10분)만 알린다. 예전 항목으로 알림을 계속 보내는 걸 막으려고.
 // 받는 사람마다 notifications(알림함)에도 한 줄씩 남긴다 (푸시를 꺼둔 사람도 앱에서 볼 수 있게).
@@ -25,9 +27,12 @@ const admin = createClient(
 
 type Body = {
   spaceId?: string;
-  event?: 'added' | 'done' | 'reviewed' | 'commented';
+  event?: 'added' | 'done' | 'reviewed' | 'commented' | 'todo';
   itemIds?: string[];
+  todoIds?: string[];
 };
+
+type Todo = { id?: string; text?: string; done?: boolean };
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -78,7 +83,7 @@ Deno.serve(async (req) => {
   const itemIds = (body.itemIds ?? []).slice(0, MAX_ITEMS);
   if (
     !spaceId ||
-    !['added', 'done', 'reviewed', 'commented'].includes(event ?? '') ||
+    !['added', 'done', 'reviewed', 'commented', 'todo'].includes(event ?? '') ||
     !itemIds.length
   ) {
     return json({ error: 'invalid_body' }, 400);
@@ -100,7 +105,7 @@ Deno.serve(async (req) => {
     await Promise.all([
       admin
         .from('bucket_items')
-        .select('id, title, updated_at')
+        .select('id, title, updated_at, todos')
         .eq('space_id', spaceId)
         .in('id', itemIds),
       admin
@@ -146,6 +151,18 @@ Deno.serve(async (req) => {
     message = `${name}님이 ${quote(first.title)} 기록을 남겼어요${stars}`;
   } else if (event === 'reviewed') {
     message = `${name}님도 ${quote(first.title)}에 평가를 남겼어요${stars}`;
+  } else if (event === 'todo') {
+    // 보낸 할 것 중 지금도 체크돼 있는 것만
+    const wanted = new Set((body.todoIds ?? []).slice(0, 30));
+    const checked = ((first.todos as Todo[] | null) ?? []).filter(
+      (t) => t.id && wanted.has(t.id) && t.done && t.text
+    );
+    if (checked.length === 0) return json({ sent: 0 });
+    const what =
+      checked.length === 1
+        ? quote(checked[0].text!)
+        : `${quote(checked[0].text!)} 외 ${checked.length - 1}개`;
+    message = `${name}님이 ${quote(first.title)}에서 ${what}을(를) 했어요 ✓`;
   } else if (event === 'commented') {
     const body = commentOf.get(first.id)?.body ?? '';
     const short = body.length > 30 ? `${body.slice(0, 30)}…` : body;
@@ -168,7 +185,8 @@ Deno.serve(async (req) => {
         user_id: userId,
         space_id: spaceId,
         item_id: itemId,
-        kind: event,
+        // 예전 앱은 'todo'를 몰라서 'done'으로 남긴다
+        kind: event === 'todo' ? 'done' : event,
         title,
         body: message,
       }))
