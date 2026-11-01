@@ -15,6 +15,10 @@ import {
   type DoneRecord,
   type ItemReview,
   type RecordPhoto,
+  applyTodoOps,
+  itemTodos,
+  newTodoId,
+  type TodoOp,
 } from '@/lib/bucket/types';
 import {
   isNetworkError,
@@ -68,6 +72,12 @@ type BucketState = {
   addItemsTo: (target: string | null, inputs: BucketInput[]) => Promise<void>;
   /** 바꿀 칸만 넘겨도 된다 */
   updateItem: (id: string, input: Partial<BucketInput>) => void;
+  /**
+   * 할 것 하나를 체크하거나 푼다 / 할 것을 하나 더한다.
+   * 공간에서는 목록 전체 대신 이 변경만 서버에 보내서, 동시에 체크해도 서로 지우지 않는다
+   */
+  checkTodo: (itemId: string, todoId: string, done: boolean) => void;
+  addTodo: (itemId: string, text: string) => void;
   /** 여러 개를 한 번에 지운다 (사진도 같이) */
   removeItems: (ids: string[]) => void;
   /** 사진이 새로 바뀌었으면 서버에 올린 뒤 저장한다 */
@@ -202,6 +212,12 @@ function removedPhotos(prev: RecordPhoto[], next: RecordPhoto[]) {
   );
 }
 
+/** 서버에서 받은 항목에 아직 안 올라간 내 할 것 변경을 다시 얹는다 */
+function withPendingTodos(item: BucketItem, ops: TodoOp[] | undefined) {
+  if (!ops || ops.length === 0) return item;
+  return { ...item, todos: applyTodoOps(itemTodos(item), ops) };
+}
+
 /** 올리는 중이면 같은 작업을 기다린다 (두 번 올리지 않게) */
 let flushing: Promise<boolean> | null = null;
 let flushAgain = false;
@@ -218,15 +234,37 @@ export const useBucketStore = create<BucketState>()(
         void get().flushPending();
       };
 
-      /** 공간이면 항목들을 서버에 저장한다 */
-      const pushItems = (items: BucketItem[], notify?: 'added' | 'done') => {
+      /**
+       * 공간이면 항목들을 서버에 저장한다.
+       * withTodos: 할 것 목록도 통째로 올린다 (새 항목, 수정 화면에서 할 것을 바꿨을 때만)
+       */
+      const pushItems = (
+        items: BucketItem[],
+        notify?: 'added' | 'done',
+        withTodos = false
+      ) => {
         const { spaceId } = get();
         if (!spaceId || items.length === 0) return;
         useOutboxStore.getState().queueUpsert(
           spaceId,
           items.map((it) => it.id),
-          notify
+          notify,
+          withTodos
         );
+        flushSoon();
+      };
+
+      /** 할 것 변경을 폰에 바로 반영하고, 공간이면 이 변경만 서버에 보낸다 */
+      const changeTodos = (itemId: string, ops: TodoOp[]) => {
+        const prev = findItem(itemId);
+        if (!prev) return;
+        replaceItem(itemId, {
+          ...prev,
+          todos: applyTodoOps(itemTodos(prev), ops),
+        });
+        const { spaceId } = get();
+        if (!spaceId) return;
+        useOutboxStore.getState().queueTodoOps(spaceId, itemId, ops);
         flushSoon();
       };
 
@@ -257,6 +295,7 @@ export const useBucketStore = create<BucketState>()(
         const deletes = entries.filter((e) => e.op === 'delete');
         const upserts = entries.filter((e) => e.op === 'upsert');
         const reviews = entries.filter((e) => e.op === 'review');
+        const todoChanges = entries.filter((e) => e.op === 'todo');
 
         if (deletes.length > 0) {
           try {
@@ -288,9 +327,13 @@ export const useBucketStore = create<BucketState>()(
         if (ready.length > 0) {
           let accepted = true;
           try {
+            const withTodos = new Set(
+              ready.filter((r) => r.entry.withTodos).map((r) => r.item.id)
+            );
             await remote.upsertItems(
               ready.map((r) => r.item),
-              spaceId
+              spaceId,
+              (id) => withTodos.has(id)
             );
           } catch (e) {
             if (isNetworkError(e)) throw e;
@@ -304,6 +347,18 @@ export const useBucketStore = create<BucketState>()(
               .map((r) => r.item.id);
             if (ids.length > 0) notifySpace(spaceId, 'added', ids);
           }
+        }
+
+        // 할 것 체크·추가 (항목이 먼저 서버에 있어야 해서 저장 다음에).
+        // 같은 변경을 다시 보내도 결과가 같아서, 올리는 사이에 더 바뀌면 다음에 통째로 다시 보낸다
+        for (const entry of todoChanges) {
+          try {
+            await remote.applyTodoOps(entry.itemId, entry.todoOps ?? []);
+          } catch (e) {
+            if (isNetworkError(e)) throw e;
+            console.warn('[outbox] todo rejected', e);
+          }
+          outbox.settle([entry]);
         }
 
         // 내 평가 (항목이 먼저 서버에 있어야 해서 맨 뒤에)
@@ -414,7 +469,7 @@ export const useBucketStore = create<BucketState>()(
           }));
           set({ items: [...created, ...get().items] });
           // 저장되면 같은 공간 사람들에게 알린다
-          pushItems(created, 'added');
+          pushItems(created, 'added', true);
           return created.map((it) => it.id);
         },
 
@@ -430,8 +485,20 @@ export const useBucketStore = create<BucketState>()(
             );
           }
           replaceItem(id, next);
-          pushItems([next]);
+          // 할 것은 정말 바뀌었을 때만 통째로 올린다 (안 바꿨는데 덮어쓰면 상대 체크가 사라진다)
+          const todosChanged =
+            'todos' in input &&
+            JSON.stringify(itemTodos(prev)) !== JSON.stringify(itemTodos(next));
+          pushItems([next], undefined, todosChanged);
         },
+
+        checkTodo: (itemId, todoId, done) =>
+          changeTodos(itemId, [{ type: 'check', todoId, done }]),
+
+        addTodo: (itemId, text) =>
+          changeTodos(itemId, [
+            { type: 'add', todo: { id: newTodoId(), text, done: false } },
+          ]),
 
         removeItems: (ids) => {
           const idSet = new Set(ids);
@@ -640,7 +707,7 @@ export const useBucketStore = create<BucketState>()(
           set({ sync: { status: 'idle', error: null } });
 
           // 아직 안 올라간 변경은 서버 목록보다 폰 내용을 믿는다
-          const { upserts, deletes, reviews } = pendingFor(spaceId);
+          const { upserts, deletes, reviews, todoOps } = pendingFor(spaceId);
           const local = get().items;
           const localById = new Map(local.map((it) => [it.id, it]));
           const merged = rows
@@ -648,7 +715,10 @@ export const useBucketStore = create<BucketState>()(
             .map((r) => {
               const mine = localById.get(r.id);
               if (upserts.has(r.id) && mine) return mine;
-              const next = remote.fromRow(r, mine);
+              const next = withPendingTodos(
+                remote.fromRow(r, mine),
+                todoOps.get(r.id)
+              );
               // 내 평가가 아직 안 올라갔으면 평가 목록은 폰 것을 쓴다
               return reviews.has(r.id) && mine
                 ? { ...next, reviews: mine.reviews }
@@ -693,10 +763,15 @@ export const useBucketStore = create<BucketState>()(
         applyRemoteRow: (row) => {
           if (row.space_id !== get().spaceId) return;
           // 폰에서 바꾸고 아직 안 올라간 항목은 폰 내용을 유지한다
-          if (pendingFor(row.space_id).upserts.has(row.id)) return;
+          const pending = pendingFor(row.space_id);
+          if (pending.upserts.has(row.id)) return;
           const items = get().items;
           const local = items.find((it) => it.id === row.id);
-          const next = remote.fromRow(row, local);
+          // 아직 안 올라간 내 체크는 받은 목록 위에 다시 얹는다
+          const next = withPendingTodos(
+            remote.fromRow(row, local),
+            pending.todoOps.get(row.id)
+          );
           set({
             items: local
               ? items.map((it) => (it.id === row.id ? next : it))

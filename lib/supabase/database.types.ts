@@ -431,6 +431,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      apply_item_todo_ops: {
+        Args: { p_item_id: string; p_ops: Json };
+        Returns: undefined;
+      };
       claim_push_token: {
         Args: { push_platform: string; push_token: string };
         Returns: undefined;

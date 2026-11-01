@@ -238,6 +238,29 @@ export function itemTodos(
 }
 
 /** 새 할 것 id (항목 안에서만 겹치지 않으면 된다) */
+/**
+ * 할 것 하나만 바꾸는 변경 (공간에서 서버에 이것만 보낸다).
+ * 목록 전체를 덮어쓰지 않아서 두 사람이 동시에 체크해도 서로 지우지 않는다.
+ */
+export type TodoOp =
+  | { type: 'check'; todoId: string; done: boolean }
+  | { type: 'add'; todo: ItemTodo };
+
+/** 할 것 목록에 변경을 차례로 반영한다 (서버 apply_item_todo_ops와 같은 규칙) */
+export function applyTodoOps(todos: ItemTodo[], ops: TodoOp[]): ItemTodo[] {
+  let next = todos;
+  for (const op of ops) {
+    if (op.type === 'check') {
+      next = next.map((t) =>
+        t.id === op.todoId ? { ...t, done: op.done } : t
+      );
+    } else if (!next.some((t) => t.id === op.todo.id) && next.length < 30) {
+      next = [...next, op.todo];
+    }
+  }
+  return next;
+}
+
 export function newTodoId() {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }

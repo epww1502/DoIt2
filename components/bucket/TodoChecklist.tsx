@@ -12,7 +12,6 @@ import { MAP_APPS, openInMap, openInSystemMap } from '@/lib/mapLinks';
 import {
   itemTodos,
   KIND_META,
-  newTodoId,
   type BucketItem,
   type PlaceInfo,
 } from '@/lib/bucket/types';
@@ -49,7 +48,8 @@ type TodoChecklistProps = {
  * 할 것이 없으면 '+ 할 것 추가' 줄만 보인다. 위치를 붙인 할 것은 오른쪽 장소 이름을 누르면 지도 앱으로 연다.
  */
 export function TodoChecklist({ item, onRecord }: TodoChecklistProps) {
-  const updateItem = useBucketStore((s) => s.updateItem);
+  const checkTodo = useBucketStore((s) => s.checkTodo);
+  const addTodo = useBucketStore((s) => s.addTodo);
   const todos = itemTodos(item);
   const doneCount = todos.filter((t) => t.done).length;
   const [adding, setAdding] = useState(false);
@@ -58,7 +58,7 @@ export function TodoChecklist({ item, onRecord }: TodoChecklistProps) {
   const toggle = (id: string) => {
     const next = todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t));
     hapticSelect();
-    updateItem(item.id, { todos: next });
+    checkTodo(item.id, id, !todos.find((t) => t.id === id)?.done);
     // 마지막 하나까지 체크했고 아직 기록이 없으면, 기록을 남길지 물어본다
     const allDone = next.length > 0 && next.every((t) => t.done);
     const justFinished = allDone && doneCount < todos.length;
@@ -84,9 +84,7 @@ export function TodoChecklist({ item, onRecord }: TodoChecklistProps) {
       setAdding(false);
       return;
     }
-    updateItem(item.id, {
-      todos: [...todos, { id: newTodoId(), text, done: false }],
-    });
+    addTodo(item.id, text);
     setDraft('');
   };
 

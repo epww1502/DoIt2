@@ -9,6 +9,7 @@ import {
   itemPhotos,
   itemTodos,
   type ItemTodo,
+  type TodoOp,
   recordPhotos,
   withRecordPhotos,
   type BucketItem,
@@ -146,8 +147,13 @@ export function fromRow(
   };
 }
 
-function toRow(item: BucketItem, spaceId: string): ItemInsert {
-  return {
+/** withTodos가 false면 할 것 칸은 아예 보내지 않는다 (서버 목록을 덮어쓰지 않게) */
+function toRow(
+  item: BucketItem,
+  spaceId: string,
+  withTodos: boolean
+): ItemInsert {
+  const row: ItemInsert = {
     id: item.id,
     space_id: spaceId,
     kind: item.kind,
@@ -163,6 +169,8 @@ function toRow(item: BucketItem, spaceId: string): ItemInsert {
     goal: (item.goal ?? null) as Json,
     created_at: item.createdAt,
   };
+  if (!withTodos) delete row.todos;
+  return row;
 }
 
 export function newItemId() {
@@ -189,11 +197,34 @@ export async function fetchItems(
   return data;
 }
 
-export async function upsertItems(items: BucketItem[], spaceId: string) {
-  if (items.length === 0) return;
-  const { error } = await supabase
-    .from('bucket_items')
-    .upsert(items.map((it) => toRow(it, spaceId)));
+/**
+ * 항목을 저장한다. withTodos(id)가 false인 항목은 할 것 칸을 빼고 보낸다.
+ * 한 번에 보내는 행은 칸이 같아야 해서(빠진 칸은 비워진다) 둘로 나눠 보낸다.
+ */
+export async function upsertItems(
+  items: BucketItem[],
+  spaceId: string,
+  withTodos: (id: string) => boolean = () => true
+) {
+  const groups = [true, false].map((todos) =>
+    items
+      .filter((it) => withTodos(it.id) === todos)
+      .map((it) => toRow(it, spaceId, todos))
+  );
+  for (const rows of groups) {
+    if (rows.length === 0) continue;
+    const { error } = await supabase.from('bucket_items').upsert(rows);
+    if (error) throw error;
+  }
+}
+
+/** 할 것 체크·추가를 서버의 지금 목록에 반영한다 */
+export async function applyTodoOps(itemId: string, ops: TodoOp[]) {
+  if (ops.length === 0) return;
+  const { error } = await supabase.rpc('apply_item_todo_ops', {
+    p_item_id: itemId,
+    p_ops: ops as unknown as Json,
+  });
   if (error) throw error;
 }
 

@@ -10,7 +10,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-export type OutboxOp = 'upsert' | 'delete' | 'review';
+import type { TodoOp } from '@/lib/bucket/types';
+
+export type OutboxOp = 'upsert' | 'delete' | 'review' | 'todo';
 
 export type OutboxEntry = {
   spaceId: string;
@@ -20,6 +22,10 @@ export type OutboxEntry = {
   notify?: 'added' | 'done' | 'reviewed';
   /** 올리는 사이에 또 바뀌었는지 알아보는 번호 */
   rev: number;
+  /** upsert: 할 것 목록도 통째로 올릴지 (새 항목이거나 수정 화면에서 바꿨을 때만) */
+  withTodos?: boolean;
+  /** todo: 아직 안 올라간 할 것 변경들 (차례대로) */
+  todoOps?: TodoOp[];
 };
 
 type OutboxState = {
@@ -31,8 +37,11 @@ type OutboxState = {
   queueUpsert: (
     spaceId: string,
     itemIds: string[],
-    notify?: 'added' | 'done'
+    notify?: 'added' | 'done',
+    withTodos?: boolean
   ) => void;
+  /** 할 것 체크·추가를 적어둔다 */
+  queueTodoOps: (spaceId: string, itemId: string, ops: TodoOp[]) => void;
   queueDelete: (spaceId: string, itemIds: string[]) => void;
   /** 내 평가를 서버와 맞추라고 적어둔다 */
   queueReview: (
@@ -50,9 +59,11 @@ type OutboxState = {
 };
 
 let nextRev = 1;
-/** 항목 변경과 내 평가 변경은 따로 센다 (같은 항목이어도 둘 다 올려야 한다) */
+/** 항목 변경·내 평가·할 것 변경은 따로 센다 (같은 항목이어도 모두 올려야 한다) */
 const keyOf = (spaceId: string, itemId: string, op: OutboxOp) =>
-  op === 'review' ? `${spaceId}:${itemId}:review` : `${spaceId}:${itemId}`;
+  op === 'review' || op === 'todo'
+    ? `${spaceId}:${itemId}:${op}`
+    : `${spaceId}:${itemId}`;
 
 export const useOutboxStore = create<OutboxState>()(
   persist(
@@ -60,7 +71,7 @@ export const useOutboxStore = create<OutboxState>()(
       entries: {},
       photoPaths: [],
 
-      queueUpsert: (spaceId, itemIds, notify) => {
+      queueUpsert: (spaceId, itemIds, notify, withTodos) => {
         if (itemIds.length === 0) return;
         const entries = { ...get().entries };
         for (const itemId of itemIds) {
@@ -72,10 +83,30 @@ export const useOutboxStore = create<OutboxState>()(
             op: 'upsert',
             // 처음 담은 알림('added')이 아직 안 나갔으면 그대로 둔다
             notify: prev?.notify ?? notify,
+            // 앞서 할 것까지 올리기로 했으면 그대로 둔다
+            withTodos: Boolean(prev?.withTodos || withTodos),
             rev: nextRev++,
           };
         }
         set({ entries });
+      },
+
+      queueTodoOps: (spaceId, itemId, ops) => {
+        if (ops.length === 0) return;
+        const key = keyOf(spaceId, itemId, 'todo');
+        const prev = get().entries[key];
+        set({
+          entries: {
+            ...get().entries,
+            [key]: {
+              spaceId,
+              itemId,
+              op: 'todo',
+              todoOps: [...(prev?.todoOps ?? []), ...ops],
+              rev: nextRev++,
+            },
+          },
+        });
       },
 
       queueDelete: (spaceId, itemIds) => {
@@ -88,8 +119,9 @@ export const useOutboxStore = create<OutboxState>()(
             op: 'delete',
             rev: nextRev++,
           };
-          // 항목이 지워지면 평가도 같이 지워진다
+          // 항목이 지워지면 평가·할 것 변경도 같이 지워진다
           delete entries[keyOf(spaceId, itemId, 'review')];
+          delete entries[keyOf(spaceId, itemId, 'todo')];
         }
         set({ entries });
       },
@@ -163,13 +195,16 @@ export function pendingFor(spaceId: string) {
   const deletes = new Set<string>();
   /** 내 평가가 아직 안 올라간 항목 */
   const reviews = new Set<string>();
+  /** 아직 안 올라간 할 것 변경 (서버에서 받은 목록 위에 다시 얹는다) */
+  const todoOps = new Map<string, TodoOp[]>();
   for (const e of Object.values(useOutboxStore.getState().entries)) {
     if (e.spaceId !== spaceId) continue;
     if (e.op === 'upsert') upserts.add(e.itemId);
     else if (e.op === 'delete') deletes.add(e.itemId);
+    else if (e.op === 'todo') todoOps.set(e.itemId, e.todoOps ?? []);
     else reviews.add(e.itemId);
   }
-  return { upserts, deletes, reviews };
+  return { upserts, deletes, reviews, todoOps };
 }
 
 /** 아직 안 올라간 변경 개수 (안내 띠에 보여준다) */
