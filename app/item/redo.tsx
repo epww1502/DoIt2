@@ -11,7 +11,11 @@ import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
-import { type BucketInput, type BucketItem } from '@/lib/bucket/types';
+import {
+  itemTodos,
+  type BucketInput,
+  type BucketItem,
+} from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
 
@@ -29,6 +33,8 @@ function toInput(it: BucketItem): BucketInput {
     location: it.location,
     place: it.place ?? null,
     memo: it.memo,
+    // 할 것은 체크를 다 풀어서 다시 담는다
+    todos: itemTodos(it).map((t) => ({ ...t, done: false })),
   };
 }
 

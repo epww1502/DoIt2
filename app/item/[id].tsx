@@ -13,6 +13,7 @@ import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
+import { TodoChecklist } from '@/components/bucket/TodoChecklist';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { MapAppButtons } from '@/components/bucket/MapAppButtons';
@@ -190,6 +191,9 @@ export default function BucketDetailScreen() {
             <DonePhotoGallery done={{ photoUri: null, photos }} />
           </View>
         ) : null}
+
+        {/* 할 것 체크리스트 (없으면 '+ 할 것 추가'만) */}
+        <TodoChecklist item={item} onRecord={goRecord} />
 
         {item.goal ? (
           <View className="flex-row items-center gap-3 rounded-2xl p-4 bg-accent">

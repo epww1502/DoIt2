@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,6 +16,7 @@ import { BottomBar } from '@/components/bucket/BottomBar';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { GoalField } from '@/components/bucket/GoalField';
 import { ItemPhotosField } from '@/components/bucket/ItemPhotosField';
+import { TodoListField } from '@/components/bucket/TodoListField';
 import { PlaceField } from '@/components/bucket/PlaceField';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { deletePhoto } from '@/lib/bucket/photo';
@@ -23,6 +24,7 @@ import {
   CATEGORIES_BY_KIND,
   DEFAULT_SETTING,
   itemPhotos,
+  itemTodos,
   KIND_META,
   SETTING_META,
   type BucketKind,
@@ -30,6 +32,7 @@ import {
   type CategoryKey,
   type GoalInfo,
   type PlaceInfo,
+  type ItemTodo,
   type RecordPhoto,
 } from '@/lib/bucket/types';
 import { KIND_ICON } from '@/components/bucket/kindIcons';
@@ -85,6 +88,7 @@ export default function BucketFormScreen() {
   // 목표 날짜 (선택). 스위치를 켜야 보인다
   const [goal, setGoal] = useState<GoalInfo | null>(editing?.goal ?? null);
   // 사진 (최대 3장, 첫 번째가 대표). uri: 이 휴대폰 파일, path: 서버에 올라간 사진
+  const [todos, setTodos] = useState<ItemTodo[]>(() => itemTodos(editing));
   const [photos, setPhotos] = useState<RecordPhoto[]>(() =>
     itemPhotos(editing)
   );
@@ -101,10 +105,20 @@ export default function BucketFormScreen() {
 
   // 장소 검색 화면에서 고르고 돌아오면 받아서 채운다
   const takePicked = usePlacePickStore((state) => state.take);
+  // 할 것 줄의 핀으로 검색하러 갔으면 그 할 것 id (돌아오면 그 줄에 장소를 붙인다)
+  const pickingTodo = useRef<string | null>(null);
   useFocusEffect(
     useCallback(() => {
       const picked = takePicked();
+      const todoId = pickingTodo.current;
+      pickingTodo.current = null;
       if (!picked) return;
+      if (todoId) {
+        setTodos((prev) =>
+          prev.map((t) => (t.id === todoId ? { ...t, place: picked } : t))
+        );
+        return;
+      }
       setPlace(picked);
       setLocation(picked.address);
       // 이름을 아직 안 적었으면 가게 이름으로 채운다
@@ -117,6 +131,14 @@ export default function BucketFormScreen() {
       pathname: '/item/search-place',
       params: { q: place?.name ?? (title.trim() || location.trim()) },
     });
+
+  const openTodoSearch = (todo: ItemTodo) => {
+    pickingTodo.current = todo.id;
+    router.push({
+      pathname: '/item/search-place',
+      params: { q: todo.place?.name ?? todo.text.trim() },
+    });
+  };
 
   const clearPlace = () => {
     setPlace(null);
@@ -153,6 +175,10 @@ export default function BucketFormScreen() {
       memo: memo.trim(),
       goal,
       photos,
+      // 빈 줄은 빼고 앞뒤 공백을 지운다
+      todos: todos
+        .map((t) => ({ ...t, text: t.text.trim() }))
+        .filter((t) => t.text !== ''),
     };
     if (editing) {
       updateItem(editing.id, input);
@@ -199,6 +225,13 @@ export default function BucketFormScreen() {
               onFocus={ensureFocusedVisible}
             />
           </View>
+
+          <TodoListField
+            todos={todos}
+            onChange={setTodos}
+            onFocus={ensureFocusedVisible}
+            onPickPlace={openTodoSearch}
+          />
 
           <ItemPhotosField
             photos={photos}

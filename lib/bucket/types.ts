@@ -206,6 +206,8 @@ export type BucketItem = {
   memo: string;
   /** 항목 사진 (최대 MAX_ITEM_PHOTOS). 첫 번째가 대표 사진이고 목록에서 이모지 대신 보인다 */
   photos?: RecordPhoto[];
+  /** 할 것 체크리스트 (예: '용산 가기' 안의 '아이파크몰 구경', '용리단길 맛집'). 없으면 빈 목록 */
+  todos?: ItemTodo[];
   createdAt: string;
   /** 함께한 기록(날짜·사진). 공간에서는 별점·소감은 reviews에 사람마다 따로 있다 */
   done: DoneRecord | null;
@@ -216,6 +218,29 @@ export type BucketItem = {
   /** 공간 항목의 댓글 수 (목록에 말풍선 숫자로) */
   commentCount?: number;
 };
+
+/** 항목 안의 할 것 한 줄 */
+export type ItemTodo = {
+  id: string;
+  text: string;
+  done: boolean;
+  /** 할 것마다 고른 장소 (나중에 쓰려고 자리만 둔다) */
+  place?: PlaceInfo | null;
+};
+
+/** 할 것 목록 (예전 데이터·이상한 값은 걸러낸다) */
+export function itemTodos(
+  item: Pick<BucketItem, 'todos'> | null | undefined
+): ItemTodo[] {
+  return (item?.todos ?? []).filter(
+    (t) => t && typeof t.text === 'string' && t.text.trim() !== ''
+  );
+}
+
+/** 새 할 것 id (항목 안에서만 겹치지 않으면 된다) */
+export function newTodoId() {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
 
 /** 목표 날짜 알림 시점: 일주일 전, 하루 전, 당일 아침 */
 export type GoalRemind = 'week' | 'day' | 'morning';
@@ -258,4 +283,5 @@ export type BucketInput = Pick<
   | 'memo'
   | 'goal'
   | 'photos'
+  | 'todos'
 >;

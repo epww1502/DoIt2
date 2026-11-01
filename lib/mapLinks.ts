@@ -81,3 +81,19 @@ export async function openInMap(app: MapApp, target: Target) {
     await Linking.openURL(webUrl);
   }
 }
+
+/**
+ * 안드로이드: 폰에 깔린 지도 앱 중에서 고르는 시스템 선택 창으로 연다 (geo: 링크).
+ * 여는 앱이 없으면 구글 웹 지도로 연다.
+ */
+export async function openInSystemMap(place: PlaceInfo) {
+  const { latitude: lat, longitude: lng } = place;
+  const label = encodeURIComponent(place.name);
+  try {
+    await Linking.openURL(`geo:${lat},${lng}?q=${lat},${lng}(${label})`);
+  } catch {
+    await Linking.openURL(
+      `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+    );
+  }
+}

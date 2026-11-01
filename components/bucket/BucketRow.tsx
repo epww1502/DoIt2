@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ChevronRight, MessageCircle } from 'lucide-react-native';
+import { Check, ChevronRight, MessageCircle } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
@@ -7,6 +7,7 @@ import { SOFT_SHADOW } from '@/constants/shadow';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
 import {
   getCategory,
+  itemTodos,
   KIND_META,
   settingTag,
   type BucketItem,
@@ -60,10 +61,12 @@ export function BucketRow({
             {item.title}
           </Text>
           <GoalBadge item={item} />
+          <TodoBadge item={item} />
         </View>
         <Text variant="muted" size={13} numberOfLines={1}>
           {meta}
         </Text>
+        <TodoProgress item={item} />
       </View>
       {/* 고르기 모드에서는 체크 동그라미가 그 자리에 나온다 */}
       {!selection.selecting ? (
@@ -73,6 +76,36 @@ export function BucketRow({
         </View>
       ) : null}
     </Selectable>
+  );
+}
+
+/** 할 것이 있으면 제목 옆에 '✓ 2/4' */
+function TodoBadge({ item }: { item: BucketItem }) {
+  const todos = itemTodos(item);
+  if (todos.length === 0) return null;
+  const done = todos.filter((t) => t.done).length;
+  return (
+    <View className="flex-row items-center gap-0.5 rounded-full px-1.5 py-0.5 bg-accent">
+      <Icon as={Check} size={11} strokeWidth={3} className="text-primary" />
+      <Text weight="700" size={11} className="text-primary">
+        {done}/{todos.length}
+      </Text>
+    </View>
+  );
+}
+
+/** 할 것이 있으면 설명 아래 얇은 진행 막대 */
+function TodoProgress({ item }: { item: BucketItem }) {
+  const todos = itemTodos(item);
+  if (todos.length === 0) return null;
+  const ratio = todos.filter((t) => t.done).length / todos.length;
+  return (
+    <View className="mt-1.5 h-1 overflow-hidden rounded-full bg-accent">
+      <View
+        className="h-full rounded-full bg-primary"
+        style={{ width: `${Math.round(ratio * 100)}%` }}
+      />
+    </View>
   );
 }
 

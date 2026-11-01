@@ -7,6 +7,8 @@ import { File } from 'expo-file-system';
 
 import {
   itemPhotos,
+  itemTodos,
+  type ItemTodo,
   recordPhotos,
   withRecordPhotos,
   type BucketItem,
@@ -131,6 +133,7 @@ export function fromRow(
     place: (row.place as PlaceInfo | null) ?? null,
     memo: row.memo,
     photos: photosFromRow(row.photos, itemPhotos(local)),
+    todos: itemTodos({ todos: (row.todos as ItemTodo[] | null) ?? [] }),
     createdAt: row.created_at,
     done,
     goal: (row.goal as GoalInfo | null) ?? null,
@@ -155,6 +158,7 @@ function toRow(item: BucketItem, spaceId: string): ItemInsert {
     place: (item.place ?? null) as Json,
     memo: item.memo,
     photos: photosToRow(itemPhotos(item)),
+    todos: (itemTodos(item).length > 0 ? itemTodos(item) : null) as Json,
     done: toRemoteDone(item.done) as Json,
     goal: (item.goal ?? null) as Json,
     created_at: item.createdAt,
