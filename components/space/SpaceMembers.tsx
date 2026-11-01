@@ -14,6 +14,7 @@ import {
 } from '@/lib/supabase/account';
 import type { MemberProfile } from '@/lib/supabase/database.types';
 import { fetchMyBlocks, unblockUser } from '@/lib/supabase/social';
+import { openMemberProfile } from '@/store/useMembersStore';
 import { displayName } from '@/store/useProfileStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
@@ -182,21 +183,29 @@ export function SpaceMembers({ spaceId, memberCount }: SpaceMembersProps) {
         }
         return (
           <View key={m.user_id} className="flex-row items-center gap-3">
-            <PersonAvatar
-              imagePath={m.avatar_path}
-              size={36}
-              crown={m.is_owner}
-            />
-            <View className="flex-1">
-              <Text size={15} numberOfLines={1}>
-                {displayName(m.nickname)}
-              </Text>
-              {blocked.includes(m.user_id) ? (
-                <Text size={12} className="text-muted-foreground">
-                  차단함 · 댓글이 보이지 않아요
+            {/* 누르면 그 사람 프로필 */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${displayName(m.nickname)} 프로필 보기`}
+              onPress={() => openMemberProfile(m.user_id, false)}
+              className="flex-1 flex-row items-center gap-3 active:opacity-70"
+            >
+              <PersonAvatar
+                imagePath={m.avatar_path}
+                size={36}
+                crown={m.is_owner}
+              />
+              <View className="flex-1">
+                <Text size={15} numberOfLines={1}>
+                  {displayName(m.nickname)}
                 </Text>
-              ) : null}
-            </View>
+                {blocked.includes(m.user_id) ? (
+                  <Text size={12} className="text-muted-foreground">
+                    차단함 · 댓글이 보이지 않아요
+                  </Text>
+                ) : null}
+              </View>
+            </Pressable>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`${displayName(m.nickname)} 관리`}

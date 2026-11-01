@@ -209,6 +209,8 @@ export type BucketItem = {
   /** 할 것 체크리스트 (예: '용산 가기' 안의 '아이파크몰 구경', '용리단길 맛집'). 없으면 빈 목록 */
   todos?: ItemTodo[];
   createdAt: string;
+  /** 공간 항목을 담은 사람 (서버에서 받은 항목만. '나만 보기'는 없다) */
+  createdBy?: string | null;
   /** 함께한 기록(날짜·사진). 공간에서는 별점·소감은 reviews에 사람마다 따로 있다 */
   done: DoneRecord | null;
   /** 공간 항목: 사람마다 남긴 별점·소감 ('나만 보기'에는 없다) */

@@ -2,6 +2,7 @@
  * 공간 멤버 이름·사진 모음 (평가 옆에 누가 남겼는지 보여줄 때 쓴다).
  * 공간마다 한 번 받아 두고, 인원이 바뀌거나 화면에 다시 들어오면 새로 받는다.
  */
+import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { create } from 'zustand';
 
@@ -39,6 +40,39 @@ export const useMembersStore = create<MembersState>((set, get) => ({
     }
   },
 }));
+
+/**
+ * 공간 멤버 한 명의 프로필 (공간장·들어온 날 포함).
+ * 받는 중이면 undefined, 받았는데 없으면(나간 사람) null
+ */
+export function useMemberProfile(
+  spaceId: string | null,
+  userId: string | undefined
+): MemberProfile | null | undefined {
+  const space = useSpace(spaceId);
+  const entry = useMembersStore((s) =>
+    spaceId ? s.bySpace[spaceId] : undefined
+  );
+  const count = space?.memberCount ?? 0;
+
+  useEffect(() => {
+    if (!spaceId || !count) return;
+    if (entry && entry.count === count) return;
+    void useMembersStore.getState().load(spaceId, count);
+  }, [spaceId, count, entry]);
+
+  if (!entry) return undefined;
+  return entry.members.find((m) => m.user_id === userId) ?? null;
+}
+
+/** 다른 사람 프로필을 연다. 나면 '이 공간에서의 내 프로필' 고치기로 */
+export function openMemberProfile(userId: string, isMe: boolean) {
+  if (isMe) {
+    router.push('/space/profile');
+    return;
+  }
+  router.push({ pathname: '/space/member', params: { userId } });
+}
 
 const LEFT: MemberInfo = { name: '나간 멤버', avatarPath: null, isMe: false };
 

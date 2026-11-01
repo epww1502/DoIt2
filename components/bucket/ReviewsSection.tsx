@@ -16,7 +16,11 @@ import type { BucketItem, ItemReview } from '@/lib/bucket/types';
 import { showAlert } from '@/lib/dialog';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
-import { useMemberLookup, type MemberInfo } from '@/store/useMembersStore';
+import {
+  openMemberProfile,
+  useMemberLookup,
+  type MemberInfo,
+} from '@/store/useMembersStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 
 import { StarRating } from './StarRating';
@@ -164,15 +168,23 @@ function ReviewCard({
       )}
     >
       <View className="flex-row items-center gap-2.5">
-        <PersonAvatar imagePath={who.avatarPath} size={big ? 36 : 28} />
-        <View className="flex-1 gap-0.5">
-          <Text weight="600" size={big ? 16 : 14} numberOfLines={1}>
-            {who.name}
-          </Text>
-          <Text variant="muted" size={11}>
-            {dayjs(review.updatedAt).format('M월 D일')}
-          </Text>
-        </View>
+        {/* 사진·이름을 누르면 그 사람 프로필 */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${who.name} 프로필 보기`}
+          onPress={() => openMemberProfile(review.userId, who.isMe)}
+          className="flex-1 flex-row items-center gap-2.5 active:opacity-70"
+        >
+          <PersonAvatar imagePath={who.avatarPath} size={big ? 36 : 28} />
+          <View className="flex-1 gap-0.5">
+            <Text weight="600" size={big ? 16 : 14} numberOfLines={1}>
+              {who.name}
+            </Text>
+            <Text variant="muted" size={11}>
+              {dayjs(review.updatedAt).format('M월 D일')}
+            </Text>
+          </View>
+        </Pressable>
         {review.rating ? (
           <StarRating value={review.rating} size={big ? 20 : 14} />
         ) : (

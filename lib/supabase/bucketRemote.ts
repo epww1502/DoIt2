@@ -136,6 +136,7 @@ export function fromRow(
     photos: photosFromRow(row.photos, itemPhotos(local)),
     todos: itemTodos({ todos: (row.todos as ItemTodo[] | null) ?? [] }),
     createdAt: row.created_at,
+    createdBy: row.created_by ?? null,
     done,
     goal: (row.goal as GoalInfo | null) ?? null,
     reviews: row.item_reviews

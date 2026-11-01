@@ -30,7 +30,7 @@ import {
   type ReactionEmoji,
 } from '@/lib/supabase/social';
 import { cn } from '@/lib/utils';
-import { useMemberLookup } from '@/store/useMembersStore';
+import { openMemberProfile, useMemberLookup } from '@/store/useMembersStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 
 /** 댓글 시각: 오늘이면 시:분, 아니면 월/일 */
@@ -290,7 +290,16 @@ export function ItemSocial({
                 delayLongPress={350}
                 className="flex-row gap-2.5"
               >
-                <PersonAvatar imagePath={who.avatarPath} size={28} />
+                {/* 사진을 누르면 그 사람 프로필 */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${who.name} 프로필 보기`}
+                  hitSlop={4}
+                  onPress={() => openMemberProfile(c.user_id, mine)}
+                  className="active:opacity-70"
+                >
+                  <PersonAvatar imagePath={who.avatarPath} size={28} />
+                </Pressable>
                 <View className="flex-1 gap-1">
                   <View className="flex-row items-center gap-2">
                     <Text weight="600" size={13}>
