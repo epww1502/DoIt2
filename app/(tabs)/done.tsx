@@ -43,6 +43,7 @@ import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useSelection } from '@/hooks/useSelection';
 import { cn } from '@/lib/utils';
 import { recapYear } from '@/lib/bucket/yearRecap';
+import { countSpots } from '@/components/bucket/ItemsMap';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useSpace } from '@/store/useSpaceStore';
 import { shareBucketItems } from '@/lib/shareItems';
@@ -60,8 +61,8 @@ const VIEW_META: Record<DoneView, { label: string; icon: LucideIcon }> = {
 
 const KIND_OPTIONS: SegmentedOption<KindOption>[] = [
   { value: 'all', label: '전체' },
-  { value: 'place', label: '탐방한 곳', icon: KIND_ICON.place },
-  { value: 'activity', label: '성공한 도전', icon: CircleCheck },
+  { value: 'place', label: '탐방', icon: KIND_ICON.place },
+  { value: 'activity', label: '도전', icon: CircleCheck },
 ];
 
 export default function DoneScreen() {
@@ -89,7 +90,8 @@ export default function DoneScreen() {
   // 돌아볼 해 (1월엔 지난해). 기록이 없으면 띠를 숨긴다
   const recap = useMemo(() => recapYear(done, new Date()), [done]);
   // 지도에 찍을 수 있는 (장소를 골라둔) 기록 수
-  const visitedCount = done.filter((it) => it.place).length;
+  // (체크한 할 것의 위치도 센다)
+  const visitedCount = useMemo(() => countSpots(items, 'done'), [items]);
   // 종류만 거른 목록 (필터 시트에서 고를 수 있는 연도·카테고리를 여기서 뽑는다)
   const byKind = useMemo(
     () => (kind === 'all' ? done : done.filter((it) => it.kind === kind)),

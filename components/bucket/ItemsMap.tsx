@@ -33,22 +33,17 @@ type MapMessage =
   | { type: 'mapPress' }
   | { type: 'error'; message: string };
 
-/** 같은 위치(약 1m 이내)의 항목은 핀 하나로 묶는다 */
-export function groupBySpot(items: BucketItem[]) {
-  const byKey = new Map<string, BucketItem[]>();
-  for (const it of items) {
-    if (!it.place) continue;
-    const key = `${it.place.latitude.toFixed(5)},${it.place.longitude.toFixed(5)}`;
-    byKey.set(key, [...(byKey.get(key) ?? []), it]);
-  }
-  return [...byKey.values()];
-}
+/**
+ * 할 것 위치도 핀으로 찍을지. true: 모든 할 것, 'done': 체크한 할 것만 (일지 지도),
+ * false: 항목 장소만
+ */
+export type TodoPins = boolean | 'done';
 
 /** 지도에 찍는 한 점: 항목의 장소, 또는 항목 안 할 것의 위치 */
 type MapEntry = { item: BucketItem; place: PlaceInfo; todo?: ItemTodo };
 
 /** 항목 장소(+ 할 것 위치)를 같은 자리끼리 묶는다 */
-function groupEntries(items: BucketItem[], withTodos: boolean) {
+function groupEntries(items: BucketItem[], withTodos: TodoPins) {
   const byKey = new Map<string, MapEntry[]>();
   const put = (entry: MapEntry) => {
     const key = `${entry.place.latitude.toFixed(5)},${entry.place.longitude.toFixed(5)}`;
@@ -58,9 +53,13 @@ function groupEntries(items: BucketItem[], withTodos: boolean) {
     byKey.set(key, [...list, entry]);
   };
   for (const item of items) {
-    if (item.place) put({ item, place: item.place });
+    // 일지 지도('done')에선 항목 장소는 기록을 남긴 것만
+    if (item.place && (withTodos !== 'done' || item.done)) {
+      put({ item, place: item.place });
+    }
     if (!withTodos) continue;
     for (const todo of itemTodos(item)) {
+      if (withTodos === 'done' && !todo.done) continue;
       if (todo.place) put({ item, place: todo.place, todo });
     }
   }
@@ -68,10 +67,13 @@ function groupEntries(items: BucketItem[], withTodos: boolean) {
 }
 
 /** 지도에 찍을 곳이 하나라도 있는지 (할 것 위치 포함) */
-export function hasMapSpot(items: BucketItem[], withTodos = false) {
-  return items.some(
-    (it) => it.place || (withTodos && itemTodos(it).some((t) => t.place))
-  );
+export function hasMapSpot(items: BucketItem[], withTodos: TodoPins = false) {
+  return countSpots(items, withTodos) > 0;
+}
+
+/** 핀 개수 (같은 자리는 하나로 센다) */
+export function countSpots(items: BucketItem[], withTodos: TodoPins = false) {
+  return groupEntries(items, withTodos).length;
 }
 
 type ItemsMapProps = {
@@ -86,7 +88,7 @@ type ItemsMapProps = {
   /** 아래 카드 밑 여백 (휴대폰 아래 바 등) */
   bottomInset?: number;
   /** 할 것에 붙인 위치도 핀으로 찍는다 */
-  withTodos?: boolean;
+  withTodos?: TodoPins;
 };
 
 /** 카카오 지도 위에 항목 핀. 핀을 누르면 아래 카드에 그 위치의 항목들 */

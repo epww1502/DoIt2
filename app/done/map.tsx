@@ -15,9 +15,9 @@ import { EmptyState } from '@/components/bucket/EmptyState';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { viewForMe } from '@/lib/bucket/reviews';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
-import { groupBySpot, ItemsMap } from '@/components/bucket/ItemsMap';
+import { countSpots, ItemsMap } from '@/components/bucket/ItemsMap';
 import { StarRating } from '@/components/bucket/StarRating';
-import { recordPhotos, type BucketItem } from '@/lib/bucket/types';
+import { itemTodos, recordPhotos, type BucketItem } from '@/lib/bucket/types';
 import { useBucketStore } from '@/store/useBucketStore';
 
 /** 함께한 곳 지도: 장소를 골라둔 기록들을 핀으로. 핀을 누르면 아래에 그 기록 */
@@ -30,17 +30,24 @@ export default function DoneMapScreen() {
   const sync = useListSync();
   const insets = useSafeAreaInsets();
 
-  // 장소 좌표가 있는 함께한 기록 (최근 순)
+  // 다녀온 곳: 기록을 남긴 항목의 장소 + 체크한 할 것의 위치
+  // (아직 목록에 있는 항목이라도 체크한 할 것은 다녀온 곳이다). 최근 순
   const visited = useMemo(
     () =>
       items
-        .filter((it) => it.done && it.place)
+        .filter(
+          (it) =>
+            (it.done && it.place) ||
+            itemTodos(it).some((t) => t.done && t.place)
+        )
         .map((it) => viewForMe(it, reviewCtx))
-        .sort((a, b) => (b.done!.date > a.done!.date ? 1 : -1)),
+        .sort((a, b) =>
+          (b.done?.date ?? b.createdAt) > (a.done?.date ?? a.createdAt) ? 1 : -1
+        ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [items, reviewCtx.userId, reviewCtx.inSpace]
   );
-  const spotCount = useMemo(() => groupBySpot(visited).length, [visited]);
+  const spotCount = useMemo(() => countSpots(visited, 'done'), [visited]);
 
   if (visited.length === 0) {
     return (
@@ -65,9 +72,10 @@ export default function DoneMapScreen() {
       <NavBar title={`${placesLabel} ${spotCount}곳`} />
       <ItemsMap
         items={visited}
+        withTodos="done"
         renderItem={(item) => <VisitedCard item={item} />}
-        groupTitle={(group) =>
-          `${group[0].place?.name ?? '이곳'}에서 ${group.length}번 ${together ? '함께했어요' : '다녀왔어요'}`
+        groupTitle={(group, placeName) =>
+          `${placeName || '이곳'}에서 ${group.length}번 ${together ? '함께했어요' : '다녀왔어요'}`
         }
         hint="핀을 누르면 그날의 기록을 볼 수 있어요"
         bottomInset={insets.bottom}
@@ -78,8 +86,9 @@ export default function DoneMapScreen() {
 
 /** 고른 핀의 기록 요약. 누르면 항목 화면으로 */
 function VisitedCard({ item }: { item: BucketItem }) {
-  const done = item.done!;
+  const done = item.done;
   const photo = recordPhotos(done)[0];
+  const todos = itemTodos(item);
   return (
     <Pressable
       accessibilityRole="button"
@@ -98,11 +107,15 @@ function VisitedCard({ item }: { item: BucketItem }) {
           {item.title}
         </Text>
         <Text variant="muted" size={12} numberOfLines={1}>
-          {[dayjs(done.date).format('YYYY년 M월 D일'), item.place?.name]
-            .filter(Boolean)
-            .join(' · ')}
+          {done
+            ? [dayjs(done.date).format('YYYY년 M월 D일'), item.place?.name]
+                .filter(Boolean)
+                .join(' · ')
+            : `아직 목록에 있어요 · 할 것 ${todos.filter((t) => t.done).length}/${todos.length}`}
         </Text>
-        <StarRating value={done.rating} size={13} />
+        {done && done.rating > 0 ? (
+          <StarRating value={done.rating} size={13} />
+        ) : null}
       </View>
       <Icon as={ChevronRight} size={18} className="text-muted-foreground" />
     </Pressable>
