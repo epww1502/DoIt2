@@ -21,6 +21,7 @@ import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
 import { TodoChecklist } from '@/components/bucket/TodoChecklist';
+import { StartedCard } from '@/components/bucket/StartedCard';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { ItemSocial } from '@/components/bucket/ItemSocial';
@@ -38,6 +39,8 @@ import {
   SETTING_META,
 } from '@/lib/bucket/types';
 import { openMapTarget } from '@/lib/openPlace';
+import { todayKey } from '@/lib/date';
+import { doneDateLabel } from '@/lib/bucket/doneDate';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 
 export default function BucketDetailScreen() {
@@ -200,6 +203,9 @@ export default function BucketDetailScreen() {
           </View>
         ) : null}
 
+        {/* 시작하기를 눌렀으면 며칠째인지 */}
+        <StartedCard item={item} />
+
         {/* 할 것 체크리스트 (없으면 '+ 할 것 추가'만) */}
         <TodoChecklist item={item} onRecord={goRecord} />
 
@@ -314,8 +320,8 @@ export default function BucketDetailScreen() {
               <DonePhotoGallery done={done} />
               <View className="gap-2 p-4">
                 <View className="flex-row items-center justify-between">
-                  <Text weight="600">
-                    {dayjs(done.date).format('YYYY년 M월 D일 (dd)')}
+                  <Text weight="600" className="flex-shrink">
+                    {doneDateLabel(done, 'long')}
                   </Text>
                   {!inSpace ? <StarRating value={done.rating} /> : null}
                 </View>
@@ -369,7 +375,29 @@ export default function BucketDetailScreen() {
       {/* 댓글을 쓰는 동안(키보드가 올라와 있을 때)은 아래 버튼을 숨긴다 */}
       {!done && keyboardHeight === 0 ? (
         <BottomBar>
-          <Button label={`${meta.doneLabel} 기록 남기기`} onPress={goRecord} />
+          {item.started ? (
+            <Button
+              label={`${meta.doneLabel} 기록 남기기`}
+              onPress={goRecord}
+            />
+          ) : (
+            // 며칠 걸리는 일은 먼저 시작하기, 바로 해냈으면 기록 남기기
+            <View className="flex-row gap-2">
+              <Button
+                label="시작하기"
+                variant="outline"
+                className="px-6"
+                onPress={() =>
+                  updateItem(item.id, { started: { date: todayKey() } })
+                }
+              />
+              <Button
+                label={`${meta.doneLabel} 기록 남기기`}
+                className="flex-1"
+                onPress={goRecord}
+              />
+            </View>
+          )}
         </BottomBar>
       ) : null}
     </SafeAreaView>

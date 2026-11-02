@@ -1,4 +1,4 @@
-import dayjs from 'dayjs';
+import { doneDateLabel } from '@/lib/bucket/doneDate';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
@@ -57,7 +57,7 @@ export function DoneCard({
           ) : null}
         </View>
         <Text variant="muted" size={13}>
-          {dayjs(done.date).format('YYYY년 M월 D일 (dd)')}
+          {doneDateLabel(done, 'long')}
           {` · ${settingTag(item.setting)}`}
           {commentText(item.commentCount)}
           {item.location ? ` · ${item.location}` : ''}
@@ -110,7 +110,7 @@ export function DoneRow({
           {item.title}
         </Text>
         <Text variant="muted" size={12} numberOfLines={1}>
-          {dayjs(done.date).format('YYYY.M.D')}
+          {doneDateLabel(done, 'short')}
           {` · ${settingTag(item.setting)}`}
           {commentText(item.commentCount)}
           {item.location ? ` · ${item.location}` : ''}

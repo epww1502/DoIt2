@@ -40,6 +40,7 @@ import {
   type BucketFilter,
 } from '@/components/bucket/CategoryFilter';
 import { AwaitingReviews } from '@/components/bucket/AwaitingReviews';
+import { InProgressSection } from '@/components/bucket/InProgressSection';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import {
   SyncEmpty,
@@ -58,6 +59,7 @@ import { type BucketView, useSettingsStore } from '@/store/useSettingsStore';
 import {
   CATEGORIES_BY_KIND,
   getCategory,
+  isInProgress,
   isResting,
   type BucketItem,
 } from '@/lib/bucket/types';
@@ -219,10 +221,23 @@ export default function BucketListScreen() {
   const setBucketView = useSettingsStore((s) => s.setBucketView);
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
 
+  // 진행 중인 항목은 맨 위에 따로 모은다. 검색·고르기·지도에서는 목록에 그대로 섞는다
+  const splitStarted =
+    !selection.selecting && !query.trim() && bucketView !== 'map';
+  const inProgress = useMemo(
+    () => (splitStarted ? filtered.filter(isInProgress) : []),
+    [filtered, splitStarted]
+  );
+  const listItems = useMemo(
+    () =>
+      splitStarted ? filtered.filter((it) => !isInProgress(it)) : filtered,
+    [filtered, splitStarted]
+  );
+
   // 카테고리별 보기: 카테고리 순서대로 묶는다 (가보기 → 해보기)
   const sections = useMemo(() => {
     const groups = new Map<string, BucketItem[]>();
-    for (const it of filtered) {
+    for (const it of listItems) {
       const key = `${it.kind}:${it.category}`;
       groups.set(key, [...(groups.get(key) ?? []), it]);
     }
@@ -236,7 +251,7 @@ export default function BucketListScreen() {
           data: groups.get(`${kind}:${c.key}`)!,
         }))
     );
-  }, [filtered]);
+  }, [listItems]);
 
   const footer = !selection.selecting ? (
     <View className="flex-row flex-wrap items-center justify-center gap-x-5 gap-y-2 py-3">
@@ -270,9 +285,15 @@ export default function BucketListScreen() {
   ) : undefined;
   // 평가를 기다리는 칸: 목록 맨 위에 넣어 같이 스크롤된다 (고르는 중에는 숨긴다)
   const showAwaiting = !selection.selecting && awaiting.length > 0;
-  const awaitingHeader = showAwaiting ? (
-    <AwaitingReviews items={awaiting} className="" />
-  ) : undefined;
+  const awaitingHeader =
+    showAwaiting || inProgress.length > 0 ? (
+      <View className="gap-3">
+        {showAwaiting ? (
+          <AwaitingReviews items={awaiting} className="" />
+        ) : null}
+        <InProgressSection items={inProgress} />
+      </View>
+    ) : undefined;
   const listEmpty =
     activeExtras.length > 0 ? (
       <EmptyState
@@ -573,11 +594,11 @@ export default function BucketListScreen() {
                 ) : undefined
               }
               ListFooterComponent={footer}
-              ListEmptyComponent={listEmpty}
+              ListEmptyComponent={inProgress.length > 0 ? undefined : listEmpty}
             />
           ) : (
             <FlatList
-              data={filtered}
+              data={listItems}
               keyExtractor={(item) => item.id}
               extraData={selection.selected}
               renderItem={({ item }) => (
@@ -597,7 +618,7 @@ export default function BucketListScreen() {
               contentContainerStyle={{ paddingBottom: listBottom }}
               ListHeaderComponent={awaitingHeader}
               ListFooterComponent={footer}
-              ListEmptyComponent={listEmpty}
+              ListEmptyComponent={inProgress.length > 0 ? undefined : listEmpty}
             />
           )}
           {selection.selecting ? (

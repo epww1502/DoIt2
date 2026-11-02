@@ -22,6 +22,7 @@ import {
   type PlaceInfo,
   type RecordPhoto,
   type RepeatInfo,
+  type StartedInfo,
 } from '@/lib/bucket/types';
 
 import { supabase } from './client';
@@ -51,6 +52,7 @@ function toRemoteDone(done: DoneRecord | null): RemoteDone | null {
     .filter((p): p is string => Boolean(p));
   return {
     date: done.date,
+    ...(done.startDate ? { startDate: done.startDate } : {}),
     rating: done.rating,
     review: done.review,
     // 예전 앱은 photoPath 한 장만 읽는다
@@ -117,6 +119,7 @@ export function fromRow(
     done = withRecordPhotos(
       {
         date: remoteDone.date,
+        startDate: remoteDone.startDate ?? null,
         rating: remoteDone.rating,
         review: remoteDone.review,
         photoUri: null,
@@ -141,6 +144,7 @@ export function fromRow(
     done,
     goal: (row.goal as GoalInfo | null) ?? null,
     repeat: (row.repeat as RepeatInfo | null) ?? null,
+    started: (row.started as StartedInfo | null) ?? null,
     reviews: row.item_reviews
       ? row.item_reviews.map(reviewFromRow)
       : (local?.reviews ?? []),
@@ -171,6 +175,7 @@ function toRow(
     done: toRemoteDone(item.done) as Json,
     goal: (item.goal ?? null) as Json,
     repeat: (item.repeat ?? null) as Json,
+    started: (item.started ?? null) as Json,
     created_at: item.createdAt,
   };
   if (!withTodos) delete row.todos;

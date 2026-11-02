@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   CalendarDays,
+  Check,
   ChevronLeft,
   ChevronRight,
   ImagePlus,
@@ -27,6 +28,7 @@ import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { DATE_FORMAT, todayKey } from '@/lib/date';
 import { deletePhoto, pickPhotos } from '@/lib/bucket/photo';
 import {
+  dayCount,
   KIND_META,
   MAX_RECORD_PHOTOS,
   recordPhotos,
@@ -85,6 +87,11 @@ export default function RecordFormScreen() {
   );
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  // 기간으로 기록하기: 시작한 날 (끄면 null). 시작하기로 시작한 항목이면 처음부터 켜져 있다
+  const [startDate, setStartDate] = useState<string | null>(
+    saved ? (saved.startDate ?? null) : (item?.started?.date ?? null)
+  );
+  const [startPickerOpen, setStartPickerOpen] = useState(false);
   // 장소 (항목에 붙어 있는 값). 기록하면서 새로 붙이거나 바꿀 수 있다
   const updateItem = useBucketStore((state) => state.updateItem);
   const [place, setPlace] = useState<PlaceInfo | null>(item?.place ?? null);
@@ -115,8 +122,25 @@ export default function RecordFormScreen() {
   }
 
   const isToday = date === todayKey();
+  // 끝난 날을 시작한 날보다 앞으로 옮기면 시작한 날도 같이 당긴다
+  const changeDate = (next: string) => {
+    setDate(next);
+    if (startDate && startDate > next) setStartDate(next);
+  };
   const moveDate = (days: number) =>
-    setDate(dayjs(date).add(days, 'day').format(DATE_FORMAT));
+    changeDate(dayjs(date).add(days, 'day').format(DATE_FORMAT));
+  // 기간 칸 날짜: 둘 다 올해면 '10월 29일 (목)', 아니면 '25.12.30 (화)'
+  const rangeLabel = (value: string) => {
+    const thisYear = dayjs().year();
+    const crossYear =
+      dayjs(startDate ?? date).year() !== thisYear ||
+      dayjs(date).year() !== thisYear;
+    return dayjs(value).format(crossYear ? 'YY.M.D (dd)' : 'M월 D일 (dd)');
+  };
+  const togglePeriod = (on: boolean) =>
+    setStartDate(
+      on ? dayjs(date).subtract(1, 'day').format(DATE_FORMAT) : null
+    );
 
   /** 이번 화면에서 새로 고른 사진이면 지운다 (저장된 사진은 저장할 때 정리) */
   const savedUris = new Set(recordPhotos(saved).map((p) => p.uri));
@@ -170,7 +194,13 @@ export default function RecordFormScreen() {
       await recordDone(
         item.id,
         withRecordPhotos(
-          { date, rating, review: review.trim(), photoUri: null },
+          {
+            date,
+            startDate,
+            rating,
+            review: review.trim(),
+            photoUri: null,
+          },
           photos
         )
       );
@@ -217,50 +247,125 @@ export default function RecordFormScreen() {
           </Text>
 
           <View>
-            <FieldLabel>{KIND_META[item.kind].whenQuestion}</FieldLabel>
-            <View className="h-12 flex-row items-center justify-between rounded-xl px-2 bg-accent">
+            {/* 오른쪽 '기간'을 체크하면 날짜 칸이 시작한 날 ~ 끝난 날로 바뀐다 */}
+            <View className="mb-2 flex-row items-center justify-between">
+              <Text weight="600" size={14} className="text-muted-foreground">
+                {KIND_META[item.kind].whenQuestion}
+              </Text>
               <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="하루 전"
-                hitSlop={6}
-                onPress={() => moveDate(-1)}
-                className="h-10 w-10 items-center justify-center"
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: startDate !== null }}
+                accessibilityLabel="기간으로 기록하기"
+                hitSlop={10}
+                onPress={() => togglePeriod(startDate === null)}
+                className="flex-row items-center gap-1.5 active:opacity-60"
               >
-                <Icon as={ChevronLeft} size={20} />
-              </Pressable>
-              {/* 날짜를 누르면 달력이 열린다 (일 → 월 → 연으로 넓혀 고를 수 있다) */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="날짜 고르기"
-                hitSlop={6}
-                onPress={() => setPickerOpen(true)}
-                className="h-10 flex-1 flex-row items-center justify-center gap-1.5 active:opacity-60"
-              >
-                <Icon
-                  as={CalendarDays}
-                  size={16}
-                  className="text-muted-foreground"
-                />
-                <Text weight="600" size={16}>
-                  {dayjs(date).format('YYYY년 M월 D일 (dd)')}
-                  {isToday ? ' · 오늘' : ''}
+                <View
+                  className={
+                    startDate
+                      ? 'h-[18px] w-[18px] items-center justify-center rounded-[5px] bg-primary'
+                      : 'h-[18px] w-[18px] rounded-[5px] border-[1.5px] border-muted-foreground'
+                  }
+                >
+                  {startDate ? (
+                    <Icon
+                      as={Check}
+                      size={13}
+                      strokeWidth={3}
+                      className="text-primary-foreground"
+                    />
+                  ) : null}
+                </View>
+                <Text
+                  weight="600"
+                  size={14}
+                  className={
+                    startDate ? 'text-primary' : 'text-muted-foreground'
+                  }
+                >
+                  기간
                 </Text>
               </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="하루 뒤"
-                hitSlop={6}
-                disabled={isToday}
-                onPress={() => moveDate(1)}
-                className="h-10 w-10 items-center justify-center"
-              >
-                <Icon
-                  as={ChevronRight}
-                  size={20}
-                  className={isToday ? 'text-muted' : 'text-foreground'}
-                />
-              </Pressable>
             </View>
+            {startDate ? (
+              // 기간: 시작한 날 ~ 끝난 날 · n일 (각 날짜를 누르면 달력)
+              <View className="h-12 flex-row items-center rounded-xl px-2 bg-accent">
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="시작한 날 고르기"
+                  hitSlop={6}
+                  onPress={() => setStartPickerOpen(true)}
+                  className="h-10 flex-1 items-center justify-center active:opacity-60"
+                >
+                  <Text weight="600" size={15}>
+                    {rangeLabel(startDate)}
+                  </Text>
+                </Pressable>
+                <Text weight="600" size={15} className="text-muted-foreground">
+                  ~
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="끝난 날 고르기"
+                  hitSlop={6}
+                  onPress={() => setPickerOpen(true)}
+                  className="h-10 flex-1 items-center justify-center active:opacity-60"
+                >
+                  <Text weight="600" size={15}>
+                    {rangeLabel(date)}
+                  </Text>
+                </Pressable>
+                <View className="rounded-full bg-background px-2.5 py-1">
+                  <Text weight="700" size={13} className="text-primary">
+                    {dayCount(startDate, date)}일
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View className="h-12 flex-row items-center justify-between rounded-xl px-2 bg-accent">
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="하루 전"
+                  hitSlop={6}
+                  onPress={() => moveDate(-1)}
+                  className="h-10 w-10 items-center justify-center"
+                >
+                  <Icon as={ChevronLeft} size={20} />
+                </Pressable>
+                {/* 날짜를 누르면 달력이 열린다 (일 → 월 → 연으로 넓혀 고를 수 있다) */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="날짜 고르기"
+                  hitSlop={6}
+                  onPress={() => setPickerOpen(true)}
+                  className="h-10 flex-1 flex-row items-center justify-center gap-1.5 active:opacity-60"
+                >
+                  <Icon
+                    as={CalendarDays}
+                    size={16}
+                    className="text-muted-foreground"
+                  />
+                  <Text weight="600" size={16}>
+                    {dayjs(date).format('YYYY년 M월 D일 (dd)')}
+                    {isToday ? ' · 오늘' : ''}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="하루 뒤"
+                  hitSlop={6}
+                  disabled={isToday}
+                  onPress={() => moveDate(1)}
+                  className="h-10 w-10 items-center justify-center"
+                >
+                  <Icon
+                    as={ChevronRight}
+                    size={20}
+                    className={isToday ? 'text-muted' : 'text-foreground'}
+                  />
+                </Pressable>
+              </View>
+            )}
           </View>
 
           <PlaceField
@@ -393,8 +498,15 @@ export default function RecordFormScreen() {
       <DatePickerSheet
         visible={pickerOpen}
         value={date}
-        onChange={setDate}
+        onChange={changeDate}
         onClose={() => setPickerOpen(false)}
+      />
+      <DatePickerSheet
+        visible={startPickerOpen}
+        value={startDate ?? date}
+        onChange={setStartDate}
+        onClose={() => setStartPickerOpen(false)}
+        maxDate={date}
       />
     </SafeAreaView>
   );

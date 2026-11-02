@@ -554,10 +554,20 @@ export const useBucketStore = create<BucketState>()(
 
           // 공간이면 새로 고른 사진(서버 경로가 아직 없음)을 먼저 올려본다.
           // 오프라인이라 못 올린 사진은 폰 파일로 남겨두고, 다시 연결되면 대기열이 올린다
+          // 기록 화면이 정한 시작일을 쓴다. 안 정했으면 예전 기록·시작하기의 시작일을 그대로 옮긴다.
+          // 시작일보다 앞선 날로 기록하면 기간이 맞지 않아 뺀다
+          const startDate =
+            'startDate' in record
+              ? record.startDate
+              : (prev?.startDate ?? target.started?.date ?? null);
+          const dated: DoneRecord = {
+            ...record,
+            startDate: startDate && startDate <= record.date ? startDate : null,
+          };
           const next: DoneRecord =
             spaceId && useConnectionStore.getState().online
-              ? ((await withUploadedPhoto(record, spaceId)) ?? record)
-              : record;
+              ? ((await withUploadedPhoto(dated, spaceId)) ?? dated)
+              : dated;
 
           // 빠진 예전 사진 정리
           const nextPhotos = recordPhotos(next);
@@ -578,8 +588,8 @@ export const useBucketStore = create<BucketState>()(
           // (이 항목은 일지에 남고 매년 하기 표시는 새 항목으로 넘어간다)
           const renew = !prev && target.repeat ? target : null;
           const item = renew
-            ? { ...target, done: next, repeat: null }
-            : { ...target, done: next };
+            ? { ...target, done: next, repeat: null, started: null }
+            : { ...target, done: next, started: null };
           replaceItem(id, item);
           pushItems([item]);
           if (renew) {
@@ -653,7 +663,12 @@ export const useBucketStore = create<BucketState>()(
                 return it;
               }
               deleteRecordPhotos(it.done, spaceId);
-              const next = { ...it, done: null };
+              // 시작하고 해낸 기록을 지우면 다시 진행 중으로 돌아간다
+              const next = {
+                ...it,
+                done: null,
+                started: it.done.startDate ? { date: it.done.startDate } : null,
+              };
               cleared.push(next);
               return next;
             }),

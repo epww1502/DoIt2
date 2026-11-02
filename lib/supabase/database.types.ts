@@ -52,6 +52,7 @@ export type Database = {
           memo: string;
           photos: Json | null;
           repeat: Json | null;
+          started: Json | null;
           todos: Json | null;
           place: Json | null;
           setting: string;
@@ -71,6 +72,7 @@ export type Database = {
           memo?: string;
           photos?: Json | null;
           repeat?: Json | null;
+          started?: Json | null;
           todos?: Json | null;
           place?: Json | null;
           setting: string;
@@ -90,6 +92,7 @@ export type Database = {
           memo?: string;
           photos?: Json | null;
           repeat?: Json | null;
+          started?: Json | null;
           todos?: Json | null;
           place?: Json | null;
           setting?: string;

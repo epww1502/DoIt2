@@ -93,6 +93,8 @@ export const KIND_META: Record<
 export type DoneRecord = {
   /** YYYY-MM-DD */
   date: string;
+  /** 시작하기로 시작한 날 (YYYY-MM-DD). 바로 해낸 기록에는 없다 */
+  startDate?: string | null;
   /** 1~5 */
   rating: number;
   review: string;
@@ -221,7 +223,26 @@ export type BucketItem = {
   commentCount?: number;
   /** 매년 하기 (예: 벚꽃 구경). 해내면 다음 해 것이 '쉬는 중'으로 새로 담긴다 */
   repeat?: RepeatInfo | null;
+  /** 시작하기를 눌러 진행 중 (해내면 시작일은 done.startDate로 옮겨 간다) */
+  started?: StartedInfo | null;
 };
+
+export type StartedInfo = {
+  /** YYYY-MM-DD */
+  date: string;
+};
+
+/** 아직 해내지 않았고 시작한 항목 */
+export function isInProgress(item: Pick<BucketItem, 'done' | 'started'>) {
+  return !item.done && !!item.started;
+}
+
+/** 시작한 날부터 며칠째인지 (시작한 날이 1일째) */
+export function dayCount(from: string, to: string) {
+  const a = new Date(`${from}T00:00:00`);
+  const b = new Date(`${to}T00:00:00`);
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000) + 1;
+}
 
 /**
  * 매년 하기. restUntil이 있으면 그날 전까지는 목록·뽑기에 안 보이고 쉰다
@@ -349,4 +370,5 @@ export type BucketInput = Pick<
   | 'photos'
   | 'todos'
   | 'repeat'
+  | 'started'
 >;

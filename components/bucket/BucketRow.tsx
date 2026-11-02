@@ -7,6 +7,7 @@ import { SOFT_SHADOW } from '@/constants/shadow';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
 import {
   getCategory,
+  isInProgress,
   itemTodos,
   KIND_META,
   settingTag,
@@ -60,6 +61,7 @@ export function BucketRow({
           >
             {item.title}
           </Text>
+          <StartedBadge item={item} />
           <GoalBadge item={item} />
           <TodoBadge item={item} />
         </View>
@@ -127,7 +129,8 @@ export function BucketRowCompact({
       <Text weight="500" size={15} numberOfLines={1} className="flex-shrink">
         {item.title}
       </Text>
-      <View className="flex-1 pr-6">
+      <View className="flex-1 flex-row items-center gap-1.5 pr-6">
+        <StartedBadge item={item} />
         <GoalBadge item={item} />
       </View>
       {!selection.selecting ? (
@@ -139,6 +142,18 @@ export function BucketRowCompact({
         </View>
       ) : null}
     </Selectable>
+  );
+}
+
+/** 시작하기를 눌러 진행 중이면 제목 옆에 '진행 중' */
+function StartedBadge({ item }: { item: BucketItem }) {
+  if (!isInProgress(item)) return null;
+  return (
+    <View className="rounded-full bg-primary px-2 py-0.5">
+      <Text weight="700" size={11} className="text-primary-foreground">
+        진행 중
+      </Text>
+    </View>
   );
 }
 
