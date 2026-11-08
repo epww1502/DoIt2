@@ -126,10 +126,13 @@ export function PhotoGallery({
   photos,
   overlay,
   caption,
+  itemId,
 }: {
-  photos: RecordPhoto[];
+  photos: (RecordPhoto & { by?: string | null })[];
   overlay?: (index: number) => ReactNode;
   caption?: (index: number) => string | null;
+  /** 공간 기록 사진이면 그 기록 (크게 보기에서 하트) */
+  itemId?: string;
 }) {
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
@@ -140,7 +143,7 @@ export function PhotoGallery({
   ) : null;
   const open = (i: number) =>
     openPhotoViewer(
-      photos.map((p, j) => ({ ...p, caption: caption?.(j) ?? null })),
+      photos.map((p, j) => ({ ...p, caption: caption?.(j) ?? null, itemId })),
       i
     );
   if (photos.length === 1) {

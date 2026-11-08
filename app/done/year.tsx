@@ -344,6 +344,15 @@ function Moment({
   );
 }
 
+/** 공간 기록 사진을 올린 사람 (하트 알림을 받는 사람). 모르면 null */
+function authorOf(item: BucketItem, photo: { path: string | null }) {
+  if (!photo.path) return null;
+  return (
+    item.reviews?.find((r) => r.photos?.some((p) => p.path === photo.path))
+      ?.userId ?? null
+  );
+}
+
 function BestCard({ recap, primary }: CardProps) {
   const best = recap.best!;
   const photos = recordPhotos(best.done);
@@ -357,7 +366,13 @@ function BestCard({ recap, primary }: CardProps) {
           accessibilityLabel="사진 크게 보기"
           onPress={() =>
             openPhotoViewer(
-              photos.map((p) => ({ ...p, caption: best.title })),
+              photos.map((p) => ({
+                ...p,
+                caption: best.title,
+                itemId: best.id,
+                by: authorOf(best, p),
+                link: true,
+              })),
               0
             )
           }
@@ -494,7 +509,13 @@ function PhotosCard({ recap, primary }: CardProps) {
             // 누르면 올해의 사진을 넘겨 보며 크게 보기
             onPress={() =>
               openPhotoViewer(
-                photos.map((p) => ({ ...p.photo, caption: p.item.title })),
+                photos.map((p) => ({
+                  ...p.photo,
+                  caption: p.item.title,
+                  itemId: p.item.id,
+                  by: authorOf(p.item, p.photo),
+                  link: true,
+                })),
                 i
               )
             }

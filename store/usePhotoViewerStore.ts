@@ -3,8 +3,19 @@ import { create } from 'zustand';
 
 import type { RecordPhoto } from '@/lib/bucket/types';
 
-/** 크게 보기 화면에 넘기는 사진. caption: 위에 보여줄 글 (올린 사람 이름 등) */
-export type ViewerPhoto = RecordPhoto & { caption?: string | null };
+/**
+ * 크게 보기 화면에 넘기는 사진.
+ * caption: 위에 보여줄 글 (올린 사람 이름 등)
+ * itemId: 어느 기록 사진인지 (공간 사진이면 하트를 누를 수 있다)
+ * by: 올린 사람 (하트 알림을 받는 사람)
+ * link: 위에 '기록 보기'를 보여줄지 (그 기록 화면에서 연 게 아닐 때)
+ */
+export type ViewerPhoto = RecordPhoto & {
+  caption?: string | null;
+  itemId?: string;
+  by?: string | null;
+  link?: boolean;
+};
 
 type PhotoViewerState = {
   photos: ViewerPhoto[];

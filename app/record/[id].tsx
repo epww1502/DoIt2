@@ -512,7 +512,11 @@ export default function RecordFormScreen() {
           </View>
 
           {otherPhotos.length > 0 ? (
-            <OthersPhotos photos={otherPhotos} member={member} />
+            <OthersPhotos
+              photos={otherPhotos}
+              member={member}
+              itemId={item.id}
+            />
           ) : null}
         </ScrollView>
 
@@ -565,9 +569,11 @@ const SMALL_THUMB_SIZE = 56;
 function OthersPhotos({
   photos,
   member,
+  itemId,
 }: {
   photos: AuthoredPhoto[];
   member: ReturnType<typeof useMemberLookup>;
+  itemId: string;
 }) {
   const authors: (string | null)[] = [];
   for (const p of photos) if (!authors.includes(p.by)) authors.push(p.by);
@@ -578,6 +584,7 @@ function OthersPhotos({
       ordered.map((p) => ({
         ...p,
         caption: p.by ? `${member(p.by).name}의 사진` : null,
+        itemId,
       })),
       ordered.indexOf(photo)
     );

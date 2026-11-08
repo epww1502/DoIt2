@@ -309,6 +309,7 @@ export type Database = {
         Row: {
           body: string;
           created_at: string;
+          detail: string | null;
           id: string;
           item_id: string | null;
           kind: string;
@@ -320,6 +321,7 @@ export type Database = {
         Insert: {
           body: string;
           created_at?: string;
+          detail?: string | null;
           id?: string;
           item_id?: string | null;
           kind: string;
@@ -331,12 +333,37 @@ export type Database = {
         Update: {
           body?: string;
           created_at?: string;
+          detail?: string | null;
           id?: string;
           item_id?: string | null;
           kind?: string;
           read_at?: string | null;
           space_id?: string | null;
           title?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      photo_likes: {
+        Row: {
+          created_at: string;
+          item_id: string;
+          photo_path: string;
+          space_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          item_id: string;
+          photo_path: string;
+          space_id?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          item_id?: string;
+          photo_path?: string;
+          space_id?: string;
           user_id?: string;
         };
         Relationships: [];
@@ -589,6 +616,7 @@ export type ItemReactionRow =
   Database['public']['Tables']['item_reactions']['Row'];
 export type CommentReactionRow =
   Database['public']['Tables']['comment_reactions']['Row'];
+export type PhotoLikeRow = Database['public']['Tables']['photo_likes']['Row'];
 export type NotificationRow =
   Database['public']['Tables']['notifications']['Row'];
 export type MemberProfile =

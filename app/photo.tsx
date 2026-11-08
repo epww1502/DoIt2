@@ -2,7 +2,14 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Download, ImageOff, Share2, X } from 'lucide-react-native';
+import {
+  ChevronRight,
+  Download,
+  Heart,
+  ImageOff,
+  Share2,
+  X,
+} from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -31,11 +38,15 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { Icon, Text } from '@/components/atoms';
 import { loadPhotoUrl, usePhotoState } from '@/components/bucket/DonePhoto';
+import { usePhotoLikes } from '@/hooks/usePhotoLikes';
 import { showAlert } from '@/lib/dialog';
+import { cn } from '@/lib/utils';
+import { useBucketStore } from '@/store/useBucketStore';
 import {
   usePhotoViewerStore,
   type ViewerPhoto,
 } from '@/store/usePhotoViewerStore';
+import { useSpace } from '@/store/useSpaceStore';
 
 /** 두 손가락으로 키울 수 있는 최대 배율 / 두 번 톡 했을 때 배율 */
 const MAX_SCALE = 4;
@@ -55,6 +66,21 @@ export default function PhotoViewerScreen() {
   const [busy, setBusy] = useState<'save' | 'share' | null>(null);
 
   const current = photos[index];
+
+  // 함께 쓰는 공간의 기록 사진이면 하트
+  const spaceId = useBucketStore((s) => s.spaceId);
+  const shared = (useSpace(spaceId)?.memberCount ?? 0) > 1;
+  const likes = usePhotoLikes(
+    shared ? spaceId : null,
+    photos.filter((p) => p.itemId && p.path).map((p) => p.path!)
+  );
+  const canLike = shared && Boolean(current?.path && current.itemId);
+
+  /** 이 사진이 있는 기록으로 (크게 보기를 닫고 그 기록 화면을 연다) */
+  const openRecord = () => {
+    if (!current?.itemId) return;
+    router.replace({ pathname: '/item/[id]', params: { id: current.itemId } });
+  };
 
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const next = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -158,7 +184,7 @@ export default function PhotoViewerScreen() {
         >
           <Icon as={X} size={22} className="text-white" />
         </Pressable>
-        <View className="flex-1 items-center" pointerEvents="none">
+        <View className="flex-1 items-center" pointerEvents="box-none">
           {photos.length > 1 ? (
             <Text weight="600" size={15} className="text-white">
               {`${index + 1} / ${photos.length}`}
@@ -169,6 +195,20 @@ export default function PhotoViewerScreen() {
               {current.caption}
             </Text>
           ) : null}
+          {current?.link && current.itemId ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="이 사진이 있는 기록 보기"
+              hitSlop={6}
+              onPress={openRecord}
+              className="bg-white/15 mt-1.5 flex-row items-center gap-0.5 rounded-full py-1 pl-3 pr-2 active:opacity-70"
+            >
+              <Text size={12} weight="600" className="text-white">
+                기록 보기
+              </Text>
+              <Icon as={ChevronRight} size={14} className="text-white" />
+            </Pressable>
+          ) : null}
         </View>
         <View className="h-10 w-10" />
       </View>
@@ -178,6 +218,15 @@ export default function PhotoViewerScreen() {
         className="absolute left-0 right-0 flex-row justify-center gap-3 px-5"
         style={{ bottom: insets.bottom + 12 }}
       >
+        {canLike && current?.path && current.itemId ? (
+          <HeartButton
+            liked={likes.likedByMe(current.path)}
+            count={likes.countOf(current.path)}
+            onPress={() =>
+              void likes.toggle(current.path!, current.itemId!, current.by)
+            }
+          />
+        ) : null}
         <ActionButton
           icon={Download}
           label="저장"
@@ -211,7 +260,7 @@ function ActionButton({
       accessibilityRole="button"
       accessibilityLabel={`사진 ${label}하기`}
       onPress={onPress}
-      className="bg-white/15 h-12 min-w-[120px] flex-row items-center justify-center gap-2 rounded-full px-5 active:opacity-70"
+      className="bg-white/15 h-12 min-w-[104px] flex-row items-center justify-center gap-2 rounded-full px-5 active:opacity-70"
     >
       {busy ? (
         <ActivityIndicator color="#fff" />
@@ -221,6 +270,39 @@ function ActionButton({
       <Text weight="600" size={15} className="text-white">
         {label}
       </Text>
+    </Pressable>
+  );
+}
+
+/** 하트: 누르면 넣기/빼기, 옆에 하트 수 */
+function HeartButton({
+  liked,
+  count,
+  onPress,
+}: {
+  liked: boolean;
+  count: number;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={liked ? '하트 빼기' : '하트 누르기'}
+      accessibilityState={{ selected: liked }}
+      onPress={onPress}
+      className="bg-white/15 h-12 flex-row items-center justify-center gap-1.5 rounded-full px-4 active:opacity-70"
+    >
+      <Icon
+        as={Heart}
+        size={20}
+        className={cn(liked ? 'text-red-500' : 'text-white')}
+        fill={liked ? '#ef4444' : 'transparent'}
+      />
+      {count > 0 ? (
+        <Text weight="600" size={15} className="text-white">
+          {count}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }

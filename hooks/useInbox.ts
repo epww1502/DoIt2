@@ -11,7 +11,15 @@ import {
 /** 알림센터 한 줄 (서버 소식과 폰 안 알림을 합친 모양) */
 export type InboxEntry = {
   id: string;
-  kind: 'added' | 'done' | 'reviewed' | 'commented' | 'goal' | 'weekend';
+  kind:
+    | 'added'
+    | 'done'
+    | 'reviewed'
+    | 'commented'
+    | 'goal'
+    | 'weekend'
+    | 'photos'
+    | 'liked';
   at: number;
   title: string;
   body: string;
@@ -23,7 +31,8 @@ export type InboxEntry = {
 function fromRow(r: NotificationRow): InboxEntry {
   return {
     id: r.id,
-    kind: r.kind as InboxEntry['kind'],
+    // 사진·하트 알림은 kind를 예전 앱이 아는 값으로 두고 detail에 진짜 종류를 남긴다
+    kind: (r.detail ?? r.kind) as InboxEntry['kind'],
     at: Date.parse(r.created_at),
     title: r.title,
     body: r.body,

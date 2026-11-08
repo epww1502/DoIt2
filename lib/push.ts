@@ -105,13 +105,16 @@ export async function unregisterForPush() {
 /** 같은 공간의 다른 사람들에게 알린다. 실패해도 앱 동작에는 영향이 없다 */
 export function notifySpace(
   spaceId: string,
-  event: 'added' | 'done' | 'reviewed' | 'commented' | 'todo' | 'photos',
+  event:
+    'added' | 'done' | 'reviewed' | 'commented' | 'todo' | 'photos' | 'liked',
   itemIds: string[],
   extra?: {
     /** event 'todo': 체크한 할 것 id들 */
     todoIds?: string[];
     /** event 'photos': 새로 올린 사진 수 */
     photoCount?: number;
+    /** event 'liked': 하트를 누른 사진 경로 */
+    photoPath?: string;
   }
 ) {
   if (itemIds.length === 0) return;

@@ -11,6 +11,10 @@
 //   (지금도 체크돼 있는 것만 알린다. 알림함에는 예전 앱도 알아보게 kind 'done'으로 남긴다)
 // - { spaceId, event: 'photos', itemIds: [string], photoCount: number }  이미 남긴 평가에 사진을 더 올림
 //   (평가가 막 바뀌었을 때만. 알림함에는 예전 앱도 알아보게 kind 'reviewed'로 남긴다)
+// - { spaceId, event: 'liked', itemIds: [string], photoPath: string }  사진에 하트를 누름
+//   (그 사진을 올린 사람에게만, 하트를 막 눌렀을 때만. kind 'reviewed')
+//
+// 알림함 detail: 'photos' | 'liked' (새 앱만 보고 아이콘을 고른다. 예전 앱은 kind만 본다)
 //
 // 막 바뀐 항목(최근 10분)만 알린다. 예전 항목으로 알림을 계속 보내는 걸 막으려고.
 // 받는 사람마다 notifications(알림함)에도 한 줄씩 남긴다 (푸시를 꺼둔 사람도 앱에서 볼 수 있게).
@@ -29,11 +33,14 @@ const admin = createClient(
 
 type Body = {
   spaceId?: string;
-  event?: 'added' | 'done' | 'reviewed' | 'commented' | 'todo' | 'photos';
+  event?:
+    'added' | 'done' | 'reviewed' | 'commented' | 'todo' | 'photos' | 'liked';
   itemIds?: string[];
   todoIds?: string[];
   /** event 'photos': 새로 올린 사진 수 */
   photoCount?: number;
+  /** event 'liked': 하트를 누른 사진 경로 */
+  photoPath?: string;
 };
 
 type Todo = { id?: string; text?: string; done?: boolean };
@@ -87,10 +94,17 @@ Deno.serve(async (req) => {
   const itemIds = (body.itemIds ?? []).slice(0, MAX_ITEMS);
   if (
     !spaceId ||
-    !['added', 'done', 'reviewed', 'commented', 'todo', 'photos'].includes(
-      event ?? ''
-    ) ||
-    !itemIds.length
+    ![
+      'added',
+      'done',
+      'reviewed',
+      'commented',
+      'todo',
+      'photos',
+      'liked',
+    ].includes(event ?? '') ||
+    !itemIds.length ||
+    (event === 'liked' && !body.photoPath)
   ) {
     return json({ error: 'invalid_body' }, 400);
   }
@@ -103,8 +117,36 @@ Deno.serve(async (req) => {
   if (!members?.some((m) => m.user_id === actor)) {
     return json({ error: 'not_member' }, 403);
   }
-  const others = members.map((m) => m.user_id).filter((id) => id !== actor);
+  let others = members.map((m) => m.user_id).filter((id) => id !== actor);
   if (others.length === 0) return json({ sent: 0 });
+
+  // 하트: 그 사진을 올린 사람에게만, 방금 누른 하트일 때만
+  if (event === 'liked') {
+    const photoPath = body.photoPath!;
+    const [{ data: owners }, { data: like }] = await Promise.all([
+      admin
+        .from('item_reviews')
+        .select('user_id')
+        .eq('item_id', itemIds[0])
+        .contains('photos', [photoPath]),
+      admin
+        .from('photo_likes')
+        .select('created_at')
+        .eq('photo_path', photoPath)
+        .eq('user_id', actor)
+        .maybeSingle(),
+    ]);
+    const owner = owners?.[0]?.user_id;
+    if (
+      !owner ||
+      !others.includes(owner) ||
+      !like ||
+      Date.now() - new Date(like.created_at).getTime() >= FRESH_MS
+    ) {
+      return json({ sent: 0 });
+    }
+    others = [owner];
+  }
 
   // 이 공간 항목과, 부른 사람이 남긴 평가·최근 댓글
   const [{ data: items }, { data: reviews }, { data: comments }] =
@@ -136,11 +178,13 @@ Deno.serve(async (req) => {
   const isFresh = (at: string | undefined) =>
     !!at && Date.now() - new Date(at).getTime() < FRESH_MS;
   const fresh = (items ?? []).filter((it) =>
-    event === 'reviewed' || event === 'photos'
-      ? isFresh(reviewOf.get(it.id)?.updated_at)
-      : event === 'commented'
-        ? isFresh(commentOf.get(it.id)?.created_at)
-        : isFresh(it.updated_at)
+    event === 'liked'
+      ? true
+      : event === 'reviewed' || event === 'photos'
+        ? isFresh(reviewOf.get(it.id)?.updated_at)
+        : event === 'commented'
+          ? isFresh(commentOf.get(it.id)?.created_at)
+          : isFresh(it.updated_at)
   );
   if (fresh.length === 0) return json({ sent: 0 });
 
@@ -172,6 +216,8 @@ Deno.serve(async (req) => {
   } else if (event === 'photos') {
     const count = Math.min(Math.max(Math.round(body.photoCount ?? 1), 1), 5);
     message = `${name}님이 ${quote(first.title)}에 사진 ${count}장을 올렸어요 📷`;
+  } else if (event === 'liked') {
+    message = `${name}님이 ${quote(first.title)}에 올린 사진에 하트를 눌렀어요 ❤️`;
   } else if (event === 'commented') {
     const body = commentOf.get(first.id)?.body ?? '';
     const short = body.length > 30 ? `${body.slice(0, 30)}…` : body;
@@ -194,9 +240,14 @@ Deno.serve(async (req) => {
         user_id: userId,
         space_id: spaceId,
         item_id: itemId,
-        // 예전 앱은 'todo'·'photos'를 몰라서 아는 종류로 남긴다
+        // 예전 앱은 'todo'·'photos'·'liked'를 몰라서 아는 종류로 남긴다
         kind:
-          event === 'todo' ? 'done' : event === 'photos' ? 'reviewed' : event,
+          event === 'todo'
+            ? 'done'
+            : event === 'photos' || event === 'liked'
+              ? 'reviewed'
+              : event,
+        detail: event === 'photos' || event === 'liked' ? event : null,
         title,
         body: message,
       }))

@@ -1,8 +1,10 @@
 import dayjs from 'dayjs';
 import {
   CalendarHeart,
+  Camera,
   CircleCheck,
   Flag,
+  Heart,
   MessageCircle,
   Plus,
   Star,
@@ -32,6 +34,8 @@ const KIND_ICON: Record<InboxEntry['kind'], LucideIcon> = {
   commented: MessageCircle,
   goal: Flag,
   weekend: CalendarHeart,
+  photos: Camera,
+  liked: Heart,
 };
 
 /** '방금', '5분 전', '3시간 전', '어제', '10월 21일' */
@@ -149,7 +153,8 @@ function InboxRow({ entry }: { entry: InboxEntry }) {
         )}
       >
         <Icon
-          as={KIND_ICON[entry.kind]}
+          // 모르는 종류가 와도 멈추지 않게
+          as={KIND_ICON[entry.kind] ?? Star}
           size={18}
           className={
             unread ? 'text-primary-foreground' : 'text-muted-foreground'
