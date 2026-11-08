@@ -2,10 +2,38 @@
  * 버킷리스트 공유: 고른 항목의 사본을 서버에 두고 6자리 코드로 나눠준다.
  * 받는 사람은 코드로 미리보기를 보고 원하는 곳에 새 항목으로 담는다.
  */
-import { itemTodos, newTodoId, type BucketInput } from '@/lib/bucket/types';
+import { normalizeUrl } from '@/lib/bucket/link';
+import {
+  itemTodos,
+  MAX_LINKS,
+  newTodoId,
+  type BucketInput,
+  type ItemLink,
+} from '@/lib/bucket/types';
 
 import { supabase } from './client';
 import type { Json } from './database.types';
+
+/** 공유받은 목록의 링크 (다른 사람이 만든 것이라 모양을 다시 확인한다) */
+function sharedLinks(value: unknown): ItemLink[] {
+  if (!Array.isArray(value)) return [];
+  const links: ItemLink[] = [];
+  for (const raw of value as Partial<ItemLink>[]) {
+    const url = typeof raw?.url === 'string' ? normalizeUrl(raw.url) : null;
+    if (!url || links.some((l) => l.url === url)) continue;
+    const text = (v: unknown, max: number) =>
+      typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null;
+    const image = text(raw.image, 1000);
+    links.push({
+      url,
+      title: text(raw.title, 120),
+      image: image?.startsWith('https://') ? image : null,
+      site: text(raw.site, 40),
+    });
+    if (links.length >= MAX_LINKS) break;
+  }
+  return links;
+}
 
 export const SHARE_CODE_LENGTH = 6;
 
@@ -57,6 +85,7 @@ export async function getSharedList(code: string): Promise<SharedList | null> {
       location: it.location ?? '',
       place: it.place ?? null,
       memo: it.memo ?? '',
+      links: sharedLinks(it.links),
       // 할 것은 새로 시작하니 체크를 풀고, id는 새로 만든다 (같은 목록을 두 번 가져와도 겹치지 않게)
       todos: itemTodos({ todos: Array.isArray(it.todos) ? it.todos : [] })
         .slice(0, 30)

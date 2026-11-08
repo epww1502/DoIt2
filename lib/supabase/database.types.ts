@@ -48,6 +48,7 @@ export type Database = {
           goal: Json | null;
           id: string;
           kind: string;
+          links: Json | null;
           location: string;
           memo: string;
           photos: Json | null;
@@ -68,6 +69,7 @@ export type Database = {
           goal?: Json | null;
           id: string;
           kind: string;
+          links?: Json | null;
           location?: string;
           memo?: string;
           photos?: Json | null;
@@ -88,6 +90,7 @@ export type Database = {
           goal?: Json | null;
           id?: string;
           kind?: string;
+          links?: Json | null;
           location?: string;
           memo?: string;
           photos?: Json | null;

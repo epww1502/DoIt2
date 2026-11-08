@@ -106,7 +106,14 @@ export async function unregisterForPush() {
 export function notifySpace(
   spaceId: string,
   event:
-    'added' | 'done' | 'reviewed' | 'commented' | 'todo' | 'photos' | 'liked',
+    | 'added'
+    | 'done'
+    | 'reviewed'
+    | 'commented'
+    | 'todo'
+    | 'photos'
+    | 'liked'
+    | 'wanted',
   itemIds: string[],
   extra?: {
     /** event 'todo': 체크한 할 것 id들 */

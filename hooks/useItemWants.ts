@@ -3,11 +3,15 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 
 import { noteFailure } from '@/lib/connection';
+import { notifySpace } from '@/lib/push';
 import { supabase } from '@/lib/supabase/client';
 import type { ItemWantRow } from '@/lib/supabase/database.types';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
 const EMPTY: ItemWantRow[] = [];
+
+/** 이번에 앱을 켜고 '하고 싶어요' 알림을 보낸 항목 (껐다 켰다 해도 한 번만. 서버도 12시간에 한 번만 보낸다) */
+const notified = new Set<string>();
 
 type WantsState = {
   /** 공간 → 그 공간 항목의 '하고 싶어요' */
@@ -146,6 +150,12 @@ export function useItemWants(spaceId: string | null) {
     if (error) {
       noteFailure(error);
       apply(had);
+      return;
+    }
+    // 새로 눌렀으면 같은 공간 사람들에게 알린다
+    if (!had && !notified.has(itemId)) {
+      notified.add(itemId);
+      notifySpace(spaceId, 'wanted', [itemId]);
     }
   };
 

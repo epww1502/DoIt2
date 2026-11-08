@@ -23,6 +23,7 @@ import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
+import { LinkCard } from '@/components/bucket/LinkCard';
 import { RecordAlbum } from '@/components/bucket/RecordAlbum';
 import { TodoChecklist } from '@/components/bucket/TodoChecklist';
 import { StartedCard } from '@/components/bucket/StartedCard';
@@ -325,6 +326,18 @@ export default function BucketDetailScreen() {
               메모
             </Text>
             <Text variant="body">{item.memo}</Text>
+          </View>
+        ) : null}
+
+        {/* 참고 링크 (누르면 열린다) */}
+        {item.links?.length ? (
+          <View className="gap-1.5">
+            <Text weight="600" size={13} className="text-muted-foreground">
+              링크
+            </Text>
+            {item.links.map((link) => (
+              <LinkCard key={link.url} link={link} />
+            ))}
           </View>
         ) : null}
 

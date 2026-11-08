@@ -4,6 +4,7 @@ import {
   Camera,
   CircleCheck,
   Flag,
+  HandHeart,
   Heart,
   MessageCircle,
   Plus,
@@ -36,6 +37,7 @@ const KIND_ICON: Record<InboxEntry['kind'], LucideIcon> = {
   weekend: CalendarHeart,
   photos: Camera,
   liked: Heart,
+  wanted: HandHeart,
 };
 
 /** '방금', '5분 전', '3시간 전', '어제', '10월 21일' */

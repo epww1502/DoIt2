@@ -646,6 +646,7 @@ export const useBucketStore = create<BucketState>()(
               location: renew.location,
               place: renew.place ?? null,
               memo: renew.memo,
+              links: renew.links ?? [],
               // 할 것은 체크를 풀어서
               todos: itemTodos(renew).map((t) => ({
                 ...t,

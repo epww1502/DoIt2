@@ -8,6 +8,7 @@ import { File } from 'expo-file-system';
 import {
   itemPhotos,
   itemTodos,
+  type ItemLink,
   type ItemTodo,
   type TodoOp,
   recordPhotos,
@@ -147,6 +148,7 @@ export function fromRow(
     memo: row.memo,
     photos: photosFromRow(row.photos, itemPhotos(local)),
     todos: itemTodos({ todos: (row.todos as ItemTodo[] | null) ?? [] }),
+    links: (row.links as ItemLink[] | null) ?? [],
     createdAt: row.created_at,
     createdBy: row.created_by ?? null,
     done,
@@ -185,6 +187,7 @@ function toRow(
     memo: item.memo,
     photos: photosToRow(itemPhotos(item)),
     todos: (itemTodos(item).length > 0 ? itemTodos(item) : null) as Json,
+    links: (item.links?.length ? item.links : null) as Json,
     done: toRemoteDone(item.done) as Json,
     goal: (item.goal ?? null) as Json,
     repeat: (item.repeat ?? null) as Json,

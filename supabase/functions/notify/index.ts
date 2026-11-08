@@ -13,8 +13,10 @@
 //   (평가가 막 바뀌었을 때만. 알림함에는 예전 앱도 알아보게 kind 'reviewed'로 남긴다)
 // - { spaceId, event: 'liked', itemIds: [string], photoPath: string }  사진에 하트를 누름
 //   (그 사진을 올린 사람에게만, 하트를 막 눌렀을 때만. kind 'reviewed')
+// - { spaceId, event: 'wanted', itemIds: [string] }  '하고 싶어요'를 누름
+//   (막 눌렀을 때만, 같은 사람이 같은 항목으로 12시간 안에 또 보내지 않는다. kind 'added')
 //
-// 알림함 detail: 'photos' | 'liked' (새 앱만 보고 아이콘을 고른다. 예전 앱은 kind만 본다)
+// 알림함 detail: 'photos' | 'liked' | 'wanted' (새 앱만 보고 아이콘을 고른다. 예전 앱은 kind만 본다)
 //
 // 막 바뀐 항목(최근 10분)만 알린다. 예전 항목으로 알림을 계속 보내는 걸 막으려고.
 // 받는 사람마다 notifications(알림함)에도 한 줄씩 남긴다 (푸시를 꺼둔 사람도 앱에서 볼 수 있게).
@@ -23,6 +25,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const MAX_ITEMS = 50;
 const FRESH_MS = 10 * 60 * 1000;
+/** '하고 싶어요'를 껐다 켰다 해도 알림이 계속 가지 않게 */
+const WANTED_QUIET_MS = 12 * 60 * 60 * 1000;
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 const admin = createClient(
@@ -34,7 +38,14 @@ const admin = createClient(
 type Body = {
   spaceId?: string;
   event?:
-    'added' | 'done' | 'reviewed' | 'commented' | 'todo' | 'photos' | 'liked';
+    | 'added'
+    | 'done'
+    | 'reviewed'
+    | 'commented'
+    | 'todo'
+    | 'photos'
+    | 'liked'
+    | 'wanted';
   itemIds?: string[];
   todoIds?: string[];
   /** event 'photos': 새로 올린 사진 수 */
@@ -102,6 +113,7 @@ Deno.serve(async (req) => {
       'todo',
       'photos',
       'liked',
+      'wanted',
     ].includes(event ?? '') ||
     !itemIds.length ||
     (event === 'liked' && !body.photoPath)
@@ -148,6 +160,20 @@ Deno.serve(async (req) => {
     others = [owner];
   }
 
+  // 하고 싶어요: 방금 누른 것만 (지금 몇 명인지도 같이)
+  let wantCount = 0;
+  if (event === 'wanted') {
+    const { data: wants } = await admin
+      .from('item_wants')
+      .select('user_id, created_at')
+      .eq('item_id', itemIds[0]);
+    const mine = wants?.find((w) => w.user_id === actor);
+    if (!mine || Date.now() - new Date(mine.created_at).getTime() >= FRESH_MS) {
+      return json({ sent: 0 });
+    }
+    wantCount = wants!.length;
+  }
+
   // 이 공간 항목과, 부른 사람이 남긴 평가·최근 댓글
   const [{ data: items }, { data: reviews }, { data: comments }] =
     await Promise.all([
@@ -178,7 +204,7 @@ Deno.serve(async (req) => {
   const isFresh = (at: string | undefined) =>
     !!at && Date.now() - new Date(at).getTime() < FRESH_MS;
   const fresh = (items ?? []).filter((it) =>
-    event === 'liked'
+    event === 'liked' || event === 'wanted'
       ? true
       : event === 'reviewed' || event === 'photos'
         ? isFresh(reviewOf.get(it.id)?.updated_at)
@@ -218,6 +244,11 @@ Deno.serve(async (req) => {
     message = `${name}님이 ${quote(first.title)}에 사진 ${count}장을 올렸어요 📷`;
   } else if (event === 'liked') {
     message = `${name}님이 ${quote(first.title)}에 올린 사진에 하트를 눌렀어요 ❤️`;
+  } else if (event === 'wanted') {
+    message =
+      wantCount >= 2
+        ? `${name}님도 ${quote(first.title)}을(를) 하고 싶어해요 🙌 지금 ${wantCount}명이에요`
+        : `${name}님이 ${quote(first.title)}을(를) 하고 싶어해요 🙌`;
   } else if (event === 'commented') {
     const body = commentOf.get(first.id)?.body ?? '';
     const short = body.length > 30 ? `${body.slice(0, 30)}…` : body;
@@ -232,6 +263,21 @@ Deno.serve(async (req) => {
   const title = space ? `${space.emoji} ${space.name}` : 'DoIt2';
   const itemId = fresh.length === 1 ? first.id : null;
 
+  // 하고 싶어요: 같은 사람이 같은 항목으로 얼마 전에 보냈으면 그만 (알림 문구에 이름·제목이 들어 있다)
+  if (event === 'wanted') {
+    const since = new Date(Date.now() - WANTED_QUIET_MS).toISOString();
+    const { data: recent } = await admin
+      .from('notifications')
+      .select('id, body')
+      .eq('space_id', spaceId)
+      .eq('item_id', first.id)
+      .eq('detail', 'wanted')
+      .gte('created_at', since)
+      .limit(50);
+    const who = `${name}님`;
+    if (recent?.some((n) => n.body.startsWith(who))) return json({ sent: 0 });
+  }
+
   // 알림함 (실패해도 푸시는 보낸다)
   await admin
     .from('notifications')
@@ -240,14 +286,19 @@ Deno.serve(async (req) => {
         user_id: userId,
         space_id: spaceId,
         item_id: itemId,
-        // 예전 앱은 'todo'·'photos'·'liked'를 몰라서 아는 종류로 남긴다
+        // 예전 앱은 'todo'·'photos'·'liked'·'wanted'를 몰라서 아는 종류로 남긴다
         kind:
           event === 'todo'
             ? 'done'
             : event === 'photos' || event === 'liked'
               ? 'reviewed'
-              : event,
-        detail: event === 'photos' || event === 'liked' ? event : null,
+              : event === 'wanted'
+                ? 'added'
+                : event,
+        detail:
+          event === 'photos' || event === 'liked' || event === 'wanted'
+            ? event
+            : null,
         title,
         body: message,
       }))

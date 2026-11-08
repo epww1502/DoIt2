@@ -19,7 +19,8 @@ export type InboxEntry = {
     | 'goal'
     | 'weekend'
     | 'photos'
-    | 'liked';
+    | 'liked'
+    | 'wanted';
   at: number;
   title: string;
   body: string;

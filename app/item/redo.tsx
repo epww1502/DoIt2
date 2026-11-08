@@ -33,6 +33,7 @@ function toInput(it: BucketItem): BucketInput {
     location: it.location,
     place: it.place ?? null,
     memo: it.memo,
+    links: it.links ?? [],
     // 할 것은 체크를 다 풀어서 다시 담는다
     todos: itemTodos(it).map((t) => ({ ...t, done: false })),
   };

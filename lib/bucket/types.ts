@@ -215,6 +215,8 @@ export type BucketItem = {
   photos?: RecordPhoto[];
   /** 할 것 체크리스트 (예: '용산 가기' 안의 '아이파크몰 구경', '용리단길 맛집'). 없으면 빈 목록 */
   todos?: ItemTodo[];
+  /** 참고 링크 (블로그, 가게 인스타, 영상). 없으면 빈 목록 */
+  links?: ItemLink[];
   createdAt: string;
   /** 공간 항목을 담은 사람 (서버에서 받은 항목만. '나만 보기'는 없다) */
   createdBy?: string | null;
@@ -231,6 +233,19 @@ export type BucketItem = {
   /** 시작하기를 눌러 진행 중 (해내면 시작일은 done.startDate로 옮겨 간다) */
   started?: StartedInfo | null;
 };
+
+/** 항목에 붙인 링크. 제목·사진은 붙일 때 그 페이지에서 받아 둔다 (못 받으면 없다) */
+export type ItemLink = {
+  url: string;
+  title?: string | null;
+  /** 미리보기 사진 주소 (og:image) */
+  image?: string | null;
+  /** 사이트 이름 (og:site_name) */
+  site?: string | null;
+};
+
+/** 한 항목에 붙일 수 있는 링크 수 */
+export const MAX_LINKS = 5;
 
 export type StartedInfo = {
   /** YYYY-MM-DD */
@@ -378,6 +393,7 @@ export type BucketInput = Pick<
   | 'goal'
   | 'photos'
   | 'todos'
+  | 'links'
   | 'repeat'
   | 'started'
 >;

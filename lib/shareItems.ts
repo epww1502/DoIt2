@@ -19,6 +19,7 @@ export async function shareBucketItems(items: BucketItem[], title: string) {
       location: it.location,
       place: it.place ?? null,
       memo: it.memo,
+      links: it.links ?? [],
       todos: itemTodos(it).map((t) => ({ ...t, done: false })),
     }))
   );

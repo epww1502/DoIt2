@@ -165,6 +165,7 @@ function PickItems({
         location: it.location,
         place: it.place ?? null,
         memo: it.memo,
+        links: it.links ?? [],
         // 할 것도 같이 가져오고, 체크는 풀어서 새로 시작한다
         todos: itemTodos(it).map((t) => ({
           ...t,

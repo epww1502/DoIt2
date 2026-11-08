@@ -17,6 +17,7 @@ import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { GoalField } from '@/components/bucket/GoalField';
 import { RepeatField } from '@/components/bucket/RepeatField';
 import { ItemPhotosField } from '@/components/bucket/ItemPhotosField';
+import { LinksField } from '@/components/bucket/LinksField';
 import { TodoListField } from '@/components/bucket/TodoListField';
 import { PlaceField } from '@/components/bucket/PlaceField';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
@@ -34,6 +35,7 @@ import {
   type GoalInfo,
   type RepeatInfo,
   type PlaceInfo,
+  type ItemLink,
   type ItemTodo,
   type RecordPhoto,
 } from '@/lib/bucket/types';
@@ -87,6 +89,7 @@ export default function BucketFormScreen() {
   const [location, setLocation] = useState(editing?.location ?? '');
   const [place, setPlace] = useState<PlaceInfo | null>(editing?.place ?? null);
   const [memo, setMemo] = useState(editing?.memo ?? '');
+  const [links, setLinks] = useState<ItemLink[]>(editing?.links ?? []);
   // 목표 날짜 (선택). 스위치를 켜야 보인다
   const [goal, setGoal] = useState<GoalInfo | null>(editing?.goal ?? null);
   const [repeat, setRepeat] = useState<RepeatInfo | null>(
@@ -178,6 +181,7 @@ export default function BucketFormScreen() {
       location: location.trim(),
       place,
       memo: memo.trim(),
+      links,
       goal,
       repeat,
       photos,
@@ -291,12 +295,18 @@ export default function BucketFormScreen() {
               placeholder={
                 kind === 'place'
                   ? '예약 필수, 웨이팅 김, 크림 파스타가 유명함'
-                  : '준비물, 참고할 영상 링크, 하고 싶은 이유'
+                  : '준비물, 하고 싶은 이유'
               }
               maxLength={300}
               onFocus={ensureFocusedVisible}
             />
           </View>
+
+          <LinksField
+            links={links}
+            setLinks={setLinks}
+            onFocus={ensureFocusedVisible}
+          />
 
           <GoalField value={goal} onChange={setGoal} />
 
