@@ -46,6 +46,10 @@ export function RecordAlbum({ item }: { item: BucketItem }) {
         // 칩을 바꾸면 첫 장부터
         key={String(current)}
         photos={photos}
+        caption={(i) => {
+          const by = photos[i]?.by ?? null;
+          return by === null ? null : `${member(by).name}의 사진`;
+        }}
         overlay={(i) => {
           const by = photos[i]?.by ?? null;
           if (by === null) return null;

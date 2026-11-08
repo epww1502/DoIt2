@@ -19,12 +19,13 @@ import {
 import { noteFailure } from '@/lib/connection';
 import { cn } from '@/lib/utils';
 import { getPhotoUrl } from '@/lib/supabase/bucketRemote';
+import { openPhotoViewer } from '@/store/usePhotoViewerStore';
 
 /** 저장소 경로 → 임시 링크 (앱이 켜져 있는 동안 다시 쓰고, 50분 뒤 새로 받는다) */
 const urlCache = new Map<string, { url: string; expiresAt: number }>();
 const CACHE_MS = 50 * 60 * 1000;
 
-async function loadPhotoUrl(path: string) {
+export async function loadPhotoUrl(path: string) {
   const cached = urlCache.get(path);
   if (cached && cached.expiresAt > Date.now()) return cached.url;
   const url = await getPhotoUrl(path);
@@ -117,15 +118,18 @@ export function DonePhotoGallery({ done }: Pick<DonePhotoProps, 'done'>) {
 }
 
 /**
- * 사진 목록을 옆으로 넘겨 본다. overlay: 지금 보고 있는 사진 위(왼쪽 위)에 덧그릴 것
- * (누가 올린 사진인지 등)
+ * 사진 목록을 옆으로 넘겨 본다. 누르면 크게 보기.
+ * overlay: 지금 보고 있는 사진 위(왼쪽 위)에 덧그릴 것 (누가 올린 사진인지 등)
+ * caption: 크게 보기 화면 위에 보여줄 글
  */
 export function PhotoGallery({
   photos,
   overlay,
+  caption,
 }: {
   photos: RecordPhoto[];
   overlay?: (index: number) => ReactNode;
+  caption?: (index: number) => string | null;
 }) {
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
@@ -134,10 +138,17 @@ export function PhotoGallery({
   const badge = overlay ? (
     <View className="absolute left-3 top-3">{overlay(shown)}</View>
   ) : null;
+  const open = (i: number) =>
+    openPhotoViewer(
+      photos.map((p, j) => ({ ...p, caption: caption?.(j) ?? null })),
+      i
+    );
   if (photos.length === 1) {
     return (
       <View>
-        <PhotoImage photo={photos[0]} />
+        <ZoomTap onPress={() => open(0)}>
+          <PhotoImage photo={photos[0]} />
+        </ZoomTap>
         {badge}
       </View>
     );
@@ -158,11 +169,9 @@ export function PhotoGallery({
         onMomentumScrollEnd={onScrollEnd}
       >
         {photos.map((photo, i) => (
-          <PhotoImage
-            key={photo.path ?? photo.uri ?? i}
-            photo={photo}
-            style={{ width: width || 1 }}
-          />
+          <ZoomTap key={photo.path ?? photo.uri ?? i} onPress={() => open(i)}>
+            <PhotoImage photo={photo} style={{ width: width || 1 }} />
+          </ZoomTap>
         ))}
       </ScrollView>
       {badge}
@@ -178,6 +187,25 @@ export function PhotoGallery({
         ))}
       </View>
     </View>
+  );
+}
+
+/** 누르면 사진 크게 보기 */
+function ZoomTap({
+  onPress,
+  children,
+}: {
+  onPress: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="imagebutton"
+      accessibilityLabel="사진 크게 보기"
+      onPress={onPress}
+    >
+      {children}
+    </Pressable>
   );
 }
 

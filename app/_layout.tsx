@@ -128,6 +128,10 @@ function RootLayoutInner() {
             name="share/[id]"
             options={{ animation: 'slide_from_bottom' }}
           />
+          <Stack.Screen
+            name="photo"
+            options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+          />
           <Stack.Screen name="profile" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="account/restore" />
