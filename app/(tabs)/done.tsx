@@ -46,6 +46,7 @@ import { cn } from '@/lib/utils';
 import { recapYear } from '@/lib/bucket/yearRecap';
 import { countSpots } from '@/components/bucket/ItemsMap';
 import { albumPhotos } from '@/lib/bucket/album';
+import { MemoryStrip } from '@/components/bucket/MemoryStrip';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useSpace } from '@/store/useSpaceStore';
 import { shareBucketItems } from '@/lib/shareItems';
@@ -275,6 +276,10 @@ export default function DoneScreen() {
                   </Text>
                 </Pressable>
               </View>
+            ) : null}
+            {/* 1년 전 오늘 같은 추억 한 줄 (여러 개 고를 땐 숨긴다) */}
+            {!selection.selecting ? (
+              <MemoryStrip items={items} spaceId={spaceId} />
             ) : null}
             {/* 올해의 우리 돌아보기 (여러 개 고를 땐 숨긴다) */}
             {!selection.selecting && recap ? (

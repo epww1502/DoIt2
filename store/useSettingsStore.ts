@@ -47,6 +47,9 @@ type SettingsState = {
   /** 같은 공간 사람이 담거나 기록하면 알림 받기 */
   pushEnabled: boolean;
   setPushEnabled: (value: boolean) => void;
+  /** 일지 맨 위 추억을 '오늘은 그만 보기'로 숨긴 날 (YYYY-MM-DD) */
+  memoryHiddenOn: string | null;
+  setMemoryHiddenOn: (value: string | null) => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -74,6 +77,8 @@ export const useSettingsStore = create<SettingsState>()(
       setWeekendReminder: (weekendReminder) => set({ weekendReminder }),
       pushEnabled: true,
       setPushEnabled: (pushEnabled) => set({ pushEnabled }),
+      memoryHiddenOn: null,
+      setMemoryHiddenOn: (memoryHiddenOn) => set({ memoryHiddenOn }),
     }),
     {
       name: 'doit2-settings',
@@ -91,6 +96,7 @@ export const useSettingsStore = create<SettingsState>()(
         bucketSort: state.bucketSort,
         weekendReminder: state.weekendReminder,
         pushEnabled: state.pushEnabled,
+        memoryHiddenOn: state.memoryHiddenOn,
       }),
     }
   )
