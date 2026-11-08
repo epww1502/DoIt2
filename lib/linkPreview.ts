@@ -5,18 +5,21 @@
 import type { ItemLink } from '@/lib/bucket/types';
 import { supabase } from '@/lib/supabase/client';
 
-type Preview = Pick<ItemLink, 'title' | 'image' | 'site'>;
+type Preview = Pick<ItemLink, 'title' | 'image' | 'site'> & {
+  /** 짧은 링크를 따라간 마지막 주소 (예전 서버는 없다) */
+  finalUrl?: string | null;
+};
 
 /** 못 받으면 빈 미리보기 (링크는 그대로 쓸 수 있다) */
 export async function fetchLinkPreview(url: string): Promise<Preview> {
-  const { data, error } = await supabase.functions.invoke<Preview>(
-    'link-preview',
-    { body: { url } }
-  );
+  const { data, error } = await supabase.functions.invoke<
+    Omit<Preview, 'finalUrl'> & { url?: string | null }
+  >('link-preview', { body: { url } });
   if (error || !data) return {};
   return {
     title: data.title ?? null,
     image: data.image ?? null,
     site: data.site ?? null,
+    finalUrl: data.url ?? null,
   };
 }

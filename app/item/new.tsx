@@ -28,6 +28,7 @@ import {
   itemPhotos,
   itemTodos,
   KIND_META,
+  MAX_LINKS,
   SETTING_META,
   type BucketKind,
   type BucketSetting,
@@ -44,6 +45,15 @@ import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
 import { ensureReminderPermission } from '@/lib/reminders';
+import { showAlert } from '@/lib/dialog';
+import { searchKakaoPlaces } from '@/lib/kakao';
+import { fetchLinkPreview } from '@/lib/linkPreview';
+import {
+  MAP_APP_LABEL,
+  nameFromPage,
+  parseMapShare,
+  pickSharedPlace,
+} from '@/lib/bucket/mapShare';
 
 const KIND_OPTIONS: SegmentedOption<BucketKind>[] = [
   {
@@ -148,6 +158,80 @@ export default function BucketFormScreen() {
     });
   };
 
+  // 지도 앱 공유 글에서 장소를 찾는 중
+  const [findingPlace, setFindingPlace] = useState(false);
+
+  /**
+   * 네이버지도·카카오맵에서 '공유'로 복사한 글이면 링크·이름·주소를 넣고
+   * 카카오 장소 검색으로 정확한 장소(지도 핀)까지 채운다. 지도 링크가 아니면 false.
+   * 이미 적어 둔 이름·장소는 덮어쓰지 않는다.
+   */
+  const fillFromMapShare = (text: string) => {
+    const share = parseMapShare(text);
+    if (!share) return false;
+    const fillTitle = (name: string) =>
+      setTitle((prev) => (prev.trim() ? prev : name.slice(0, 40)));
+    setLinks((prev) =>
+      prev.some((l) => l.url === share.url) || prev.length >= MAX_LINKS
+        ? prev
+        : [
+            ...prev,
+            {
+              url: share.url,
+              title: share.name,
+              site: MAP_APP_LABEL[share.app],
+            },
+          ]
+    );
+    if (share.name) fillTitle(share.name);
+    if (share.address && !place) {
+      setLocation((prev) => (prev.trim() ? prev : share.address!));
+    }
+    if (place) return true;
+
+    setFindingPlace(true);
+    void (async () => {
+      try {
+        let name = share.name;
+        // 링크만 붙였으면 링크를 열어 이름을 찾는다
+        if (!name) {
+          const preview = await fetchLinkPreview(share.url);
+          name = nameFromPage(preview.finalUrl, preview.title);
+          if (name) {
+            const found = name;
+            fillTitle(found);
+            setLinks((prev) =>
+              prev.map((l) =>
+                l.url === share.url ? { ...l, title: found } : l
+              )
+            );
+          }
+        }
+        if (!name) {
+          showAlert(
+            '장소 이름을 찾지 못했어요',
+            '링크는 넣어 뒀어요. 장소는 검색해서 골라 주세요'
+          );
+          return;
+        }
+        const picked = pickSharedPlace(
+          await searchKakaoPlaces(name.slice(0, 50)),
+          name,
+          share.address
+        );
+        if (!picked) return;
+        setPlace(picked);
+        setLocation(picked.address);
+        fillTitle(picked.name);
+      } catch {
+        // 장소 검색이 안 되면 이름·주소·링크만 남긴다
+      } finally {
+        setFindingPlace(false);
+      }
+    })();
+    return true;
+  };
+
   const clearPlace = () => {
     setPlace(null);
     setLocation('');
@@ -227,13 +311,28 @@ export default function BucketFormScreen() {
             <FieldLabel>{meta.question}</FieldLabel>
             <TextField
               value={title}
-              onChangeText={setTitle}
+              onChangeText={(next) => {
+                // 지도 앱 공유 글을 붙여넣었으면 (한 번에 여러 글자) 이름·장소·링크를 채운다
+                if (next.length - title.length > 5 && fillFromMapShare(next)) {
+                  return;
+                }
+                setTitle(next.slice(0, 40));
+              }}
               placeholder={meta.placeholder}
               autoFocus={!editing}
               returnKeyType="next"
-              maxLength={40}
               onFocus={ensureFocusedVisible}
             />
+            {findingPlace ? (
+              <Text variant="muted" size={12} className="mt-2">
+                지도 링크에서 장소를 찾고 있어요…
+              </Text>
+            ) : !editing && !title ? (
+              <Text variant="muted" size={12} className="mt-2">
+                네이버지도·카카오맵에서 &apos;공유 → 복사&apos;한 걸 붙여넣으면
+                장소까지 채워져요
+              </Text>
+            ) : null}
           </View>
 
           <TodoListField
@@ -306,6 +405,7 @@ export default function BucketFormScreen() {
             links={links}
             setLinks={setLinks}
             onFocus={ensureFocusedVisible}
+            onMapShare={fillFromMapShare}
           />
 
           <GoalField value={goal} onChange={setGoal} />

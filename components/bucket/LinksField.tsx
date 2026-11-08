@@ -16,13 +16,20 @@ type LinksFieldProps = {
   links: ItemLink[];
   setLinks: Dispatch<SetStateAction<ItemLink[]>>;
   onFocus?: () => void;
+  /** 네이버지도·카카오맵 공유 글이면 받아서 처리하고 true (그러면 여기서는 넣지 않는다) */
+  onMapShare?: (text: string) => boolean;
 };
 
 /**
  * 담기·수정 화면의 '링크' 칸. 주소를 붙여넣고 '추가'를 누르면
  * 바로 목록에 들어가고, 제목·사진은 뒤에서 받아 와 채운다.
  */
-export function LinksField({ links, setLinks, onFocus }: LinksFieldProps) {
+export function LinksField({
+  links,
+  setLinks,
+  onFocus,
+  onMapShare,
+}: LinksFieldProps) {
   const [text, setText] = useState('');
   // 제목·사진을 받아 오는 중인 링크
   const [loading, setLoading] = useState<string[]>([]);
@@ -30,6 +37,11 @@ export function LinksField({ links, setLinks, onFocus }: LinksFieldProps) {
   const hasText = text.trim().length > 0;
 
   const add = () => {
+    // 지도 앱 링크면 담기 화면이 장소까지 채운다
+    if (onMapShare?.(text)) {
+      setText('');
+      return;
+    }
     const url = normalizeUrl(text);
     if (!url) {
       showAlert(
@@ -43,9 +55,9 @@ export function LinksField({ links, setLinks, onFocus }: LinksFieldProps) {
     setLinks((prev) => [...prev, { url }]);
     setLoading((prev) => [...prev, url]);
     void fetchLinkPreview(url)
-      .then((preview) =>
+      .then(({ title, image, site }) =>
         setLinks((prev) =>
-          prev.map((l) => (l.url === url ? { ...l, ...preview } : l))
+          prev.map((l) => (l.url === url ? { ...l, title, image, site } : l))
         )
       )
       .catch(() => {})

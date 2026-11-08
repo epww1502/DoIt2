@@ -2,7 +2,8 @@
 // 로그인한 앱만 부른다 (verify_jwt). 배포된 버전과 같은 코드다.
 // 바꾸면 Supabase MCP deploy_edge_function 또는 supabase CLI로 다시 배포한다.
 //
-// 요청 본문: { url: string } → { title, image, site } (못 찾은 건 null)
+// 요청 본문: { url: string } → { title, image, site, url } (못 찾은 건 null)
+// url: 짧은 링크(naver.me 등)를 따라간 마지막 주소
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 const TIMEOUT_MS = 6000;
@@ -149,22 +150,28 @@ Deno.serve(async (req: Request) => {
       },
     });
   } catch {
-    return json({ title: null, image: null, site: null });
+    return json({ title: null, image: null, site: null, url: null });
   }
   const finalUrl = new URL(res.url || url.toString());
   const contentType = res.headers.get('content-type') ?? '';
-  if (!res.ok || isPrivateHost(finalUrl.hostname)) {
+  if (isPrivateHost(finalUrl.hostname)) {
     void res.body?.cancel().catch(() => {});
-    return json({ title: null, image: null, site: null });
+    return json({ title: null, image: null, site: null, url: null });
+  }
+  const at = finalUrl.toString().slice(0, MAX_URL_LENGTH);
+  // 막혀도(429 등) 따라간 주소는 쓸모 있다 (지도 링크의 검색어)
+  if (!res.ok) {
+    void res.body?.cancel().catch(() => {});
+    return json({ title: null, image: null, site: null, url: at });
   }
   // 사진 링크면 그 사진을 그대로 미리보기로
   if (contentType.startsWith('image/')) {
     void res.body?.cancel().catch(() => {});
-    return json({ title: null, image: finalUrl.toString(), site: null });
+    return json({ title: null, image: at, site: null, url: at });
   }
   if (!contentType.includes('html')) {
     void res.body?.cancel().catch(() => {});
-    return json({ title: null, image: null, site: null });
+    return json({ title: null, image: null, site: null, url: at });
   }
 
   const html = decode(await readHead(res), contentType);
@@ -197,5 +204,5 @@ Deno.serve(async (req: Request) => {
       image = null;
     }
   }
-  return json({ title, image, site });
+  return json({ title, image, site, url: at });
 });
