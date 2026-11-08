@@ -261,6 +261,7 @@ export type Database = {
         Row: {
           created_at: string;
           item_id: string;
+          photos: Json | null;
           rating: number | null;
           review: string;
           space_id: string;
@@ -270,6 +271,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           item_id: string;
+          photos?: Json | null;
           rating?: number | null;
           review?: string;
           space_id: string;
@@ -279,6 +281,7 @@ export type Database = {
         Update: {
           created_at?: string;
           item_id?: string;
+          photos?: Json | null;
           rating?: number | null;
           review?: string;
           space_id?: string;

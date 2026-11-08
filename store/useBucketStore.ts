@@ -28,7 +28,7 @@ import {
 } from '@/lib/connection';
 import { notifySpace } from '@/lib/push';
 import * as remote from '@/lib/supabase/bucketRemote';
-import { myReview } from '@/lib/bucket/reviews';
+import { myReview, reviewPhotos } from '@/lib/bucket/reviews';
 import type {
   BucketItemRow,
   ItemReviewRow,
@@ -81,15 +81,22 @@ type BucketState = {
   addTodo: (itemId: string, text: string) => void;
   /** 여러 개를 한 번에 지운다 (사진도 같이) */
   removeItems: (ids: string[]) => void;
-  /** 사진이 새로 바뀌었으면 서버에 올린 뒤 저장한다 */
-  recordDone: (id: string, record: DoneRecord) => Promise<void>;
+  /**
+   * 사진이 새로 바뀌었으면 서버에 올린 뒤 저장한다.
+   * 공간: record의 사진은 기록에 함께 붙은 예전 사진, myPhotos는 내가 올린 사진 (내 평가에 붙는다)
+   */
+  recordDone: (
+    id: string,
+    record: DoneRecord,
+    myPhotos?: RecordPhoto[]
+  ) => Promise<void>;
   /**
    * 공간: 내 평가만 따로 남기거나 건너뛴다 (rating null이면 건너뜀).
    * 다른 사람이 먼저 기록한 항목에서 쓴다. 날짜·사진은 그대로 둔다
    */
   saveMyReview: (
     id: string,
-    review: { rating: number | null; review: string }
+    review: { rating: number | null; review: string; photos?: RecordPhoto[] }
   ) => void;
   /**
    * 해낸 기록을 지운다. '나만 보기'는 버킷리스트로 돌린다.
@@ -397,8 +404,22 @@ export const useBucketStore = create<BucketState>()(
             outbox.settle([entry]);
             continue;
           }
-          const mine = myReview(item, userId);
+          let mine = myReview(item, userId);
           try {
+            // 오프라인일 때 고른 내 사진을 지금 올린다. 인터넷 문제로 못 올리면 다음에 다시
+            if (mine) {
+              const photos = reviewPhotos(mine);
+              const uploaded = await uploadPhotos(photos, spaceId, true);
+              if (uploaded !== photos) {
+                mine = { ...mine, photos: uploaded };
+                patchIn(spaceId, {
+                  ...item,
+                  reviews: (item.reviews ?? []).map((r) =>
+                    r.userId === userId ? mine! : r
+                  ),
+                });
+              }
+            }
             if (mine) {
               await remote.upsertReview(item.id, spaceId, userId, mine);
             } else {
@@ -421,7 +442,7 @@ export const useBucketStore = create<BucketState>()(
       /** 공간 항목의 내 평가를 바꾸고(null이면 지우기) 서버와 맞추라고 적어둔다 */
       const setMine = (
         id: string,
-        review: Pick<ItemReview, 'rating' | 'review'> | null,
+        review: Pick<ItemReview, 'rating' | 'review' | 'photos'> | null,
         notify?: 'done' | 'reviewed'
       ) => {
         const { spaceId } = get();
@@ -429,9 +450,14 @@ export const useBucketStore = create<BucketState>()(
         if (!spaceId || !userId) return;
         const target = findItem(id);
         if (!target) return;
+        const prevMine = myReview(target, userId);
         const others = (target.reviews ?? []).filter(
           (r) => r.userId !== userId
         );
+        // 사진을 따로 안 넘기면 내 사진은 그대로 둔다
+        const photos = review ? (review.photos ?? reviewPhotos(prevMine)) : [];
+        // 빠진 내 사진은 휴대폰·서버에서 지운다
+        deletePhotos(removedPhotos(reviewPhotos(prevMine), photos), spaceId);
         const reviews = review
           ? [
               ...others,
@@ -440,6 +466,9 @@ export const useBucketStore = create<BucketState>()(
                 rating: review.rating,
                 review: review.review,
                 updatedAt: new Date().toISOString(),
+                // 처음 남긴 시각 (사진 순서·대표 사진이 고쳐도 안 바뀌게)
+                createdAt: prevMine?.createdAt ?? new Date().toISOString(),
+                photos,
               },
             ]
           : others;
@@ -538,6 +567,9 @@ export const useBucketStore = create<BucketState>()(
           for (const t of targets) {
             deleteRecordPhotos(t.done, spaceId);
             deletePhotos(itemPhotos(t), spaceId);
+            // 사람마다 올린 기록 사진도 (항목이 지워지면 평가도 같이 지워진다)
+            for (const r of t.reviews ?? [])
+              deletePhotos(reviewPhotos(r), spaceId);
           }
           set({ items: get().items.filter((it) => !idSet.has(it.id)) });
 
@@ -546,7 +578,7 @@ export const useBucketStore = create<BucketState>()(
           flushSoon();
         },
 
-        recordDone: async (id, record) => {
+        recordDone: async (id, record, myPhotos) => {
           const target = findItem(id);
           if (!target) return;
           const prev = target.done;
@@ -569,8 +601,13 @@ export const useBucketStore = create<BucketState>()(
               ? ((await withUploadedPhoto(dated, spaceId)) ?? dated)
               : dated;
 
-          // 빠진 예전 사진 정리
-          const nextPhotos = recordPhotos(next);
+          // 빠진 예전 사진 정리. 사람별 사진(평가)에 있는 것은 지우지 않는다
+          // (예전 앱이 옮긴 사진을 기록에 다시 올려 둔 경우)
+          const nextPhotos = [
+            ...recordPhotos(next),
+            ...(target.reviews ?? []).flatMap(reviewPhotos),
+            ...(myPhotos ?? []),
+          ];
           const keptUris = new Set(nextPhotos.map((p) => p.uri));
           const keptPaths = new Set(nextPhotos.map((p) => p.path));
           const removedPaths: string[] = [];
@@ -628,7 +665,11 @@ export const useBucketStore = create<BucketState>()(
             );
             setMine(
               id,
-              { rating: record.rating, review: record.review },
+              {
+                rating: record.rating,
+                review: record.review,
+                photos: myPhotos,
+              },
               !prev ? 'done' : hadMine ? undefined : 'reviewed'
             );
           }
@@ -738,22 +779,30 @@ export const useBucketStore = create<BucketState>()(
             current === null ? items : (cache[LOCAL_KEY] ?? []);
           if (localItems.length === 0) return;
 
+          const userId = useSpaceStore.getState().userId;
           const uploaded: BucketItem[] = [];
+          // 기록 사진은 공간에서 내 사진(내 평가)이 된다
+          const myPhotos = new Map<string, RecordPhoto[]>();
           for (const it of localItems) {
-            uploaded.push({
+            const next = {
               ...(await withUploadedItem(it, spaceId)),
               id: remote.ensureUuid(it.id),
-            });
+            };
+            if (userId && next.done) {
+              myPhotos.set(next.id, recordPhotos(next.done));
+              next.done = withRecordPhotos(next.done, []);
+            }
+            uploaded.push(next);
           }
           await remote.upsertItems(uploaded, spaceId);
           // 해낸 기록의 별점·소감은 공간에서 내 평가가 된다
-          const userId = useSpaceStore.getState().userId;
           if (userId) {
             for (const it of uploaded) {
               if (!it.done) continue;
               await remote.upsertReview(it.id, spaceId, userId, {
                 rating: it.done.rating,
                 review: it.done.review,
+                photos: myPhotos.get(it.id) ?? [],
               });
             }
           }
@@ -885,7 +934,10 @@ export const useBucketStore = create<BucketState>()(
           }
           const target = findItem(row.item_id);
           if (!target) return;
-          const review = remote.reviewFromRow(row);
+          const review = remote.reviewFromRow(
+            row,
+            myReview(target, row.user_id)
+          );
           replaceItem(row.item_id, {
             ...target,
             reviews: [

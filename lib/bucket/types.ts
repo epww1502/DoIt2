@@ -112,8 +112,11 @@ export type DoneRecord = {
 /** 기록 사진 한 장. uri: 이 휴대폰 파일(내가 올린 사진), path: 서버 경로 */
 export type RecordPhoto = { uri: string | null; path: string | null };
 
-/** 기록 하나에 넣을 수 있는 사진 수 */
+/** 기록 하나에 넣을 수 있는 사진 수 ('나만 보기'). 공간에서는 한 사람이 넣을 수 있는 수 */
 export const MAX_RECORD_PHOTOS = 5;
+
+/** 공간: 기록 하나에 모두 합쳐 넣을 수 있는 사진 수 (사람이 많아도 용량이 너무 커지지 않게) */
+export const MAX_SHARED_RECORD_PHOTOS = 15;
 
 /** 버킷리스트 항목 하나에 넣을 수 있는 사진 수 */
 export const MAX_ITEM_PHOTOS = 3;
@@ -355,6 +358,10 @@ export type ItemReview = {
   rating: number | null;
   review: string;
   updatedAt: string;
+  /** 처음 남긴 시각. 예전에 폰에 저장된 평가에는 없다 */
+  createdAt?: string;
+  /** 이 사람이 올린 기록 사진 (최대 MAX_RECORD_PHOTOS). 없으면 빈 목록이나 없음 */
+  photos?: RecordPhoto[];
 };
 
 export type BucketInput = Pick<

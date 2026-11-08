@@ -47,7 +47,7 @@ export async function pickPhotos(limit: number): Promise<string[]> {
 
 /** 고른 사진을 줄여서 앱 문서 폴더로 복사하고 그 uri를 돌려준다 */
 async function saveAsset(asset: ImagePicker.ImagePickerAsset) {
-  // 저장 공간·데이터를 아끼려고 긴 쪽 1280px, JPEG 0.7로 줄인다 (장당 수 MB → 200~300KB)
+  // 저장 공간·데이터를 아끼려고 긴 쪽 1080px, JPEG 0.7로 줄인다 (장당 수 MB → 100KB 안팎)
   const resized = await shrinkPhoto(asset.uri, asset.width, asset.height);
 
   const folder = new Directory(Paths.document, PHOTO_DIR);
@@ -63,7 +63,7 @@ async function saveAsset(asset: ImagePicker.ImagePickerAsset) {
 }
 
 /** 사진 긴 쪽 최대 길이(px)와 JPEG 압축률 */
-const MAX_PHOTO_SIDE = 1280;
+const MAX_PHOTO_SIDE = 1080;
 const PHOTO_COMPRESS = 0.7;
 
 /** 긴 쪽이 MAX_PHOTO_SIDE를 넘으면 줄이고, JPEG로 압축한 임시 파일 uri */

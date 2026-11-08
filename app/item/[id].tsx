@@ -20,6 +20,7 @@ import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
+import { RecordAlbum } from '@/components/bucket/RecordAlbum';
 import { TodoChecklist } from '@/components/bucket/TodoChecklist';
 import { StartedCard } from '@/components/bucket/StartedCard';
 import { EmptyState } from '@/components/bucket/EmptyState';
@@ -317,7 +318,11 @@ export default function BucketDetailScreen() {
               {together ? '우리의 기록' : '나의 기록'}
             </Text>
             <View className="overflow-hidden rounded-2xl border border-border bg-card">
-              <DonePhotoGallery done={done} />
+              {inSpace ? (
+                <RecordAlbum item={item} />
+              ) : (
+                <DonePhotoGallery done={done} />
+              )}
               <View className="gap-2 p-4">
                 <View className="flex-row items-center justify-between">
                   <Text weight="600" className="flex-shrink">

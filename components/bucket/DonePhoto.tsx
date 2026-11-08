@@ -1,6 +1,6 @@
 import { Image, type ImageStyle } from 'expo-image';
 import { ImageOff, Images } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -113,11 +113,35 @@ export function DonePhoto({ done, style }: DonePhotoProps) {
 
 /** 사진 여러 장을 옆으로 넘겨 본다 (아래에 점으로 몇 번째인지) */
 export function DonePhotoGallery({ done }: Pick<DonePhotoProps, 'done'>) {
-  const photos = recordPhotos(done);
+  return <PhotoGallery photos={recordPhotos(done)} />;
+}
+
+/**
+ * 사진 목록을 옆으로 넘겨 본다. overlay: 지금 보고 있는 사진 위(왼쪽 위)에 덧그릴 것
+ * (누가 올린 사진인지 등)
+ */
+export function PhotoGallery({
+  photos,
+  overlay,
+}: {
+  photos: RecordPhoto[];
+  overlay?: (index: number) => ReactNode;
+}) {
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
   if (photos.length === 0) return null;
-  if (photos.length === 1) return <PhotoImage photo={photos[0]} />;
+  const shown = Math.min(index, photos.length - 1);
+  const badge = overlay ? (
+    <View className="absolute left-3 top-3">{overlay(shown)}</View>
+  ) : null;
+  if (photos.length === 1) {
+    return (
+      <View>
+        <PhotoImage photo={photos[0]} />
+        {badge}
+      </View>
+    );
+  }
 
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (width > 0) {
@@ -141,13 +165,14 @@ export function DonePhotoGallery({ done }: Pick<DonePhotoProps, 'done'>) {
           />
         ))}
       </ScrollView>
+      {badge}
       <View className="absolute bottom-3 left-0 right-0 flex-row justify-center gap-1.5">
         {photos.map((photo, i) => (
           <View
             key={photo.path ?? photo.uri ?? i}
             className={cn(
               'h-1.5 rounded-full',
-              i === index ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
+              i === shown ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
             )}
           />
         ))}

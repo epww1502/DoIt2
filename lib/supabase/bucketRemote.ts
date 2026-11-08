@@ -89,12 +89,18 @@ export type ItemRowWithReviews = BucketItemRow & {
   item_comments?: { count: number }[];
 };
 
-export function reviewFromRow(row: ItemReviewRow): ItemReview {
+/** 서버 평가 행 → 앱 평가. local: 이 폰에 있던 같은 사람 평가 (같은 사진 파일을 그대로 쓴다) */
+export function reviewFromRow(
+  row: ItemReviewRow,
+  local?: ItemReview | null
+): ItemReview {
   return {
     userId: row.user_id,
     rating: row.rating,
     review: row.review,
     updatedAt: row.updated_at,
+    createdAt: row.created_at,
+    photos: photosFromRow(row.photos, local?.photos ?? []),
   };
 }
 
@@ -146,7 +152,12 @@ export function fromRow(
     repeat: (row.repeat as RepeatInfo | null) ?? null,
     started: (row.started as StartedInfo | null) ?? null,
     reviews: row.item_reviews
-      ? row.item_reviews.map(reviewFromRow)
+      ? row.item_reviews.map((r) =>
+          reviewFromRow(
+            r,
+            local?.reviews?.find((l) => l.userId === r.user_id)
+          )
+        )
       : (local?.reviews ?? []),
     commentCount: row.item_comments
       ? (row.item_comments[0]?.count ?? 0)
@@ -237,12 +248,12 @@ export async function applyTodoOps(itemId: string, ops: TodoOp[]) {
   if (error) throw error;
 }
 
-/** 내 평가 저장 (rating null: 건너뜀) */
+/** 내 평가 저장 (rating null: 건너뜀). 사진은 서버에 올라간 것만 보낸다 */
 export async function upsertReview(
   itemId: string,
   spaceId: string,
   userId: string,
-  review: Pick<ItemReview, 'rating' | 'review'>
+  review: Pick<ItemReview, 'rating' | 'review' | 'photos'>
 ) {
   const { error } = await supabase.from('item_reviews').upsert({
     item_id: itemId,
@@ -251,6 +262,7 @@ export async function upsertReview(
     user_id: userId,
     rating: review.rating,
     review: review.review,
+    photos: photosToRow(review.photos ?? []),
   });
   if (error) throw error;
 }

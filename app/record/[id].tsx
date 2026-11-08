@@ -31,6 +31,7 @@ import {
   dayCount,
   KIND_META,
   MAX_RECORD_PHOTOS,
+  MAX_SHARED_RECORD_PHOTOS,
   recordPhotos,
   withRecordPhotos,
   type PlaceInfo,
@@ -40,7 +41,14 @@ import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 import { useMemberLookup } from '@/store/useMembersStore';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
-import { myReview, visibleReviews } from '@/lib/bucket/reviews';
+import {
+  allRecordPhotos,
+  myReview,
+  reviewPhotos,
+  sharedRecordPhotos,
+  visibleReviews,
+  type AuthoredPhoto,
+} from '@/lib/bucket/reviews';
 import { showErrorAlert } from '@/lib/errors';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
 
@@ -82,8 +90,9 @@ export default function RecordFormScreen() {
     (inSpace ? mine?.review : saved?.review) ?? ''
   );
   // 사진들. uri: 이 휴대폰의 사진 파일, path: 서버에 올라간 사진 (상대가 올린 사진이면 path만 있다)
+  // 공간에서는 내가 올린 사진만 (다른 사람 사진은 아래에서 보기만)
   const [photos, setPhotos] = useState<RecordPhoto[]>(() =>
-    recordPhotos(saved)
+    inSpace ? reviewPhotos(mine) : recordPhotos(saved)
   );
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -142,15 +151,33 @@ export default function RecordFormScreen() {
       on ? dayjs(date).subtract(1, 'day').format(DATE_FORMAT) : null
     );
 
+  // 공간: 다른 사람(과 예전 기록에 함께 붙어 있던) 사진. 모두 합쳐 15장까지
+  const otherPhotos: AuthoredPhoto[] = inSpace
+    ? allRecordPhotos(item).filter((p) => p.by !== reviewCtx.userId)
+    : [];
+  const photoLimit = inSpace
+    ? Math.max(
+        0,
+        Math.min(
+          MAX_RECORD_PHOTOS,
+          MAX_SHARED_RECORD_PHOTOS - otherPhotos.length
+        )
+      )
+    : MAX_RECORD_PHOTOS;
+  // 다른 사람 사진이 많아서 내 몫이 5장보다 적어졌다
+  const sharedFull = inSpace && photoLimit < MAX_RECORD_PHOTOS;
+
   /** 이번 화면에서 새로 고른 사진이면 지운다 (저장된 사진은 저장할 때 정리) */
-  const savedUris = new Set(recordPhotos(saved).map((p) => p.uri));
+  const savedUris = new Set(
+    (inSpace ? reviewPhotos(mine) : recordPhotos(saved)).map((p) => p.uri)
+  );
   const discardNewPhoto = (uri: string | null) => {
     if (uri && !savedUris.has(uri)) deletePhoto(uri);
   };
 
   const addPhotos = async () => {
     try {
-      const uris = await pickPhotos(MAX_RECORD_PHOTOS - photos.length);
+      const uris = await pickPhotos(photoLimit - photos.length);
       if (uris.length === 0) return;
       // 새 사진은 아직 서버 경로가 없다 (저장할 때 올린다)
       setPhotos((prev) => [
@@ -191,19 +218,23 @@ export default function RecordFormScreen() {
       if (place !== item.place || nextLocation !== item.location) {
         updateItem(item.id, { place, location: nextLocation });
       }
-      await recordDone(
-        item.id,
-        withRecordPhotos(
-          {
-            date,
-            startDate,
-            rating,
-            review: review.trim(),
-            photoUri: null,
-          },
+      const record = {
+        date,
+        startDate,
+        rating,
+        review: review.trim(),
+        photoUri: null,
+      };
+      if (inSpace) {
+        // 기록에는 예전에 함께 붙어 있던 사진만 남기고, 내 사진은 내 평가에
+        await recordDone(
+          item.id,
+          withRecordPhotos(record, sharedRecordPhotos(item)),
           photos
-        )
-      );
+        );
+      } else {
+        await recordDone(item.id, withRecordPhotos(record, photos));
+      }
       router.back();
     } catch (e) {
       showErrorAlert('저장하지 못했어요', e, save);
@@ -431,7 +462,9 @@ export default function RecordFormScreen() {
           </View>
 
           <View>
-            <FieldLabel>{`사진 (선택, ${photos.length}/${MAX_RECORD_PHOTOS})`}</FieldLabel>
+            <FieldLabel>
+              {`${inSpace ? '내 사진' : '사진'} (선택, ${photos.length}/${photoLimit})`}
+            </FieldLabel>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -441,11 +474,11 @@ export default function RecordFormScreen() {
                 <PhotoThumb
                   key={photo.path ?? photo.uri ?? i}
                   photo={photo}
-                  first={i === 0}
+                  first={!inSpace && i === 0}
                   onRemove={() => removePhotoAt(i)}
                 />
               ))}
-              {photos.length < MAX_RECORD_PHOTOS ? (
+              {photos.length < photoLimit ? (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="사진 추가하기"
@@ -464,12 +497,22 @@ export default function RecordFormScreen() {
                 </Pressable>
               ) : null}
             </ScrollView>
-            {photos.length > 1 ? (
+            {inSpace ? (
+              <Text size={12} className="mt-2 text-muted-foreground">
+                {sharedFull
+                  ? `한 기록에는 모두 합쳐 ${MAX_SHARED_RECORD_PHOTOS}장까지 올릴 수 있어요`
+                  : `함께한 사람마다 ${MAX_RECORD_PHOTOS}장씩 따로 올릴 수 있어요`}
+              </Text>
+            ) : photos.length > 1 ? (
               <Text size={12} className="mt-2 text-muted-foreground">
                 첫 번째 사진이 목록에 대표로 보여요
               </Text>
             ) : null}
           </View>
+
+          {otherPhotos.length > 0 ? (
+            <OthersPhotos photos={otherPhotos} member={member} />
+          ) : null}
         </ScrollView>
 
         <BottomBar>
@@ -514,6 +557,69 @@ export default function RecordFormScreen() {
 
 /** 사진 칸 크기 */
 const THUMB_SIZE = 96;
+/** 다른 사람 사진 칸 크기 (보기만) */
+const SMALL_THUMB_SIZE = 56;
+
+/** 공간: 다른 사람이 올린 사진. 사람마다 한 줄씩, 보기만 한다 */
+function OthersPhotos({
+  photos,
+  member,
+}: {
+  photos: AuthoredPhoto[];
+  member: ReturnType<typeof useMemberLookup>;
+}) {
+  const authors: (string | null)[] = [];
+  for (const p of photos) if (!authors.includes(p.by)) authors.push(p.by);
+  return (
+    <View className="gap-3">
+      <FieldLabel>함께한 사람 사진</FieldLabel>
+      {authors.map((by) => {
+        const mineOf = photos.filter((p) => p.by === by);
+        const who = by ? member(by) : null;
+        return (
+          <View key={by ?? 'shared'} className="gap-2">
+            <View className="flex-row items-center gap-1.5">
+              {who ? (
+                <PersonAvatar imagePath={who.avatarPath} size={20} />
+              ) : null}
+              <Text weight="600" size={13}>
+                {who ? who.name : '함께한 기록'}
+              </Text>
+              <Text variant="muted" size={12}>
+                {`${mineOf.length}장 · 보기만`}
+              </Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerClassName="gap-1.5"
+            >
+              {mineOf.map((photo, i) => (
+                <SmallThumb key={photo.path ?? photo.uri ?? i} photo={photo} />
+              ))}
+            </ScrollView>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function SmallThumb({ photo }: { photo: RecordPhoto }) {
+  const uri = usePhotoSource(photo.uri, photo.path);
+  return (
+    <View
+      className="overflow-hidden rounded-xl bg-accent"
+      style={{ width: SMALL_THUMB_SIZE, height: SMALL_THUMB_SIZE }}
+    >
+      <Image
+        source={uri ? { uri } : undefined}
+        style={{ width: SMALL_THUMB_SIZE, height: SMALL_THUMB_SIZE }}
+        contentFit="cover"
+      />
+    </View>
+  );
+}
 
 /** 기록 사진 한 칸: 오른쪽 위 X로 빼고, 첫 장엔 '대표' 표시 */
 function PhotoThumb({

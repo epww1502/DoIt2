@@ -3,7 +3,13 @@
  * - '나만 보기': 지금처럼 done.rating·done.review 하나만 있다
  * - 공간: done은 함께한 기록(날짜·사진), 별점·소감은 reviews에 사람마다
  */
-import type { BucketItem, ItemReview } from './types';
+import {
+  recordPhotos,
+  withRecordPhotos,
+  type BucketItem,
+  type ItemReview,
+  type RecordPhoto,
+} from './types';
 
 /** 누구 기준으로 볼지: 내 계정 id와 공간을 보고 있는지 */
 export type ReviewCtx = { userId: string | null; inSpace: boolean };
@@ -42,6 +48,45 @@ export function visibleReviews(item: BucketItem): ItemReview[] {
   );
 }
 
+/** 누가 올렸는지 붙은 기록 사진. by가 null이면 예전 기록에 함께 붙어 있던 사진 */
+export type AuthoredPhoto = RecordPhoto & { by: string | null };
+
+/** 한 사람이 올린 기록 사진 */
+export function reviewPhotos(review: ItemReview | null | undefined) {
+  return (review?.photos ?? []).filter((p) => p.uri || p.path);
+}
+
+/**
+ * 공간: 예전처럼 기록(done)에 함께 붙어 있는 사진 (누가 올렸는지 모른다).
+ * 사람별 사진으로 옮긴 뒤에도 예전 앱이 다시 올려 둘 수 있어서, 평가에 있는 사진은 뺀다
+ */
+export function sharedRecordPhotos(item: BucketItem): RecordPhoto[] {
+  const owned = new Set<string>();
+  for (const r of item.reviews ?? []) {
+    for (const p of reviewPhotos(r)) {
+      if (p.path) owned.add(p.path);
+      if (p.uri) owned.add(p.uri);
+    }
+  }
+  return recordPhotos(item.done).filter(
+    (p) => !(p.path && owned.has(p.path)) && !(p.uri && owned.has(p.uri))
+  );
+}
+
+/**
+ * 공간 기록의 모든 사진 (누가 올렸는지와 함께).
+ * 함께 붙어 있던 사진 → 먼저 평가한 사람 순. 첫 장이 목록의 대표 사진이 된다
+ */
+export function allRecordPhotos(item: BucketItem): AuthoredPhoto[] {
+  const shared = sharedRecordPhotos(item).map((p) => ({ ...p, by: null }));
+  const byPerson = [...(item.reviews ?? [])]
+    .sort((a, b) =>
+      (a.createdAt ?? a.updatedAt).localeCompare(b.createdAt ?? b.updatedAt)
+    )
+    .flatMap((r) => reviewPhotos(r).map((p) => ({ ...p, by: r.userId })));
+  return [...shared, ...byPerson];
+}
+
 /** 내 별점. 건너뛰었거나 아직이면 null */
 export function myRating(item: BucketItem, ctx: ReviewCtx): number | null {
   if (!item.done) return null;
@@ -72,19 +117,24 @@ export function shownRating(item: BucketItem, ctx: ReviewCtx): number | null {
 }
 
 /**
- * 내 기준으로 본 항목: done.rating·done.review를 내 별점·소감으로 바꿔 둔다.
+ * 내 기준으로 본 항목: done.rating·done.review를 내 별점·소감으로, 사진은 모두의 사진으로 바꿔 둔다.
  * (함께한 것 목록·통계·공유 카드처럼 별점 하나만 보여주는 곳에서 그대로 쓰려고)
  * 내 별점이 없으면 모두의 평균, 그것도 없으면 0(별 없음)
  */
 export function viewForMe(item: BucketItem, ctx: ReviewCtx): BucketItem {
   if (!item.done || !ctx.inSpace) return item;
   const mine = myReview(item, ctx.userId);
+  // 사진은 모두가 올린 것을 모아서
+  const photos = allRecordPhotos(item).map(({ uri, path }) => ({ uri, path }));
   return {
     ...item,
-    done: {
-      ...item.done,
-      rating: Math.round(shownRating(item, ctx) ?? 0),
-      review: mine?.review ?? '',
-    },
+    done: withRecordPhotos(
+      {
+        ...item.done,
+        rating: Math.round(shownRating(item, ctx) ?? 0),
+        review: mine?.review ?? '',
+      },
+      photos
+    ),
   };
 }
