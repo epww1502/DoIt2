@@ -162,18 +162,26 @@ export function PhotoGallery({
 
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onScrollEnd}
-      >
-        {photos.map((photo, i) => (
-          <ZoomTap key={photo.path ?? photo.uri ?? i} onPress={() => open(i)}>
-            <PhotoImage photo={photo} style={{ width: width || 1 }} />
-          </ZoomTap>
-        ))}
-      </ScrollView>
+      {/* 폭을 잰 뒤에 사진을 그린다. 폭을 모를 때 그리면 사진이 그 작은 크기로 줄여져 불러와져서 흐리게 보인다 */}
+      {width > 0 ? (
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={onScrollEnd}
+        >
+          {photos.map((photo, i) => (
+            <ZoomTap key={photo.path ?? photo.uri ?? i} onPress={() => open(i)}>
+              <PhotoImage photo={photo} style={{ width }} />
+            </ZoomTap>
+          ))}
+        </ScrollView>
+      ) : (
+        <View
+          className="bg-accent"
+          style={{ width: '100%', aspectRatio: 4 / 3 }}
+        />
+      )}
       {badge}
       <View className="absolute bottom-3 left-0 right-0 flex-row justify-center gap-1.5">
         {photos.map((photo, i) => (
