@@ -39,6 +39,7 @@ import {
 } from '@/lib/bucket/types';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 import { useMemberLookup } from '@/store/useMembersStore';
+import { openPhotoViewer } from '@/store/usePhotoViewerStore';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
 import {
@@ -570,6 +571,16 @@ function OthersPhotos({
 }) {
   const authors: (string | null)[] = [];
   for (const p of photos) if (!authors.includes(p.by)) authors.push(p.by);
+  // 크게 보기에서는 올린 사람 순서대로 모두 넘겨 본다
+  const ordered = authors.flatMap((by) => photos.filter((p) => p.by === by));
+  const open = (photo: AuthoredPhoto) =>
+    openPhotoViewer(
+      ordered.map((p) => ({
+        ...p,
+        caption: p.by ? `${member(p.by).name}의 사진` : null,
+      })),
+      ordered.indexOf(photo)
+    );
   return (
     <View className="gap-3">
       <FieldLabel>함께한 사람 사진</FieldLabel>
@@ -595,7 +606,11 @@ function OthersPhotos({
               contentContainerClassName="gap-1.5"
             >
               {mineOf.map((photo, i) => (
-                <SmallThumb key={photo.path ?? photo.uri ?? i} photo={photo} />
+                <SmallThumb
+                  key={photo.path ?? photo.uri ?? i}
+                  photo={photo}
+                  onPress={() => open(photo)}
+                />
               ))}
             </ScrollView>
           </View>
@@ -605,11 +620,21 @@ function OthersPhotos({
   );
 }
 
-function SmallThumb({ photo }: { photo: RecordPhoto }) {
+/** 누르면 크게 보기 */
+function SmallThumb({
+  photo,
+  onPress,
+}: {
+  photo: RecordPhoto;
+  onPress: () => void;
+}) {
   const uri = usePhotoSource(photo.uri, photo.path);
   return (
-    <View
-      className="overflow-hidden rounded-xl bg-accent"
+    <Pressable
+      accessibilityRole="imagebutton"
+      accessibilityLabel="사진 크게 보기"
+      onPress={onPress}
+      className="overflow-hidden rounded-xl bg-accent active:opacity-70"
       style={{ width: SMALL_THUMB_SIZE, height: SMALL_THUMB_SIZE }}
     >
       <Image
@@ -617,7 +642,7 @@ function SmallThumb({ photo }: { photo: RecordPhoto }) {
         style={{ width: SMALL_THUMB_SIZE, height: SMALL_THUMB_SIZE }}
         contentFit="cover"
       />
-    </View>
+    </Pressable>
   );
 }
 

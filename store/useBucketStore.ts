@@ -241,7 +241,7 @@ function scheduleTodoNotify(spaceId: string, itemId: string, todoId: string) {
   todoIds.add(todoId);
   const timer = setTimeout(() => {
     todoNotify.delete(key);
-    notifySpace(spaceId, 'todo', [itemId], [...todoIds]);
+    notifySpace(spaceId, 'todo', [itemId], { todoIds: [...todoIds] });
   }, TODO_NOTIFY_DELAY_MS);
   todoNotify.set(key, { spaceId, todoIds, timer });
 }
@@ -435,6 +435,11 @@ export const useBucketStore = create<BucketState>()(
           // 별점을 남겼을 때만 알린다 (건너뛰기는 조용히)
           if (entry.notify && entry.notify !== 'added' && mine?.rating) {
             notifySpace(spaceId, entry.notify, [item.id]);
+          } else if (mine && entry.newPhotos) {
+            // 평가 알림이 안 갔는데 사진을 더 올렸으면 사진 알림 (그 사이 지운 건 빼고 센다)
+            const count = Math.min(entry.newPhotos, reviewPhotos(mine).length);
+            if (count > 0)
+              notifySpace(spaceId, 'photos', [item.id], { photoCount: count });
           }
         }
       };
@@ -458,6 +463,8 @@ export const useBucketStore = create<BucketState>()(
         const photos = review ? (review.photos ?? reviewPhotos(prevMine)) : [];
         // 빠진 내 사진은 휴대폰·서버에서 지운다
         deletePhotos(removedPhotos(reviewPhotos(prevMine), photos), spaceId);
+        // 새로 고른 사진 수 (사진 알림용)
+        const added = removedPhotos(photos, reviewPhotos(prevMine)).length;
         const reviews = review
           ? [
               ...others,
@@ -473,7 +480,7 @@ export const useBucketStore = create<BucketState>()(
             ]
           : others;
         replaceItem(id, { ...target, reviews });
-        useOutboxStore.getState().queueReview(spaceId, id, notify);
+        useOutboxStore.getState().queueReview(spaceId, id, notify, added);
         flushSoon();
       };
 

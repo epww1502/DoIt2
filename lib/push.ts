@@ -105,14 +105,18 @@ export async function unregisterForPush() {
 /** 같은 공간의 다른 사람들에게 알린다. 실패해도 앱 동작에는 영향이 없다 */
 export function notifySpace(
   spaceId: string,
-  event: 'added' | 'done' | 'reviewed' | 'commented' | 'todo',
+  event: 'added' | 'done' | 'reviewed' | 'commented' | 'todo' | 'photos',
   itemIds: string[],
-  /** event 'todo': 체크한 할 것 id들 */
-  todoIds?: string[]
+  extra?: {
+    /** event 'todo': 체크한 할 것 id들 */
+    todoIds?: string[];
+    /** event 'photos': 새로 올린 사진 수 */
+    photoCount?: number;
+  }
 ) {
   if (itemIds.length === 0) return;
   void supabase.functions
-    .invoke('notify', { body: { spaceId, event, itemIds, todoIds } })
+    .invoke('notify', { body: { spaceId, event, itemIds, ...extra } })
     .catch(() => {});
 }
 

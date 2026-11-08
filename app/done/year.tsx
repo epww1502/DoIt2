@@ -3,6 +3,7 @@ import { Star } from 'lucide-react-native';
 import { useMemo, useRef, useState } from 'react';
 import {
   FlatList,
+  Pressable,
   Text as RNText,
   useWindowDimensions,
   View,
@@ -14,6 +15,7 @@ import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { CategoryIcon } from '@/components/bucket/CategoryIcon';
 import { PhotoImage } from '@/components/bucket/DonePhoto';
+import { openPhotoViewer } from '@/store/usePhotoViewerStore';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { FONT_WEIGHTS } from '@/constants/fonts';
@@ -344,11 +346,25 @@ function Moment({
 
 function BestCard({ recap, primary }: CardProps) {
   const best = recap.best!;
-  const photo = recordPhotos(best.done)[0];
+  const photos = recordPhotos(best.done);
+  const photo = photos[0];
   return (
     <View style={{ flex: 1 }}>
       {photo ? (
-        <PhotoImage photo={photo} style={{ width: '100%', height: '48%' }} />
+        // 누르면 이 기록 사진을 모두 크게 보기
+        <Pressable
+          accessibilityRole="imagebutton"
+          accessibilityLabel="사진 크게 보기"
+          onPress={() =>
+            openPhotoViewer(
+              photos.map((p) => ({ ...p, caption: best.title })),
+              0
+            )
+          }
+          style={{ width: '100%', height: '48%' }}
+        >
+          <PhotoImage photo={photo} style={{ width: '100%', height: '100%' }} />
+        </Pressable>
       ) : (
         <View
           style={{
@@ -470,9 +486,18 @@ function PhotosCard({ recap, primary }: CardProps) {
         </CardText>
       </View>
       <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {photos.map(({ item, photo }) => (
-          <View
+        {photos.map(({ item, photo }, i) => (
+          <Pressable
             key={item.id}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={`${item.title} 사진 크게 보기`}
+            // 누르면 올해의 사진을 넘겨 보며 크게 보기
+            onPress={() =>
+              openPhotoViewer(
+                photos.map((p) => ({ ...p.photo, caption: p.item.title })),
+                i
+              )
+            }
             style={{
               width: columns === 1 ? '100%' : '48.5%',
               height:
@@ -491,7 +516,7 @@ function PhotosCard({ recap, primary }: CardProps) {
               photo={photo}
               style={{ width: '100%', height: '100%' }}
             />
-          </View>
+          </Pressable>
         ))}
       </View>
     </View>

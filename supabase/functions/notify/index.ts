@@ -9,6 +9,8 @@
 // - { spaceId, event: 'commented', itemIds: [string] }  항목에 댓글을 남김 (부른 사람의 최근 댓글)
 // - { spaceId, event: 'todo', itemIds: [string], todoIds: string[] }  할 것을 체크함
 //   (지금도 체크돼 있는 것만 알린다. 알림함에는 예전 앱도 알아보게 kind 'done'으로 남긴다)
+// - { spaceId, event: 'photos', itemIds: [string], photoCount: number }  이미 남긴 평가에 사진을 더 올림
+//   (평가가 막 바뀌었을 때만. 알림함에는 예전 앱도 알아보게 kind 'reviewed'로 남긴다)
 //
 // 막 바뀐 항목(최근 10분)만 알린다. 예전 항목으로 알림을 계속 보내는 걸 막으려고.
 // 받는 사람마다 notifications(알림함)에도 한 줄씩 남긴다 (푸시를 꺼둔 사람도 앱에서 볼 수 있게).
@@ -27,9 +29,11 @@ const admin = createClient(
 
 type Body = {
   spaceId?: string;
-  event?: 'added' | 'done' | 'reviewed' | 'commented' | 'todo';
+  event?: 'added' | 'done' | 'reviewed' | 'commented' | 'todo' | 'photos';
   itemIds?: string[];
   todoIds?: string[];
+  /** event 'photos': 새로 올린 사진 수 */
+  photoCount?: number;
 };
 
 type Todo = { id?: string; text?: string; done?: boolean };
@@ -83,7 +87,9 @@ Deno.serve(async (req) => {
   const itemIds = (body.itemIds ?? []).slice(0, MAX_ITEMS);
   if (
     !spaceId ||
-    !['added', 'done', 'reviewed', 'commented', 'todo'].includes(event ?? '') ||
+    !['added', 'done', 'reviewed', 'commented', 'todo', 'photos'].includes(
+      event ?? ''
+    ) ||
     !itemIds.length
   ) {
     return json({ error: 'invalid_body' }, 400);
@@ -130,7 +136,7 @@ Deno.serve(async (req) => {
   const isFresh = (at: string | undefined) =>
     !!at && Date.now() - new Date(at).getTime() < FRESH_MS;
   const fresh = (items ?? []).filter((it) =>
-    event === 'reviewed'
+    event === 'reviewed' || event === 'photos'
       ? isFresh(reviewOf.get(it.id)?.updated_at)
       : event === 'commented'
         ? isFresh(commentOf.get(it.id)?.created_at)
@@ -163,6 +169,9 @@ Deno.serve(async (req) => {
         ? quote(checked[0].text!)
         : `${quote(checked[0].text!)} 외 ${checked.length - 1}개`;
     message = `${name}님이 ${quote(first.title)}에서 ${what}을(를) 했어요 ✓`;
+  } else if (event === 'photos') {
+    const count = Math.min(Math.max(Math.round(body.photoCount ?? 1), 1), 5);
+    message = `${name}님이 ${quote(first.title)}에 사진 ${count}장을 올렸어요 📷`;
   } else if (event === 'commented') {
     const body = commentOf.get(first.id)?.body ?? '';
     const short = body.length > 30 ? `${body.slice(0, 30)}…` : body;
@@ -185,8 +194,9 @@ Deno.serve(async (req) => {
         user_id: userId,
         space_id: spaceId,
         item_id: itemId,
-        // 예전 앱은 'todo'를 몰라서 'done'으로 남긴다
-        kind: event === 'todo' ? 'done' : event,
+        // 예전 앱은 'todo'·'photos'를 몰라서 아는 종류로 남긴다
+        kind:
+          event === 'todo' ? 'done' : event === 'photos' ? 'reviewed' : event,
         title,
         body: message,
       }))

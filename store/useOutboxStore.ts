@@ -20,6 +20,8 @@ export type OutboxEntry = {
   op: OutboxOp;
   /** 올라가면 같은 공간 사람들에게 보낼 알림 */
   notify?: 'added' | 'done' | 'reviewed';
+  /** review: 새로 고른 내 사진 수 (평가 알림을 안 보낼 때 '사진 n장을 올렸어요'로 알린다) */
+  newPhotos?: number;
   /** 올리는 사이에 또 바뀌었는지 알아보는 번호 */
   rev: number;
   /** upsert: 할 것 목록도 통째로 올릴지 (새 항목이거나 수정 화면에서 바꿨을 때만) */
@@ -47,7 +49,8 @@ type OutboxState = {
   queueReview: (
     spaceId: string,
     itemId: string,
-    notify?: 'done' | 'reviewed'
+    notify?: 'done' | 'reviewed',
+    newPhotos?: number
   ) => void;
   queuePhotoRemoval: (paths: (string | null | undefined)[]) => void;
   /** 올라간 변경을 뺀다. 그 사이에 또 바뀌었으면(rev가 다르면) 남긴다 */
@@ -126,7 +129,7 @@ export const useOutboxStore = create<OutboxState>()(
         set({ entries });
       },
 
-      queueReview: (spaceId, itemId, notify) => {
+      queueReview: (spaceId, itemId, notify, newPhotos = 0) => {
         const key = keyOf(spaceId, itemId, 'review');
         const prev = get().entries[key];
         set({
@@ -137,6 +140,7 @@ export const useOutboxStore = create<OutboxState>()(
               itemId,
               op: 'review',
               notify: prev?.notify ?? notify,
+              newPhotos: (prev?.newPhotos ?? 0) + newPhotos,
               rev: nextRev++,
             },
           },
