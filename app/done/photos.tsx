@@ -11,7 +11,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NavBar, Text } from '@/components/atoms';
-import { usePhotoSource } from '@/components/bucket/DonePhoto';
+import {
+  photoImageSource,
+  usePhotoSource,
+} from '@/components/bucket/DonePhoto';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { LikeCount } from '@/components/bucket/LikeCount';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
@@ -213,7 +216,7 @@ function AlbumCell({
       style={{ width: size, height: size }}
     >
       <Image
-        source={uri ? { uri } : undefined}
+        source={photoImageSource(uri)}
         style={{ width: size, height: size }}
         contentFit="cover"
         transition={120}

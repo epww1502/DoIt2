@@ -4,7 +4,10 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
-import { usePhotoSource } from '@/components/bucket/DonePhoto';
+import {
+  photoImageSource,
+  usePhotoSource,
+} from '@/components/bucket/DonePhoto';
 import { pickPhotos } from '@/lib/bucket/photo';
 import { MAX_ITEM_PHOTOS, type RecordPhoto } from '@/lib/bucket/types';
 import { showAlert } from '@/lib/dialog';
@@ -120,7 +123,7 @@ function PhotoThumb({
       style={{ width: THUMB_SIZE, height: THUMB_SIZE }}
     >
       <Image
-        source={uri ? { uri } : undefined}
+        source={photoImageSource(uri)}
         style={{ width: '100%', height: '100%' }}
         contentFit="cover"
       />

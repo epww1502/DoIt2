@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { deletePhoto } from '@/lib/bucket/photo';
 import { deleteMyAccount, signInWithAccountCode } from '@/lib/supabase/account';
 import { noteFailure } from '@/lib/connection';
+import { clearSavedPhotos } from '@/lib/photoCache';
 import { removePhoto, uploadPhoto } from '@/lib/supabase/bucketRemote';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import type { SpaceRow } from '@/lib/supabase/database.types';
@@ -110,6 +111,8 @@ export const useSpaceStore = create<SpaceState>((set, get) => {
     restoreAccount: async (code) => {
       const userId = await signInWithAccountCode(code);
       set({ userId, spaces: [] });
+      // 다른 계정으로 바꿨으면 예전 계정의 사진을 남기지 않는다
+      void clearSavedPhotos();
       try {
         await get().refreshSpaces();
         set({ status: 'ready' });
@@ -124,6 +127,7 @@ export const useSpaceStore = create<SpaceState>((set, get) => {
     deleteAccount: async () => {
       await deleteMyAccount();
       set({ userId: null, spaces: [] });
+      void clearSavedPhotos();
       // 새 익명 계정으로 다시 로그인
       await get().init();
     },
@@ -219,6 +223,8 @@ export const useSpaceStore = create<SpaceState>((set, get) => {
       });
       if (error) throw new Error('나가지 못했어요. 잠시 후 다시 시도해주세요.');
       set({ spaces: get().spaces.filter((s) => s.id !== spaceId) });
+      // 그 공간 사람들 사진을 폰에 남기지 않는다
+      void clearSavedPhotos();
     },
 
     reorderSpaces: async (orderedIds) => {

@@ -2,7 +2,10 @@ import { Image } from 'expo-image';
 import { View } from 'react-native';
 
 import { CategoryIcon } from '@/components/bucket/CategoryIcon';
-import { usePhotoSource } from '@/components/bucket/DonePhoto';
+import {
+  photoImageSource,
+  usePhotoSource,
+} from '@/components/bucket/DonePhoto';
 import { categoryTint } from '@/constants/categoryTint';
 import { useThemeMode } from '@/contexts/ThemeModeContext';
 import { itemPhotos, type BucketItem } from '@/lib/bucket/types';
@@ -67,7 +70,7 @@ function CoverPhoto({
       style={{ width: size, height: size }}
     >
       <Image
-        source={source ? { uri: source } : undefined}
+        source={photoImageSource(source)}
         style={{ width: size, height: size }}
         contentFit="cover"
         transition={150}

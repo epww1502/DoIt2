@@ -2,7 +2,10 @@ import { Image } from 'expo-image';
 import { View } from 'react-native';
 
 import { Text } from '@/components/atoms';
-import { usePhotoSource } from '@/components/bucket/DonePhoto';
+import {
+  photoImageSource,
+  usePhotoSource,
+} from '@/components/bucket/DonePhoto';
 import { SPACE_ICON } from '@/constants/spaceIcon';
 import { useThemeMode } from '@/contexts/ThemeModeContext';
 
@@ -39,7 +42,7 @@ export function SpaceAvatar({
     >
       {hasPhoto ? (
         <Image
-          source={uri ? { uri } : undefined}
+          source={photoImageSource(uri)}
           style={{ width: size, height: size }}
           contentFit="cover"
           transition={150}

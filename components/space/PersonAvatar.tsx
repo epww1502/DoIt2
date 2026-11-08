@@ -3,7 +3,10 @@ import { Crown, User } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { Icon } from '@/components/atoms';
-import { usePhotoSource } from '@/components/bucket/DonePhoto';
+import {
+  photoImageSource,
+  usePhotoSource,
+} from '@/components/bucket/DonePhoto';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 
 type PersonAvatarProps = {
@@ -36,7 +39,7 @@ export function PersonAvatar({
     >
       {hasPhoto ? (
         <Image
-          source={uri ? { uri } : undefined}
+          source={photoImageSource(uri)}
           style={{ width: size, height: size }}
           contentFit="cover"
           transition={150}

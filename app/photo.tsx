@@ -38,7 +38,11 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { Icon, Text } from '@/components/atoms';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
-import { loadPhotoUrl, usePhotoState } from '@/components/bucket/DonePhoto';
+import {
+  loadPhotoUrl,
+  photoImageSource,
+  usePhotoState,
+} from '@/components/bucket/DonePhoto';
 import { usePhotoLikes } from '@/hooks/usePhotoLikes';
 import { showAlert } from '@/lib/dialog';
 import { cn } from '@/lib/utils';
@@ -489,7 +493,7 @@ function ZoomablePhoto({
       >
         {uri ? (
           <Image
-            source={{ uri }}
+            source={photoImageSource(uri)}
             style={{ width, height }}
             contentFit="contain"
             transition={150}
@@ -522,6 +526,11 @@ async function photoFileUri(photo: ViewerPhoto) {
   const name = photo.path.split('/').pop() ?? `${Date.now()}.jpg`;
   const target = new File(folder, name);
   if (target.exists) return target.uri;
+  // 폰에 저장해 둔 사진이면 내려받지 않고 복사 (이름 끝에 .jpg가 있어야 앨범 저장이 된다)
+  if (url.startsWith('file:')) {
+    new File(url).copy(target);
+    return target.uri;
+  }
   const file = await File.downloadFileAsync(url, target, { idempotent: true });
   return file.uri;
 }

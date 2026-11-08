@@ -18,20 +18,15 @@ import {
 } from '@/lib/bucket/types';
 import { noteFailure } from '@/lib/connection';
 import { cn } from '@/lib/utils';
-import { getPhotoUrl } from '@/lib/supabase/bucketRemote';
+import {
+  forgetPhotoUrl,
+  loadPhotoUrl,
+  photoImageSource,
+} from '@/lib/photoCache';
 import { openPhotoViewer } from '@/store/usePhotoViewerStore';
 
-/** 저장소 경로 → 임시 링크 (앱이 켜져 있는 동안 다시 쓰고, 50분 뒤 새로 받는다) */
-const urlCache = new Map<string, { url: string; expiresAt: number }>();
-const CACHE_MS = 50 * 60 * 1000;
-
-export async function loadPhotoUrl(path: string) {
-  const cached = urlCache.get(path);
-  if (cached && cached.expiresAt > Date.now()) return cached.url;
-  const url = await getPhotoUrl(path);
-  urlCache.set(path, { url, expiresAt: Date.now() + CACHE_MS });
-  return url;
-}
+// 예전 자리에서 부르던 곳을 위해
+export { loadPhotoUrl, photoImageSource };
 
 /**
  * 함께한 기록 사진의 주소. 이 휴대폰에 파일이 있으면 그 파일을,
@@ -68,6 +63,8 @@ export function usePhotoState(
   }, [photoUri, photoPath, attempt]);
 
   const retry = () => {
+    // 폰에 저장해 둔 파일이 그사이 지워졌을 수 있어서 서버에서 새로 받는다
+    forgetPhotoUrl(photoPath);
     setFailedPath(null);
     setAttempt((n) => n + 1);
   };
@@ -266,7 +263,7 @@ export function PhotoImage({
 
   return (
     <Image
-      source={uri ? { uri } : undefined}
+      source={photoImageSource(uri)}
       style={[{ width: '100%', aspectRatio: 4 / 3 }, style]}
       contentFit="cover"
       transition={150}

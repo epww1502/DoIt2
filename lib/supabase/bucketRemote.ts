@@ -305,6 +305,26 @@ export async function removePhoto(path: string | null | undefined) {
   if (error) throw error;
 }
 
+/**
+ * 임시 링크 여러 개를 한 번에. 받지 못한 경로는 결과에 없다.
+ * 실패하면(인터넷 등) 던진다
+ */
+export async function getPhotoUrls(paths: string[]) {
+  const urls = new Map<string, string>();
+  for (let i = 0; i < paths.length; i += 100) {
+    const { data, error } = await supabase.storage
+      .from(PHOTO_BUCKET)
+      .createSignedUrls(paths.slice(i, i + 100), SIGNED_URL_SECONDS);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      if (row.path && row.signedUrl && !row.error) {
+        urls.set(row.path, row.signedUrl);
+      }
+    }
+  }
+  return urls;
+}
+
 /** 상대가 올린 사진처럼 휴대폰에 없는 사진을 볼 수 있는 임시 링크 */
 export async function getPhotoUrl(path: string) {
   const { data, error } = await supabase.storage

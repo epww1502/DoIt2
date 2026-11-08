@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTogether } from '@/hooks/useTogether';
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
-import { usePhotoState } from '@/components/bucket/DonePhoto';
+import { photoImageSource, usePhotoState } from '@/components/bucket/DonePhoto';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { viewForMe } from '@/lib/bucket/reviews';
 import { EmptyState } from '@/components/bucket/EmptyState';
@@ -150,7 +150,7 @@ export default function ShareCardScreen() {
         >
           {photo && !photoFailed ? (
             <Image
-              source={photoUri ? { uri: photoUri } : undefined}
+              source={photoImageSource(photoUri)}
               style={{ width: CARD_WIDTH, height: 210 }}
               contentFit="cover"
               onLoad={() => setPhotoLoaded(true)}

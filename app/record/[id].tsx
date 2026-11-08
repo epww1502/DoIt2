@@ -22,7 +22,10 @@ import { DatePickerSheet } from '@/components/bucket/DatePickerSheet';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
 import { PlaceField } from '@/components/bucket/PlaceField';
-import { usePhotoSource } from '@/components/bucket/DonePhoto';
+import {
+  photoImageSource,
+  usePhotoSource,
+} from '@/components/bucket/DonePhoto';
 import { StarRating } from '@/components/bucket/StarRating';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { DATE_FORMAT, todayKey } from '@/lib/date';
@@ -645,7 +648,7 @@ function SmallThumb({
       style={{ width: SMALL_THUMB_SIZE, height: SMALL_THUMB_SIZE }}
     >
       <Image
-        source={uri ? { uri } : undefined}
+        source={photoImageSource(uri)}
         style={{ width: SMALL_THUMB_SIZE, height: SMALL_THUMB_SIZE }}
         contentFit="cover"
       />
@@ -670,7 +673,7 @@ function PhotoThumb({
       style={{ width: THUMB_SIZE, height: THUMB_SIZE }}
     >
       <Image
-        source={uri ? { uri } : undefined}
+        source={photoImageSource(uri)}
         style={{ width: THUMB_SIZE, height: THUMB_SIZE }}
         contentFit="cover"
       />
