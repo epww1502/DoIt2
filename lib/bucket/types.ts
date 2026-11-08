@@ -98,6 +98,8 @@ export type DoneRecord = {
   /** 1~5 */
   rating: number;
   review: string;
+  /** 쓴 돈 (원). 공간에서는 함께 쓴 돈. 안 적었으면 없다 */
+  cost?: number | null;
   /**
    * 첫 번째 사진 (이 휴대폰 파일). 사진이 여러 장이 된 뒤에도 예전 앱이 첫 장을
    * 보여줄 수 있게 photos[0]과 같게 맞춰 둔다

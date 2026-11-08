@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 
 import { goalDday, goalPassed } from './goalDday';
 import { Selectable } from './Selectable';
+import { WantPill, type WantProps } from './WantButton';
 
 export type SelectionProps = {
   selecting: boolean;
@@ -29,8 +30,9 @@ export type SelectionProps = {
 /** 버킷리스트 목록의 한 줄. 길게 누르면 여러 개 고르기 */
 export function BucketRow({
   item,
+  want,
   ...selection
-}: { item: BucketItem } & SelectionProps) {
+}: { item: BucketItem; want?: WantProps } & SelectionProps) {
   const category = getCategory(item.category);
   const meta = [
     KIND_META[item.kind].label,
@@ -73,6 +75,7 @@ export function BucketRow({
       {/* 고르기 모드에서는 체크 동그라미가 그 자리에 나온다 */}
       {!selection.selecting ? (
         <View className="flex-row items-center gap-2">
+          {want ? <WantPill {...want} /> : null}
           <CommentBadge count={item.commentCount} />
           <Icon as={ChevronRight} size={20} className="text-muted-foreground" />
         </View>
@@ -114,8 +117,9 @@ function TodoProgress({ item }: { item: BucketItem }) {
 /** 간단히 보기: 이모지 + 제목 한 줄 (촘촘하게) */
 export function BucketRowCompact({
   item,
+  want,
   ...selection
-}: { item: BucketItem } & SelectionProps) {
+}: { item: BucketItem; want?: WantProps } & SelectionProps) {
   return (
     <Selectable
       {...selection}
@@ -135,6 +139,7 @@ export function BucketRowCompact({
       </View>
       {!selection.selecting ? (
         <View className="flex-row items-center gap-2">
+          {want ? <WantPill {...want} /> : null}
           <CommentBadge count={item.commentCount} />
           <Text size={11} className="text-muted-foreground">
             {settingTag(item.setting)}

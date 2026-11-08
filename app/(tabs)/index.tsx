@@ -31,6 +31,7 @@ import {
   TextField,
 } from '@/components/atoms';
 import { BucketRow, BucketRowCompact } from '@/components/bucket/BucketRow';
+import { useItemWants } from '@/hooks/useItemWants';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { hasMapSpot, ItemsMap } from '@/components/bucket/ItemsMap';
 import {
@@ -140,6 +141,9 @@ export default function BucketListScreen() {
   const awaiting = items.filter(
     (it) => itemStatus(it, reviewCtx) === 'awaiting'
   );
+  // '하고 싶어요' (함께 쓰는 공간에서만)
+  const listSpaceId = useBucketStore((s) => s.spaceId);
+  const wants = useItemWants(together ? listSpaceId : null);
   const filtered = useMemo(
     () =>
       sortItems(
@@ -149,10 +153,31 @@ export default function BucketListScreen() {
             matchesQuery(it, query) &&
             matchesExtras(it, activeExtras, userId)
         ),
-        bucketSort
+        together || bucketSort !== 'wanted' ? bucketSort : 'recent',
+        wants.countOf
       ),
-    [todo, filter, query, activeExtras, userId, bucketSort]
+    // wants.rows: 누가 누르면 'wanted' 정렬을 다시
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      todo,
+      filter,
+      query,
+      activeExtras,
+      userId,
+      bucketSort,
+      together,
+      wants.rows,
+    ]
   );
+  /** 목록 한 줄의 '하고 싶어요' (함께 쓰는 공간에서만) */
+  const wantOf = (item: BucketItem) =>
+    together
+      ? {
+          count: wants.countOf(item.id),
+          mine: wants.wantedByMe(item.id),
+          onPress: () => void wants.toggle(item.id),
+        }
+      : undefined;
   const doneCount = items.length - todo.length - resting.length;
   const shownCount = items.length - resting.length;
 
@@ -562,7 +587,7 @@ export default function BucketListScreen() {
             <SectionList
               sections={sections}
               keyExtractor={(item) => item.id}
-              extraData={selection.selected}
+              extraData={{ selected: selection.selected, wants: wants.rows }}
               stickySectionHeadersEnabled={false}
               renderSectionHeader={({ section }) => (
                 <View className="flex-row items-center gap-1.5 pb-1 pt-4">
@@ -579,6 +604,7 @@ export default function BucketListScreen() {
                 <View className="pb-2">
                   <BucketRowCompact
                     item={item}
+                    want={wantOf(item)}
                     selecting={selection.selecting}
                     selected={selection.selected.has(item.id)}
                     onLongPress={() => selection.start(item.id)}
@@ -600,11 +626,12 @@ export default function BucketListScreen() {
             <FlatList
               data={listItems}
               keyExtractor={(item) => item.id}
-              extraData={selection.selected}
+              extraData={{ selected: selection.selected, wants: wants.rows }}
               renderItem={({ item }) => (
                 <BucketItemRow
                   compact={bucketView === 'compact'}
                   item={item}
+                  want={wantOf(item)}
                   selecting={selection.selecting}
                   selected={selection.selected.has(item.id)}
                   onLongPress={() => selection.start(item.id)}
@@ -671,14 +698,18 @@ export default function BucketListScreen() {
                 정렬
               </Text>
               <View className="flex-row flex-wrap gap-2">
-                {(Object.keys(BUCKET_SORT_META) as BucketSort[]).map((sort) => (
-                  <Chip
-                    key={sort}
-                    label={BUCKET_SORT_META[sort].label}
-                    selected={sort === bucketSort}
-                    onPress={() => setBucketSort(sort)}
-                  />
-                ))}
+                {(Object.keys(BUCKET_SORT_META) as BucketSort[])
+                  .filter(
+                    (sort) => together || !BUCKET_SORT_META[sort].spaceOnly
+                  )
+                  .map((sort) => (
+                    <Chip
+                      key={sort}
+                      label={BUCKET_SORT_META[sort].label}
+                      selected={sort === bucketSort}
+                      onPress={() => setBucketSort(sort)}
+                    />
+                  ))}
               </View>
             </View>
             <View className="gap-2">

@@ -15,8 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
 import { showAlert } from '@/lib/dialog';
-import { Button, Icon, NavBar, Text } from '@/components/atoms';
+import { Button, Icon, NavBar, Text, TextField } from '@/components/atoms';
 import { TextArea } from '@/components/atoms/TextArea';
+import { parseWon, wonInputText } from '@/lib/bucket/cost';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { DatePickerSheet } from '@/components/bucket/DatePickerSheet';
 import { EmptyState } from '@/components/bucket/EmptyState';
@@ -98,6 +99,8 @@ export default function RecordFormScreen() {
   const [photos, setPhotos] = useState<RecordPhoto[]>(() =>
     inSpace ? reviewPhotos(mine) : recordPhotos(saved)
   );
+  // 쓴 돈 (입력칸 글자. 숫자만 남긴다)
+  const [costText, setCostText] = useState(wonInputText(saved?.cost));
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   // 기간으로 기록하기: 시작한 날 (끄면 null). 시작하기로 시작한 항목이면 처음부터 켜져 있다
@@ -227,6 +230,7 @@ export default function RecordFormScreen() {
         startDate,
         rating,
         review: review.trim(),
+        cost: parseWon(costText),
         photoUri: null,
       };
       if (inSpace) {
@@ -463,6 +467,31 @@ export default function RecordFormScreen() {
               maxLength={200}
               onFocus={ensureFocusedVisible}
             />
+          </View>
+
+          <View>
+            <FieldLabel>
+              {inSpace ? '함께 쓴 돈 (선택)' : '쓴 돈 (선택)'}
+            </FieldLabel>
+            <View className="flex-row items-center gap-2">
+              <TextField
+                value={costText}
+                onChangeText={(text) =>
+                  setCostText(wonInputText(parseWon(text)))
+                }
+                placeholder="예) 32,000"
+                keyboardType="number-pad"
+                maxLength={11}
+                onFocus={ensureFocusedVisible}
+                className="flex-1"
+              />
+              <Text weight="600">원</Text>
+            </View>
+            {inSpace ? (
+              <Text variant="muted" size={12} className="pt-1.5">
+                공간 사람 모두에게 보이고, 누구나 고칠 수 있어요
+              </Text>
+            ) : null}
           </View>
 
           <View>

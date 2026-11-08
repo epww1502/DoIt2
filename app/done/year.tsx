@@ -16,6 +16,7 @@ import { BottomBar } from '@/components/bucket/BottomBar';
 import { CategoryIcon } from '@/components/bucket/CategoryIcon';
 import { PhotoImage } from '@/components/bucket/DonePhoto';
 import { openPhotoViewer } from '@/store/usePhotoViewerStore';
+import { shortWon } from '@/lib/bucket/cost';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { FONT_WEIGHTS } from '@/constants/fonts';
@@ -594,7 +595,9 @@ function SummaryCard({ recap, together, owner }: CardProps) {
         }}
       >
         <CardText size={12} color={WHITE} weight="500">
-          {`${recap.days}번의 날을 기록했어요`}
+          {recap.spent > 0
+            ? `${recap.days}번의 날 · ${together ? '함께 ' : ''}쓴 돈 ${shortWon(recap.spent)}`
+            : `${recap.days}번의 날을 기록했어요`}
         </CardText>
         <CardText size={12} color={WHITE} weight="700">
           DoIt2 · 두잇투

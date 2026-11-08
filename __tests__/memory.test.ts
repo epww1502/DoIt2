@@ -1,3 +1,10 @@
+import {
+  formatWon,
+  parseWon,
+  shortWon,
+  spendingOf,
+  wonInputText,
+} from '@/lib/bucket/cost';
 import { memoryLabel, pickMemory } from '@/lib/bucket/memory';
 import type { BucketItem } from '@/lib/bucket/types';
 
@@ -71,5 +78,29 @@ describe('pickMemory', () => {
   it('연말·연초를 넘어가도 앞뒤 며칠로 친다', () => {
     const m = pickMemory([done('dec', '2024-12-30')], '2026-01-01');
     expect(m?.item.id).toBe('dec');
+  });
+});
+
+describe('쓴 돈', () => {
+  it('입력 글자를 원으로, 원을 보기 좋게', () => {
+    expect(parseWon('32,000원')).toBe(32000);
+    expect(parseWon('')).toBeNull();
+    expect(parseWon('0')).toBeNull();
+    expect(wonInputText(1234567)).toBe('1,234,567');
+    expect(formatWon(32000)).toBe('32,000원');
+    expect(shortWon(9800)).toBe('9,800원');
+    expect(shortWon(320000)).toBe('32만 원');
+  });
+
+  it('적은 기록만 더하고 가장 많이 쓴 기록을 찾는다', () => {
+    const a = done('a', '2026-01-01');
+    const b = done('b', '2026-01-02');
+    const s = spendingOf([
+      { ...a, done: { ...a.done!, cost: 30000 } },
+      { ...b, done: { ...b.done!, cost: 50000 } },
+      done('c', '2026-01-03'),
+    ]);
+    expect(s).toMatchObject({ total: 80000, count: 2 });
+    expect(s.priciest?.id).toBe('b');
   });
 });

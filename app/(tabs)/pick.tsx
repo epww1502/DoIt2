@@ -47,19 +47,31 @@ import { weatherKey } from '@/lib/weather';
 import { useBucketStore } from '@/store/useBucketStore';
 import { usePrimaryColor, useSettingsStore } from '@/store/useSettingsStore';
 import { useTabBarSpace } from '@/hooks/useTabBarSpace';
+import { useItemWants } from '@/hooks/useItemWants';
+import { useTogether } from '@/hooks/useTogether';
 
-function randomOf<T>(list: T[], except?: T): T {
+/**
+ * 하나 뽑는다. weight가 크면 더 잘 뽑힌다 ('하고 싶어요'를 많이 받은 것).
+ * 직전에 뽑힌 것(except)은 뺀다 (하나뿐이면 그대로)
+ */
+function randomOf<T>(list: T[], except?: T, weight?: (item: T) => number): T {
   if (list.length <= 1) return list[0];
-  let next = list[Math.floor(Math.random() * list.length)];
-  while (next === except) {
-    next = list[Math.floor(Math.random() * list.length)];
+  const pool = list.filter((it) => it !== except);
+  const weights = pool.map((it) => Math.max(1, weight?.(it) ?? 1));
+  let roll = Math.random() * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < pool.length; i++) {
+    roll -= weights[i];
+    if (roll < 0) return pool[i];
   }
-  return next;
+  return pool[pool.length - 1];
 }
 
 export default function PickScreen() {
   const items = useBucketStore((state) => state.items);
   const primary = usePrimaryColor();
+  // 함께 쓰는 공간이면 '하고 싶어요'를 많이 받은 것이 더 잘 뽑힌다
+  const pickSpaceId = useBucketStore((state) => state.spaceId);
+  const wants = useItemWants(useTogether() ? pickSpaceId : null);
   const tabBarSpace = useTabBarSpace();
   const surface = useSurface();
   const reviewCtx = useReviewCtx();
@@ -183,7 +195,12 @@ export default function PickScreen() {
   const shuffle = () => {
     if (candidates.length === 0 || isShuffling) return;
     // 직전에 뽑힌 것은 되도록 피한다
-    const picked = randomOf(candidates, current ?? undefined);
+    // '하고 싶어요' 한 명마다 한 번 더 뽑힐 기회 (아무도 안 눌렀으면 모두 같게)
+    const picked = randomOf(
+      candidates,
+      current ?? undefined,
+      (it) => 1 + wants.countOf(it.id)
+    );
     if (!pickAnimation) {
       // 설정에서 애니메이션을 끄면 바로 결과
       setCurrentId(picked.id);

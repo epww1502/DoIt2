@@ -3,14 +3,19 @@
  */
 import { getCategory, itemTodos, type BucketItem } from './types';
 
-export type BucketSort = 'recent' | 'oldest' | 'goal' | 'progress' | 'name';
+export type BucketSort =
+  'recent' | 'oldest' | 'goal' | 'progress' | 'name' | 'wanted';
 
-export const BUCKET_SORT_META: Record<BucketSort, { label: string }> = {
+export const BUCKET_SORT_META: Record<
+  BucketSort,
+  { label: string; spaceOnly?: boolean }
+> = {
   recent: { label: '최근에 담은 순' },
   oldest: { label: '오래된 순' },
   goal: { label: '목표 날짜 가까운 순' },
   progress: { label: '할 것 많이 해둔 순' },
   name: { label: '이름 순' },
+  wanted: { label: '하고 싶은 사람 많은 순', spaceOnly: true },
 };
 
 /** 목록에서 더 골라보기 (여러 개 고르면 모두 맞는 것만. 실내·실외는 둘 중 하나) */
@@ -77,9 +82,23 @@ export function matchesQuery(item: BucketItem, query: string) {
   return fields.some((f) => normalize(f).includes(q));
 }
 
-export function sortItems(items: BucketItem[], sort: BucketSort) {
+/**
+ * @param wantCount 'wanted' 정렬: 항목마다 하고 싶다고 한 사람 수 (없으면 최근에 담은 순)
+ */
+export function sortItems(
+  items: BucketItem[],
+  sort: BucketSort,
+  wantCount?: (itemId: string) => number
+) {
   const list = [...items];
   switch (sort) {
+    case 'wanted':
+      // 많이 받은 것 먼저, 같으면 최근에 담은 순
+      return list.sort(
+        (a, b) =>
+          (wantCount?.(b.id) ?? 0) - (wantCount?.(a.id) ?? 0) ||
+          Date.parse(b.createdAt) - Date.parse(a.createdAt)
+      );
     case 'oldest':
       return list.sort(
         (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)

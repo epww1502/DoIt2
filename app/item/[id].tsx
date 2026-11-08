@@ -15,6 +15,9 @@ import {
 } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
+import { useItemWants } from '@/hooks/useItemWants';
+import { WantRow } from '@/components/bucket/WantButton';
+import { useMemberLookup } from '@/store/useMembersStore';
 import { showAlert } from '@/lib/dialog';
 import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
@@ -42,6 +45,7 @@ import {
 import { openMapTarget } from '@/lib/openPlace';
 import { todayKey } from '@/lib/date';
 import { doneDateLabel } from '@/lib/bucket/doneDate';
+import { formatWon } from '@/lib/bucket/cost';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 
 export default function BucketDetailScreen() {
@@ -61,6 +65,9 @@ export default function BucketDetailScreen() {
     useKeyboardAwareForm();
   const spaceId = useBucketStore((s) => s.spaceId);
   const updateItem = useBucketStore((s) => s.updateItem);
+  // 하고 싶어요 (함께 쓰는 공간에서만)
+  const wants = useItemWants(together ? spaceId : null);
+  const member = useMemberLookup(spaceId);
 
   if (!item) {
     return (
@@ -204,6 +211,15 @@ export default function BucketDetailScreen() {
           </View>
         ) : null}
 
+        {/* 함께 쓰는 공간: 하고 싶어요 (아직 안 한 것만) */}
+        {together && !done ? (
+          <WantRow
+            mine={wants.wantedByMe(item.id)}
+            wanters={wants.wantersOf(item.id).map(member)}
+            onPress={() => void wants.toggle(item.id)}
+          />
+        ) : null}
+
         {/* 시작하기를 눌렀으면 며칠째인지 */}
         <StartedCard item={item} />
 
@@ -332,6 +348,11 @@ export default function BucketDetailScreen() {
                 </View>
                 {!inSpace && done.review ? (
                   <Text variant="body">“{done.review}”</Text>
+                ) : null}
+                {done.cost ? (
+                  <Text variant="muted" size={13}>
+                    {`${inSpace ? '함께 쓴 돈' : '쓴 돈'} ${formatWon(done.cost)}`}
+                  </Text>
                 ) : null}
               </View>
             </View>

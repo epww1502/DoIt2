@@ -2,6 +2,7 @@
  * '올해의 우리' 돌아보기에 쓸 숫자·기록 모으기.
  * 해낸 것(내 기준으로 본 기록)만 넘긴다.
  */
+import { spendingOf } from './cost';
 import {
   getCategory,
   recordPhotos,
@@ -28,6 +29,8 @@ export type YearRecap = {
   topCategory: { key: CategoryKey; label: string; count: number } | null;
   /** 가장 많이 한 달 (1~12) */
   topMonth: { month: number; count: number } | null;
+  /** 쓴 돈을 적은 기록들의 합 (안 적었으면 0) */
+  spent: number;
   /** 사진 모아보기 (항목마다 첫 장, 최근 순으로 최대 6장) */
   photos: { item: BucketItem; photo: RecordPhoto }[];
 };
@@ -111,6 +114,7 @@ export function buildYearRecap(
     places: items.filter((it) => it.kind === 'place').length,
     activities: items.filter((it) => it.kind === 'activity').length,
     days: dates.size,
+    spent: spendingOf(items).total,
     averageRating: rated > 0 ? ratingSum / rated : 0,
     first: items[0],
     last: items[items.length - 1],

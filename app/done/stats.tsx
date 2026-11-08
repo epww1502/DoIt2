@@ -17,6 +17,7 @@ import {
   type BucketItem,
   type CategoryKey,
 } from '@/lib/bucket/types';
+import { formatWon, shortWon, spendingOf } from '@/lib/bucket/cost';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
 import { CategoryIcon } from '@/components/bucket/CategoryIcon';
@@ -129,6 +130,10 @@ export default function DoneStatsScreen() {
   const maxMonth = Math.max(1, ...stats.months.map((m) => m.count));
   const maxCategory = Math.max(1, ...stats.categories.map((c) => c.count));
   const days = dayjs().diff(dayjs(stats.firstDate), 'day') + 1;
+  // 쓴 돈 (모아보기와 같은 기록으로)
+  const spending = spendingOf(
+    items.filter((it) => itemStatus(it, reviewCtx) === 'done')
+  );
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
@@ -153,6 +158,43 @@ export default function DoneStatsScreen() {
           <StatTile label="성공한 도전" value={`${stats.activities}`} />
           <StatTile label="평균 별점" value={stats.averageRating.toFixed(1)} />
         </View>
+
+        {/* 쓴 돈 (적은 기록이 있을 때만) */}
+        {spending.count > 0 ? (
+          <Section title={together ? '함께 쓴 돈' : '쓴 돈'}>
+            <View className="gap-3">
+              <View className="flex-row gap-3">
+                <StatTile label="모두 합쳐" value={shortWon(spending.total)} />
+                <StatTile
+                  label="한 번에 평균"
+                  value={shortWon(spending.total / spending.count)}
+                />
+              </View>
+              {spending.priciest ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/item/[id]',
+                      params: { id: spending.priciest!.id },
+                    })
+                  }
+                  className="flex-row items-center justify-between rounded-xl px-3 py-2.5 bg-accent active:opacity-70"
+                >
+                  <Text size={13} numberOfLines={1} className="flex-shrink">
+                    {`가장 많이 쓴 날 · ${spending.priciest.title}`}
+                  </Text>
+                  <Text size={13} weight="700" className="text-primary">
+                    {formatWon(spending.priciest.done?.cost ?? 0)}
+                  </Text>
+                </Pressable>
+              ) : null}
+              <Text variant="muted" size={12}>
+                {`쓴 돈을 적은 ${spending.count}개 기록으로 셌어요`}
+              </Text>
+            </View>
+          </Section>
+        ) : null}
 
         {/* 월별 */}
         <Section title="최근 1년, 달마다">
