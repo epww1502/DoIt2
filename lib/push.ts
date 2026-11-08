@@ -22,7 +22,9 @@ export function isPushSupported() {
     Platform.OS !== 'web' &&
     // 알림 부품이 다 들어 있는 빌드에서만 (Expo Go·예전 APK에는 일부가 없다)
     requireOptionalNativeModule('ExpoPushTokenManager') !== null &&
-    requireOptionalNativeModule('ExpoTopicSubscriptionModule') !== null
+    // 토픽 구독 모듈은 안드로이드에만 있다 (iOS에서 확인하면 알림이 늘 꺼진다)
+    (Platform.OS !== 'android' ||
+      requireOptionalNativeModule('ExpoTopicSubscriptionModule') !== null)
   );
 }
 
