@@ -37,11 +37,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { Icon, Text } from '@/components/atoms';
+import { PersonAvatar } from '@/components/space/PersonAvatar';
 import { loadPhotoUrl, usePhotoState } from '@/components/bucket/DonePhoto';
 import { usePhotoLikes } from '@/hooks/usePhotoLikes';
 import { showAlert } from '@/lib/dialog';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
+import { useMemberLookup } from '@/store/useMembersStore';
 import {
   usePhotoViewerStore,
   type ViewerPhoto,
@@ -64,17 +66,18 @@ export default function PhotoViewerScreen() {
   const [index, setIndex] = useState(start);
   const [zoomed, setZoomed] = useState(false);
   const [busy, setBusy] = useState<'save' | 'share' | null>(null);
+  // 하트 누른 사람 목록을 펼쳤는지
+  const [likersOpen, setLikersOpen] = useState(false);
 
   const current = photos[index];
 
   // 함께 쓰는 공간의 기록 사진이면 하트
   const spaceId = useBucketStore((s) => s.spaceId);
   const shared = (useSpace(spaceId)?.memberCount ?? 0) > 1;
-  const likes = usePhotoLikes(
-    shared ? spaceId : null,
-    photos.filter((p) => p.itemId && p.path).map((p) => p.path!)
-  );
+  const likes = usePhotoLikes(shared ? spaceId : null);
+  const member = useMemberLookup(spaceId);
   const canLike = shared && Boolean(current?.path && current.itemId);
+  const likers = canLike ? likes.likersOf(current!.path) : [];
 
   /** 이 사진이 있는 기록으로 (크게 보기를 닫고 그 기록 화면을 연다) */
   const openRecord = () => {
@@ -87,6 +90,7 @@ export default function PhotoViewerScreen() {
     if (next !== index) {
       setIndex(next);
       setZoomed(false);
+      setLikersOpen(false);
     }
   };
 
@@ -213,7 +217,37 @@ export default function PhotoViewerScreen() {
         <View className="h-10 w-10" />
       </View>
 
-      {/* 아래: 저장 · 공유 */}
+      {/* 하트 누른 사람 (하트 수를 누르면 펼친다. 바깥을 누르면 닫는다) */}
+      {likersOpen && likers.length > 0 ? (
+        <>
+          <Pressable
+            accessibilityLabel="하트 누른 사람 닫기"
+            onPress={() => setLikersOpen(false)}
+            className="absolute inset-0"
+          />
+          <View
+            className="bg-black/85 absolute left-5 right-5 gap-2.5 rounded-2xl px-4 py-3"
+            style={{ bottom: insets.bottom + 72 }}
+          >
+            <Text size={12} weight="600" className="text-white/70">
+              {`하트 ${likers.length}`}
+            </Text>
+            {likers.map((userId) => {
+              const who = member(userId);
+              return (
+                <View key={userId} className="flex-row items-center gap-2">
+                  <PersonAvatar imagePath={who.avatarPath} size={24} />
+                  <Text size={14} weight="600" className="text-white">
+                    {who.isMe ? `${who.name} (나)` : who.name}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </>
+      ) : null}
+
+      {/* 아래: 하트 · 저장 · 공유 */}
       <View
         className="absolute left-0 right-0 flex-row justify-center gap-3 px-5"
         style={{ bottom: insets.bottom + 12 }}
@@ -221,10 +255,11 @@ export default function PhotoViewerScreen() {
         {canLike && current?.path && current.itemId ? (
           <HeartButton
             liked={likes.likedByMe(current.path)}
-            count={likes.countOf(current.path)}
+            count={likers.length}
             onPress={() =>
               void likes.toggle(current.path!, current.itemId!, current.by)
             }
+            onCountPress={() => setLikersOpen((open) => !open)}
           />
         ) : null}
         <ActionButton
@@ -275,35 +310,51 @@ function ActionButton({
 }
 
 /** 하트: 누르면 넣기/빼기, 옆에 하트 수 */
+/** 하트: 하트를 누르면 넣기/빼기, 옆의 수를 누르면 누른 사람 보기 */
 function HeartButton({
   liked,
   count,
   onPress,
+  onCountPress,
 }: {
   liked: boolean;
   count: number;
   onPress: () => void;
+  onCountPress: () => void;
 }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={liked ? '하트 빼기' : '하트 누르기'}
-      accessibilityState={{ selected: liked }}
-      onPress={onPress}
-      className="bg-white/15 h-12 flex-row items-center justify-center gap-1.5 rounded-full px-4 active:opacity-70"
-    >
-      <Icon
-        as={Heart}
-        size={20}
-        className={cn(liked ? 'text-red-500' : 'text-white')}
-        fill={liked ? '#ef4444' : 'transparent'}
-      />
+    <View className="bg-white/15 h-12 flex-row items-center rounded-full">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={liked ? '하트 빼기' : '하트 누르기'}
+        accessibilityState={{ selected: liked }}
+        onPress={onPress}
+        className={cn(
+          'h-12 justify-center active:opacity-70',
+          count > 0 ? 'pl-4 pr-1.5' : 'px-4'
+        )}
+      >
+        <Icon
+          as={Heart}
+          size={20}
+          className={cn(liked ? 'text-red-500' : 'text-white')}
+          fill={liked ? '#ef4444' : 'transparent'}
+        />
+      </Pressable>
       {count > 0 ? (
-        <Text weight="600" size={15} className="text-white">
-          {count}
-        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`하트 누른 사람 ${count}명 보기`}
+          hitSlop={4}
+          onPress={onCountPress}
+          className="h-12 justify-center pl-1 pr-4 active:opacity-70"
+        >
+          <Text weight="600" size={15} className="text-white underline">
+            {count}
+          </Text>
+        </Pressable>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 

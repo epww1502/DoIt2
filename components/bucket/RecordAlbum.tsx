@@ -3,12 +3,15 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import { Text } from '@/components/atoms';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
+import { usePhotoLikes } from '@/hooks/usePhotoLikes';
 import { allRecordPhotos } from '@/lib/bucket/reviews';
 import type { BucketItem } from '@/lib/bucket/types';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useMemberLookup } from '@/store/useMembersStore';
+import { useSpace } from '@/store/useSpaceStore';
 
+import { LikeCount } from './LikeCount';
 import { PhotoGallery } from './DonePhoto';
 
 /** 칩에서 고른 사람. 'all': 모두, null: 예전 기록에 함께 붙어 있던 사진 */
@@ -22,6 +25,9 @@ export function RecordAlbum({ item }: { item: BucketItem }) {
   const spaceId = useBucketStore((s) => s.spaceId);
   const member = useMemberLookup(spaceId);
   const [filter, setFilter] = useState<Filter>('all');
+  // 함께 쓰는 공간이면 사진마다 하트 수
+  const shared = (useSpace(spaceId)?.memberCount ?? 0) > 1;
+  const likes = usePhotoLikes(shared ? spaceId : null);
 
   const all = allRecordPhotos(item);
   if (all.length === 0) return null;
@@ -47,6 +53,7 @@ export function RecordAlbum({ item }: { item: BucketItem }) {
         key={String(current)}
         photos={photos}
         itemId={item.id}
+        corner={(i) => <LikeCount count={likes.countOf(photos[i]?.path)} />}
         caption={(i) => {
           const by = photos[i]?.by ?? null;
           return by === null ? null : `${member(by).name}의 사진`;

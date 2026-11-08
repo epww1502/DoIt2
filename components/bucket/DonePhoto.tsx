@@ -127,10 +127,13 @@ export function PhotoGallery({
   overlay,
   caption,
   itemId,
+  corner,
 }: {
   photos: (RecordPhoto & { by?: string | null })[];
   overlay?: (index: number) => ReactNode;
   caption?: (index: number) => string | null;
+  /** 지금 보고 있는 사진 오른쪽 아래에 덧그릴 것 (하트 수 등) */
+  corner?: (index: number) => ReactNode;
   /** 공간 기록 사진이면 그 기록 (크게 보기에서 하트) */
   itemId?: string;
 }) {
@@ -138,9 +141,18 @@ export function PhotoGallery({
   const [index, setIndex] = useState(0);
   if (photos.length === 0) return null;
   const shown = Math.min(index, photos.length - 1);
-  const badge = overlay ? (
-    <View className="absolute left-3 top-3">{overlay(shown)}</View>
-  ) : null;
+  const badge = (
+    <>
+      {overlay ? (
+        <View className="absolute left-3 top-3">{overlay(shown)}</View>
+      ) : null}
+      {corner ? (
+        <View className="absolute bottom-3 right-3" pointerEvents="none">
+          {corner(shown)}
+        </View>
+      ) : null}
+    </>
+  );
   const open = (i: number) =>
     openPhotoViewer(
       photos.map((p, j) => ({ ...p, caption: caption?.(j) ?? null, itemId })),

@@ -4,6 +4,7 @@ import {
   ChevronRight,
   CircleCheck,
   GalleryVertical,
+  Images,
   List,
   Map as MapIcon,
   SlidersHorizontal,
@@ -44,6 +45,7 @@ import { useSelection } from '@/hooks/useSelection';
 import { cn } from '@/lib/utils';
 import { recapYear } from '@/lib/bucket/yearRecap';
 import { countSpots } from '@/components/bucket/ItemsMap';
+import { albumPhotos } from '@/lib/bucket/album';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useSpace } from '@/store/useSpaceStore';
 import { shareBucketItems } from '@/lib/shareItems';
@@ -92,6 +94,8 @@ export default function DoneScreen() {
   // 지도에 찍을 수 있는 (장소를 골라둔) 기록 수
   // (체크한 할 것의 위치도 센다)
   const visitedCount = useMemo(() => countSpots(items, 'done'), [items]);
+  // 기록에 올린 사진 수 (사진 모아보기 칸)
+  const photoCount = useMemo(() => albumPhotos(items).length, [items]);
   // 종류만 거른 목록 (필터 시트에서 고를 수 있는 연도·카테고리를 여기서 뽑는다)
   const byKind = useMemo(
     () => (kind === 'all' ? done : done.filter((it) => it.kind === kind)),
@@ -309,15 +313,27 @@ export default function DoneScreen() {
                 <ViewLink
                   icon={MapIcon}
                   label={
-                    visitedCount > 0
-                      ? `${placesLabel} 지도 · ${visitedCount}곳`
-                      : `${placesLabel} 지도`
+                    // 사진 칸까지 셋이면 짧게
+                    photoCount > 0
+                      ? visitedCount > 0
+                        ? `지도 · ${visitedCount}곳`
+                        : '지도'
+                      : visitedCount > 0
+                        ? `${placesLabel} 지도 · ${visitedCount}곳`
+                        : `${placesLabel} 지도`
                   }
                   onPress={() => router.push('/done/map')}
                 />
+                {photoCount > 0 ? (
+                  <ViewLink
+                    icon={Images}
+                    label={`사진 · ${photoCount}`}
+                    onPress={() => router.push('/done/photos')}
+                  />
+                ) : null}
                 <ViewLink
                   icon={ChartColumn}
-                  label="추억 모아보기"
+                  label={photoCount > 0 ? '추억 통계' : '추억 모아보기'}
                   onPress={() => router.push('/done/stats')}
                 />
               </View>

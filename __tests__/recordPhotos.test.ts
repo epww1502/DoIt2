@@ -1,3 +1,4 @@
+import { albumMonths, albumPhotos } from '@/lib/bucket/album';
 import {
   allRecordPhotos,
   sharedRecordPhotos,
@@ -99,5 +100,27 @@ describe('viewForMe', () => {
     const it = item(['s/old.jpg'], []);
     const view = viewForMe(it, { userId: ME, inSpace: false });
     expect(recordPhotos(view.done).map((x) => x.path)).toEqual(['s/old.jpg']);
+  });
+});
+
+describe('albumPhotos', () => {
+  const at = (id: string, date: string, paths: string[]): BucketItem => ({
+    ...item([], [review(ME, '2026-01-01T00:00:00Z', paths)]),
+    id,
+    done: { ...item([], []).done!, date },
+  });
+
+  it('최근 기록 사진이 먼저, 달별로 묶는다', () => {
+    const photos = albumPhotos([
+      at('a', '2026-10-03', ['s/a1']),
+      at('b', '2026-11-02', ['s/b1', 's/b2']),
+      { ...at('c', '2026-11-05', []), done: null },
+    ]);
+    expect(photos.map((p) => p.path)).toEqual(['s/b1', 's/b2', 's/a1']);
+    expect(photos[0].by).toBe(ME);
+    expect(albumMonths(photos).map((m) => [m.month, m.photos.length])).toEqual([
+      ['2026-11', 2],
+      ['2026-10', 1],
+    ]);
   });
 });
