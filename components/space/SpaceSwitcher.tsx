@@ -9,6 +9,7 @@ import {
 } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
+import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, InlineError, Text } from '@/components/atoms';
@@ -82,7 +83,7 @@ function SpaceSheet({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent
       navigationBarTranslucent
@@ -94,75 +95,80 @@ function SpaceSheet({
           onPress={onClose}
           className="absolute inset-0 bg-black/40"
         />
-        <View
-          className="max-h-[75%] gap-3 rounded-t-3xl bg-background pt-5"
-          style={{ paddingBottom: insets.bottom + 12 }}
+        <Animated.View
+          entering={SlideInDown.duration(260)}
+          style={{ maxHeight: '75%' }}
         >
-          <Text weight="700" size={18} className="px-5">
-            어느 공간을 볼까요?
-          </Text>
-          <ScrollView contentContainerClassName="gap-1 px-3">
-            <SpaceRow
-              emoji={PERSONAL.emoji}
-              name={PERSONAL.name}
-              detail="이 휴대폰에만 저장돼요"
-              selected={spaceId === null}
-              onPress={() => choose(null)}
-            />
-            {spaces.map((s: Space) => (
+          <View
+            className="shrink gap-3 rounded-t-3xl bg-background pt-5"
+            style={{ paddingBottom: insets.bottom + 12 }}
+          >
+            <Text weight="700" size={18} className="px-5">
+              어느 공간을 볼까요?
+            </Text>
+            <ScrollView contentContainerClassName="gap-1 px-3">
               <SpaceRow
-                key={s.id}
-                emoji={s.emoji}
-                imagePath={s.image_path}
-                name={s.name}
-                detail={s.is_personal ? '개인 공간' : `${s.memberCount}명`}
-                selected={spaceId === s.id}
-                onPress={() => choose(s.id)}
+                emoji={PERSONAL.emoji}
+                name={PERSONAL.name}
+                detail="이 휴대폰에만 저장돼요"
+                selected={spaceId === null}
+                onPress={() => choose(null)}
               />
-            ))}
-          </ScrollView>
+              {spaces.map((s: Space) => (
+                <SpaceRow
+                  key={s.id}
+                  emoji={s.emoji}
+                  imagePath={s.image_path}
+                  name={s.name}
+                  detail={s.is_personal ? '개인 공간' : `${s.memberCount}명`}
+                  selected={spaceId === s.id}
+                  onPress={() => choose(s.id)}
+                />
+              ))}
+            </ScrollView>
 
-          <View className="gap-1 border-t border-border px-3 pt-2">
-            {online ? (
-              <>
-                <ActionRow
-                  icon={Plus}
-                  label="새 공간 만들기"
-                  onPress={() => go('/space/new')}
-                />
-                <ActionRow
-                  icon={Ticket}
-                  label="초대 코드로 들어가기"
-                  onPress={() => go('/space/join')}
-                />
-                {spaceId ? (
+            <View className="gap-1 border-t border-border px-3 pt-2">
+              {online ? (
+                <>
                   <ActionRow
-                    icon={Settings2}
-                    label="지금 공간 관리 · 초대하기"
-                    onPress={() => go('/space')}
+                    icon={Plus}
+                    label="새 공간 만들기"
+                    onPress={() => go('/space/new')}
                   />
-                ) : null}
-                {spaces.length > 1 ? (
                   <ActionRow
-                    icon={ListOrdered}
-                    label="모든 공간 관리 · 순서 바꾸기"
-                    onPress={() => go('/space/list')}
+                    icon={Ticket}
+                    label="초대 코드로 들어가기"
+                    onPress={() => go('/space/join')}
                   />
-                ) : null}
-              </>
-            ) : status === 'loading' ? (
-              <Text variant="muted" size={13} className="px-2 py-2">
-                서버에 연결하는 중이에요…
-              </Text>
-            ) : (
-              // 연결에 실패했으면 여기서 바로 다시 시도한다
-              <InlineError
-                message="서버에 연결해야 공간을 만들거나 들어갈 수 있어요."
-                onRetry={() => void useSpaceStore.getState().init()}
-              />
-            )}
+                  {spaceId ? (
+                    <ActionRow
+                      icon={Settings2}
+                      label="지금 공간 관리 · 초대하기"
+                      onPress={() => go('/space')}
+                    />
+                  ) : null}
+                  {spaces.length > 1 ? (
+                    <ActionRow
+                      icon={ListOrdered}
+                      label="모든 공간 관리 · 순서 바꾸기"
+                      onPress={() => go('/space/list')}
+                    />
+                  ) : null}
+                </>
+              ) : status === 'loading' ? (
+                <Text variant="muted" size={13} className="px-2 py-2">
+                  서버에 연결하는 중이에요…
+                </Text>
+              ) : (
+                // 연결에 실패했으면 여기서 바로 다시 시도한다
+                <InlineError
+                  message="서버에 연결해야 공간을 만들거나 들어갈 수 있어요."
+                  onRetry={() => void useSpaceStore.getState().init()}
+                />
+              )}
+            </View>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );

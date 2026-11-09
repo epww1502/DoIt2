@@ -516,8 +516,16 @@ export function ItemSocial({
             maxLength={MAX_COMMENT_LENGTH}
             multiline
             onFocus={onInputFocus}
-            className="max-h-28 flex-1 py-2 text-foreground"
-            style={{ fontFamily: FONT_WEIGHTS['400'], fontSize: 15 }}
+            textAlignVertical="center"
+            className="max-h-28 flex-1 text-foreground"
+            // iOS 여러 줄 입력은 위 여백을 따로 넣어 글자가 아래로 처진다. 여백·줄 높이를 직접 정해 버튼(40)과 맞춘다
+            style={{
+              fontFamily: FONT_WEIGHTS['400'],
+              fontSize: 15,
+              lineHeight: 20,
+              paddingTop: 10,
+              paddingBottom: 10,
+            }}
           />
           <Pressable
             accessibilityRole="button"

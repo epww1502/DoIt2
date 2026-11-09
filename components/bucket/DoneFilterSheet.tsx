@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
+import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Chip, Segmented, Text } from '@/components/atoms';
@@ -73,7 +74,7 @@ export function DoneFilterSheet(props: DoneFilterSheetProps) {
     <Modal
       visible={props.visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={props.onClose}
       statusBarTranslucent
       navigationBarTranslucent
@@ -111,105 +112,112 @@ function SheetBody({ items, value, onApply, onClose }: DoneFilterSheetProps) {
         onPress={onClose}
         className="absolute inset-0 bg-black/40"
       />
-      <View
-        className="max-h-[85%] rounded-t-3xl bg-background pt-3"
-        style={{ paddingBottom: insets.bottom + 12 }}
+      <Animated.View
+        entering={SlideInDown.duration(260)}
+        style={{ maxHeight: '85%' }}
       >
-        <View className="mb-2 h-1 w-10 self-center rounded-full bg-border" />
-        <Text weight="700" size={18} className="px-5 pb-2">
-          필터
-        </Text>
-        <ScrollView contentContainerClassName="gap-6 px-5 pb-4 pt-2">
-          <FilterSection title="언제">
-            <View className="flex-row flex-wrap gap-2">
-              <Chip
-                label="전체"
-                selected={draft.year === null}
-                onPress={() => setDraft((d) => ({ ...d, year: null }))}
-              />
-              {years.map((y) => (
+        <View
+          className="shrink rounded-t-3xl bg-background pt-3"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
+          <View className="mb-2 h-1 w-10 self-center rounded-full bg-border" />
+          <Text weight="700" size={18} className="px-5 pb-2">
+            필터
+          </Text>
+          <ScrollView contentContainerClassName="gap-6 px-5 pb-4 pt-2">
+            <FilterSection title="언제">
+              <View className="flex-row flex-wrap gap-2">
                 <Chip
-                  key={y}
-                  label={`${y}년`}
-                  selected={draft.year === y}
-                  onPress={() => setDraft((d) => ({ ...d, year: y }))}
+                  label="전체"
+                  selected={draft.year === null}
+                  onPress={() => setDraft((d) => ({ ...d, year: null }))}
                 />
-              ))}
-            </View>
-          </FilterSection>
-
-          <FilterSection title="카테고리 (여러 개 고를 수 있어요)">
-            <View className="flex-row flex-wrap gap-2">
-              <Chip
-                label="전체"
-                selected={draft.categories.length === 0}
-                onPress={() => setDraft((d) => ({ ...d, categories: [] }))}
-              />
-              {categories.map((key) => {
-                const c = getCategory(key);
-                return (
+                {years.map((y) => (
                   <Chip
-                    key={key}
-                    label={c.label}
-                    category={key}
-                    selected={draft.categories.includes(key)}
-                    onPress={() => toggleCategory(key)}
+                    key={y}
+                    label={`${y}년`}
+                    selected={draft.year === y}
+                    onPress={() => setDraft((d) => ({ ...d, year: y }))}
                   />
-                );
-              })}
-            </View>
-          </FilterSection>
+                ))}
+              </View>
+            </FilterSection>
 
-          <FilterSection title="실내 · 실외">
-            <Segmented
-              options={SETTING_OPTIONS}
-              value={draft.setting}
-              onChange={(setting) => setDraft((d) => ({ ...d, setting }))}
-            />
-          </FilterSection>
+            <FilterSection title="카테고리 (여러 개 고를 수 있어요)">
+              <View className="flex-row flex-wrap gap-2">
+                <Chip
+                  label="전체"
+                  selected={draft.categories.length === 0}
+                  onPress={() => setDraft((d) => ({ ...d, categories: [] }))}
+                />
+                {categories.map((key) => {
+                  const c = getCategory(key);
+                  return (
+                    <Chip
+                      key={key}
+                      label={c.label}
+                      category={key}
+                      selected={draft.categories.includes(key)}
+                      onPress={() => toggleCategory(key)}
+                    />
+                  );
+                })}
+              </View>
+            </FilterSection>
 
-          <FilterSection title="최소 별점">
-            <View className="flex-row items-center gap-3">
-              <StarRating
-                value={draft.minRating}
-                onChange={(minRating) => setDraft((d) => ({ ...d, minRating }))}
-                size={28}
+            <FilterSection title="실내 · 실외">
+              <Segmented
+                options={SETTING_OPTIONS}
+                value={draft.setting}
+                onChange={(setting) => setDraft((d) => ({ ...d, setting }))}
               />
-              <Text variant="muted" size={13}>
-                {draft.minRating <= 1
-                  ? '전체'
-                  : draft.minRating === 5
-                    ? '5점만'
-                    : `${draft.minRating}점 이상`}
-              </Text>
-            </View>
-          </FilterSection>
-        </ScrollView>
+            </FilterSection>
 
-        <View className="flex-row gap-2 border-t border-border px-5 pt-3">
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setDraft(EMPTY_DONE_FILTER)}
-            className="h-12 items-center justify-center rounded-xl px-5 bg-accent active:opacity-70"
-          >
-            <Text weight="600" size={15} className="text-muted-foreground">
-              초기화
-            </Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              onApply(draft);
-              onClose();
-            }}
-            className="h-12 flex-1 items-center justify-center rounded-xl bg-primary active:opacity-70"
-          >
-            <Text weight="600" size={15} className="text-primary-foreground">
-              {`${resultCount}개 보기`}
-            </Text>
-          </Pressable>
+            <FilterSection title="최소 별점">
+              <View className="flex-row items-center gap-3">
+                <StarRating
+                  value={draft.minRating}
+                  onChange={(minRating) =>
+                    setDraft((d) => ({ ...d, minRating }))
+                  }
+                  size={28}
+                />
+                <Text variant="muted" size={13}>
+                  {draft.minRating <= 1
+                    ? '전체'
+                    : draft.minRating === 5
+                      ? '5점만'
+                      : `${draft.minRating}점 이상`}
+                </Text>
+              </View>
+            </FilterSection>
+          </ScrollView>
+
+          <View className="flex-row gap-2 border-t border-border px-5 pt-3">
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setDraft(EMPTY_DONE_FILTER)}
+              className="h-12 items-center justify-center rounded-xl px-5 bg-accent active:opacity-70"
+            >
+              <Text weight="600" size={15} className="text-muted-foreground">
+                초기화
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                onApply(draft);
+                onClose();
+              }}
+              className="h-12 flex-1 items-center justify-center rounded-xl bg-primary active:opacity-70"
+            >
+              <Text weight="600" size={15} className="text-primary-foreground">
+                {`${resultCount}개 보기`}
+              </Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }

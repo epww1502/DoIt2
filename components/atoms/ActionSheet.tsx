@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Modal, Pressable, View } from 'react-native';
+import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { cn } from '@/lib/utils';
@@ -34,7 +35,7 @@ export function ActionSheet({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent
       navigationBarTranslucent
@@ -46,41 +47,43 @@ export function ActionSheet({
           onPress={onClose}
           className="absolute inset-0 bg-black/40"
         />
-        <View
-          className="gap-1 rounded-t-3xl bg-background px-3 pt-3"
-          style={{ paddingBottom: insets.bottom + 12 }}
-        >
-          <View className="mb-2 h-1 w-10 self-center rounded-full bg-border" />
-          {header ? <View className="px-2 pb-3">{header}</View> : null}
-          {items.map((item) => (
-            <Pressable
-              key={item.label}
-              accessibilityRole="button"
-              onPress={() => {
-                onClose();
-                item.onPress();
-              }}
-              className="rounded-xl px-3 py-3.5 active:bg-accent"
-            >
-              <Text
-                weight="600"
-                size={16}
-                className={cn(item.destructive && 'text-destructive')}
+        <Animated.View entering={SlideInDown.duration(260)}>
+          <View
+            className="shrink gap-1 rounded-t-3xl bg-background px-3 pt-3"
+            style={{ paddingBottom: insets.bottom + 12 }}
+          >
+            <View className="mb-2 h-1 w-10 self-center rounded-full bg-border" />
+            {header ? <View className="px-2 pb-3">{header}</View> : null}
+            {items.map((item) => (
+              <Pressable
+                key={item.label}
+                accessibilityRole="button"
+                onPress={() => {
+                  onClose();
+                  item.onPress();
+                }}
+                className="rounded-xl px-3 py-3.5 active:bg-accent"
               >
-                {item.label}
+                <Text
+                  weight="600"
+                  size={16}
+                  className={cn(item.destructive && 'text-destructive')}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            ))}
+            <Pressable
+              accessibilityRole="button"
+              onPress={onClose}
+              className="mt-1 items-center rounded-xl py-3.5 bg-accent active:opacity-70"
+            >
+              <Text weight="600" size={16} className="text-muted-foreground">
+                취소
               </Text>
             </Pressable>
-          ))}
-          <Pressable
-            accessibilityRole="button"
-            onPress={onClose}
-            className="mt-1 items-center rounded-xl py-3.5 bg-accent active:opacity-70"
-          >
-            <Text weight="600" size={16} className="text-muted-foreground">
-              취소
-            </Text>
-          </Pressable>
-        </View>
+          </View>
+        </Animated.View>
       </View>
     </Modal>
   );

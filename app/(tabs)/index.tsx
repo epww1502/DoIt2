@@ -20,6 +20,7 @@ import { FlatList, Pressable, SectionList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
+import { usePullRefresh } from '@/hooks/usePullRefresh';
 import { showAlert } from '@/lib/dialog';
 import {
   ActionSheet,
@@ -95,6 +96,7 @@ const BUCKET_VIEW_META: Record<
 };
 
 export default function BucketListScreen() {
+  const refreshControl = usePullRefresh();
   const together = useTogether();
   const doneLabel = together ? '함께한 것' : '해낸 것';
   const items = useBucketStore((state) => state.items);
@@ -585,6 +587,7 @@ export default function BucketListScreen() {
             </View>
           ) : bucketView === 'category' ? (
             <SectionList
+              refreshControl={refreshControl}
               sections={sections}
               keyExtractor={(item) => item.id}
               extraData={{ selected: selection.selected, wants: wants.rows }}
@@ -624,6 +627,7 @@ export default function BucketListScreen() {
             />
           ) : (
             <FlatList
+              refreshControl={refreshControl}
               data={listItems}
               keyExtractor={(item) => item.id}
               extraData={{ selected: selection.selected, wants: wants.rows }}

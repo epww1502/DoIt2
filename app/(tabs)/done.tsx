@@ -17,6 +17,7 @@ import { FlatList, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
+import { usePullRefresh } from '@/hooks/usePullRefresh';
 import { showAlert } from '@/lib/dialog';
 import { ActionSheet, Icon, Segmented, Text } from '@/components/atoms';
 import { DoneCalendar } from '@/components/bucket/DoneCalendar';
@@ -69,6 +70,7 @@ const KIND_OPTIONS: SegmentedOption<KindOption>[] = [
 ];
 
 export default function DoneScreen() {
+  const refreshControl = usePullRefresh();
   const items = useBucketStore((state) => state.items);
   // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
   const sync = useListSync();
@@ -346,6 +348,7 @@ export default function DoneScreen() {
           </View>
           {doneView === 'calendar' ? (
             <ScrollView
+              refreshControl={refreshControl}
               contentContainerClassName="px-5"
               contentContainerStyle={{ paddingBottom: listBottom }}
             >
@@ -364,6 +367,7 @@ export default function DoneScreen() {
             </ScrollView>
           ) : (
             <FlatList
+              refreshControl={refreshControl}
               data={shown}
               keyExtractor={(item) => item.id}
               extraData={selection.selected}

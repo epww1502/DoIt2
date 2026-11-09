@@ -2,6 +2,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, View } from 'react-native';
+import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Icon, Text } from '@/components/atoms';
@@ -37,7 +38,7 @@ export function DatePickerSheet({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent
       navigationBarTranslucent
@@ -112,117 +113,119 @@ function Calendar({ value, maxDate, onSelect, onClose }: CalendarProps) {
         onPress={onClose}
         className="absolute inset-0 bg-black/40"
       />
-      <View
-        className="gap-4 rounded-t-3xl bg-background px-5 pt-5"
-        style={{ paddingBottom: insets.bottom + 12 }}
-      >
-        {/* 제목: 누르면 일 → 월 → 연으로 넓게 본다 */}
-        <View className="flex-row items-center justify-between">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${title}, 눌러서 더 넓게 보기`}
-            disabled={view === 'year'}
-            onPress={zoomOut}
-            hitSlop={8}
-            className="flex-row items-center gap-1"
-          >
-            <Text weight="700" size={18}>
-              {title}
-            </Text>
-            {view !== 'year' ? (
-              <Icon
-                as={ChevronDown}
-                size={18}
-                className="text-muted-foreground"
-              />
-            ) : null}
-          </Pressable>
-          <View className="flex-row">
+      <Animated.View entering={SlideInDown.duration(260)}>
+        <View
+          className="shrink gap-4 rounded-t-3xl bg-background px-5 pt-5"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
+          {/* 제목: 누르면 일 → 월 → 연으로 넓게 본다 */}
+          <View className="flex-row items-center justify-between">
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="이전"
-              hitSlop={6}
-              onPress={() => move(-1)}
-              className="h-10 w-10 items-center justify-center"
+              accessibilityLabel={`${title}, 눌러서 더 넓게 보기`}
+              disabled={view === 'year'}
+              onPress={zoomOut}
+              hitSlop={8}
+              className="flex-row items-center gap-1"
             >
-              <Icon as={ChevronLeft} size={22} />
+              <Text weight="700" size={18}>
+                {title}
+              </Text>
+              {view !== 'year' ? (
+                <Icon
+                  as={ChevronDown}
+                  size={18}
+                  className="text-muted-foreground"
+                />
+              ) : null}
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="다음"
-              hitSlop={6}
-              disabled={!canGoNext}
-              onPress={() => move(1)}
-              className="h-10 w-10 items-center justify-center"
-            >
-              <Icon
-                as={ChevronRight}
-                size={22}
-                className={canGoNext ? 'text-foreground' : 'text-muted'}
-              />
-            </Pressable>
+            <View className="flex-row">
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="이전"
+                hitSlop={6}
+                onPress={() => move(-1)}
+                className="h-10 w-10 items-center justify-center"
+              >
+                <Icon as={ChevronLeft} size={22} />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="다음"
+                hitSlop={6}
+                disabled={!canGoNext}
+                onPress={() => move(1)}
+                className="h-10 w-10 items-center justify-center"
+              >
+                <Icon
+                  as={ChevronRight}
+                  size={22}
+                  className={canGoNext ? 'text-foreground' : 'text-muted'}
+                />
+              </Pressable>
+            </View>
           </View>
+
+          {view === 'day' ? (
+            <DayGrid
+              month={cursor}
+              selected={selected}
+              max={max}
+              onSelect={(d) => onSelect(d.format(DATE_FORMAT))}
+            />
+          ) : view === 'month' ? (
+            <CellGrid
+              columns={3}
+              cells={Array.from({ length: 12 }, (_, m) => {
+                const month = cursor.month(m).startOf('month');
+                return {
+                  key: String(m),
+                  label: `${m + 1}월`,
+                  selected: month.isSame(selected, 'month'),
+                  disabled: month.isAfter(max),
+                  onPress: () => {
+                    setCursor(month);
+                    setView('day');
+                  },
+                };
+              })}
+            />
+          ) : (
+            <CellGrid
+              columns={3}
+              cells={Array.from({ length: YEARS_PER_PAGE }, (_, i) => {
+                const year = yearPageStart + i;
+                return {
+                  key: String(year),
+                  label: `${year}`,
+                  selected: year === selected.year(),
+                  disabled: year > max.year(),
+                  onPress: () => {
+                    // 미래 달로 넘어가지 않게, 고른 해가 올해면 이번 달을 넘지 않는다
+                    const next = cursor.year(year);
+                    setCursor(next.isAfter(max) ? max.startOf('month') : next);
+                    setView('month');
+                  },
+                };
+              })}
+            />
+          )}
+
+          <Button
+            label="오늘로"
+            variant="outline"
+            size="md"
+            // 오늘이 고를 수 있는 마지막 날보다 뒤면 마지막 날로
+            onPress={() =>
+              onSelect(
+                dayjs().isAfter(max)
+                  ? max.format(DATE_FORMAT)
+                  : dayjs().format(DATE_FORMAT)
+              )
+            }
+          />
         </View>
-
-        {view === 'day' ? (
-          <DayGrid
-            month={cursor}
-            selected={selected}
-            max={max}
-            onSelect={(d) => onSelect(d.format(DATE_FORMAT))}
-          />
-        ) : view === 'month' ? (
-          <CellGrid
-            columns={3}
-            cells={Array.from({ length: 12 }, (_, m) => {
-              const month = cursor.month(m).startOf('month');
-              return {
-                key: String(m),
-                label: `${m + 1}월`,
-                selected: month.isSame(selected, 'month'),
-                disabled: month.isAfter(max),
-                onPress: () => {
-                  setCursor(month);
-                  setView('day');
-                },
-              };
-            })}
-          />
-        ) : (
-          <CellGrid
-            columns={3}
-            cells={Array.from({ length: YEARS_PER_PAGE }, (_, i) => {
-              const year = yearPageStart + i;
-              return {
-                key: String(year),
-                label: `${year}`,
-                selected: year === selected.year(),
-                disabled: year > max.year(),
-                onPress: () => {
-                  // 미래 달로 넘어가지 않게, 고른 해가 올해면 이번 달을 넘지 않는다
-                  const next = cursor.year(year);
-                  setCursor(next.isAfter(max) ? max.startOf('month') : next);
-                  setView('month');
-                },
-              };
-            })}
-          />
-        )}
-
-        <Button
-          label="오늘로"
-          variant="outline"
-          size="md"
-          // 오늘이 고를 수 있는 마지막 날보다 뒤면 마지막 날로
-          onPress={() =>
-            onSelect(
-              dayjs().isAfter(max)
-                ? max.format(DATE_FORMAT)
-                : dayjs().format(DATE_FORMAT)
-            )
-          }
-        />
-      </View>
+      </Animated.View>
     </View>
   );
 }

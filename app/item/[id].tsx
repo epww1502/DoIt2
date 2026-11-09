@@ -15,6 +15,7 @@ import {
 } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
+import { usePullRefresh } from '@/hooks/usePullRefresh';
 import { useItemWants } from '@/hooks/useItemWants';
 import { WantRow } from '@/components/bucket/WantButton';
 import { useMemberLookup } from '@/store/useMembersStore';
@@ -50,6 +51,7 @@ import { formatWon } from '@/lib/bucket/cost';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 
 export default function BucketDetailScreen() {
+  const refreshControl = usePullRefresh();
   const together = useTogether();
   const { id } = useLocalSearchParams<{ id: string }>();
   const item = useBucketItem(id);
@@ -174,6 +176,7 @@ export default function BucketDetailScreen() {
 
       <ScrollView
         ref={scrollRef}
+        refreshControl={refreshControl}
         onScroll={onScroll}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"

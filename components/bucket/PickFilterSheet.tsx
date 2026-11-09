@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
+import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppSwitch, Segmented, Text } from '@/components/atoms';
@@ -69,7 +70,7 @@ export function PickFilterSheet(props: PickFilterSheetProps) {
     <Modal
       visible={props.visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={props.onClose}
       statusBarTranslucent
       navigationBarTranslucent
@@ -99,81 +100,88 @@ function SheetBody({
         onPress={onClose}
         className="absolute inset-0 bg-black/40"
       />
-      <View
-        className="max-h-[85%] rounded-t-3xl bg-background pt-3"
-        style={{ paddingBottom: insets.bottom + 12 }}
+      <Animated.View
+        entering={SlideInDown.duration(260)}
+        style={{ maxHeight: '85%' }}
       >
-        <View className="mb-2 h-1 w-10 self-center rounded-full bg-border" />
-        <Text weight="700" size={18} className="px-5 pb-2">
-          뽑기 조건
-        </Text>
-        <ScrollView contentContainerClassName="gap-6 px-5 pb-4 pt-2">
-          <View className="gap-3">
-            <Text weight="600" size={14} className="text-muted-foreground">
-              실내 · 실외
-            </Text>
-            <Segmented
-              options={SETTING_OPTIONS}
-              value={draft.setting}
-              onChange={(setting) => patch({ setting })}
-            />
-          </View>
+        <View
+          className="shrink rounded-t-3xl bg-background pt-3"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
+          <View className="mb-2 h-1 w-10 self-center rounded-full bg-border" />
+          <Text weight="700" size={18} className="px-5 pb-2">
+            뽑기 조건
+          </Text>
+          <ScrollView contentContainerClassName="gap-6 px-5 pb-4 pt-2">
+            <View className="gap-3">
+              <Text weight="600" size={14} className="text-muted-foreground">
+                실내 · 실외
+              </Text>
+              <Segmented
+                options={SETTING_OPTIONS}
+                value={draft.setting}
+                onChange={(setting) => patch({ setting })}
+              />
+            </View>
 
-          <View className="gap-3">
-            <SwitchRow
-              title="이미 해본 것도 포함"
-              description="함께한 것 중에서도 다시 뽑아요"
-              value={draft.includeDone}
-              onChange={(includeDone) => patch({ includeDone })}
-            />
-            {draft.includeDone ? (
-              <View className="flex-row items-center justify-between">
-                <Text size={13} className="text-muted-foreground">
-                  최소 별점
-                </Text>
-                <StarRating
-                  value={draft.minRating}
-                  onChange={(minRating) => patch({ minRating })}
-                  size={22}
-                />
-              </View>
+            <View className="gap-3">
+              <SwitchRow
+                title="이미 해본 것도 포함"
+                description="함께한 것 중에서도 다시 뽑아요"
+                value={draft.includeDone}
+                onChange={(includeDone) => patch({ includeDone })}
+              />
+              {draft.includeDone ? (
+                <View className="flex-row items-center justify-between">
+                  <Text size={13} className="text-muted-foreground">
+                    최소 별점
+                  </Text>
+                  <StarRating
+                    value={draft.minRating}
+                    onChange={(minRating) => patch({ minRating })}
+                    size={22}
+                  />
+                </View>
+              ) : null}
+            </View>
+
+            {rainMatters ? (
+              <SwitchRow
+                title="비 와도 실외 포함"
+                description="오늘 비 오는 곳의 실외 항목도 뽑아요"
+                value={draft.includeOutdoor}
+                onChange={(includeOutdoor) => patch({ includeOutdoor })}
+              />
             ) : null}
+          </ScrollView>
+
+          <View className="flex-row gap-2 border-t border-border px-5 pt-3">
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                setDraft({ ...DEFAULT, minRating: draft.minRating })
+              }
+              className="h-12 items-center justify-center rounded-xl px-5 bg-accent active:opacity-70"
+            >
+              <Text weight="600" size={15} className="text-muted-foreground">
+                초기화
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                onApply(draft);
+                onClose();
+              }}
+              className="h-12 flex-1 items-center justify-center rounded-xl bg-primary active:opacity-70"
+            >
+              <Text weight="600" size={15} className="text-primary-foreground">
+                적용하기
+              </Text>
+            </Pressable>
           </View>
-
-          {rainMatters ? (
-            <SwitchRow
-              title="비 와도 실외 포함"
-              description="오늘 비 오는 곳의 실외 항목도 뽑아요"
-              value={draft.includeOutdoor}
-              onChange={(includeOutdoor) => patch({ includeOutdoor })}
-            />
-          ) : null}
-        </ScrollView>
-
-        <View className="flex-row gap-2 border-t border-border px-5 pt-3">
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setDraft({ ...DEFAULT, minRating: draft.minRating })}
-            className="h-12 items-center justify-center rounded-xl px-5 bg-accent active:opacity-70"
-          >
-            <Text weight="600" size={15} className="text-muted-foreground">
-              초기화
-            </Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              onApply(draft);
-              onClose();
-            }}
-            className="h-12 flex-1 items-center justify-center rounded-xl bg-primary active:opacity-70"
-          >
-            <Text weight="600" size={15} className="text-primary-foreground">
-              적용하기
-            </Text>
-          </Pressable>
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }
