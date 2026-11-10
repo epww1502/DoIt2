@@ -1,4 +1,4 @@
-import { Stack, ThemeProvider } from 'expo-router';
+import { Stack, ThemeProvider, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { vars } from 'nativewind';
 import * as SplashScreen from 'expo-splash-screen';
@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import '../global.css';
 import '@/lib/date';
 
+import { ErrorState } from '@/components/atoms';
 import { DialogHost } from '@/components/atoms/DialogHost';
 import { ConnectionSync } from '@/components/sync/ConnectionSync';
 import { InboxSync } from '@/components/sync/InboxSync';
@@ -23,8 +24,30 @@ import { ThemeModeProvider, useThemeMode } from '@/contexts/ThemeModeContext';
 import { useFontsLoader } from '@/hooks/useFontsLoader';
 import { useStartupUpdate } from '@/hooks/useStartupUpdate';
 import { useSurface } from '@/hooks/useSurface';
+import { installCrashReporter, reportError } from '@/lib/errorReport';
 import { useBucketStoreHydrated } from '@/store/useBucketStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
+
+// 처리되지 않은 오류도 서버에 남긴다 (앱을 켤 때 한 번)
+installCrashReporter();
+
+/** 화면을 그리다 터지면 앱이 꺼지는 대신 다시 시도 화면을 보여주고 기록을 남긴다 */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    void SplashScreen.hideAsync();
+    void reportError('screen', error);
+  }, [error]);
+  return (
+    <View className="flex-1 bg-background">
+      <ErrorState
+        error={error}
+        title="화면을 보여주지 못했어요"
+        description="잠시 후 다시 시도해주세요."
+        onRetry={() => void retry()}
+      />
+    </View>
+  );
+}
 
 export default function RootLayout() {
   return (

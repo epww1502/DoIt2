@@ -15,6 +15,48 @@ export type Database = {
   };
   public: {
     Tables: {
+      app_errors: {
+        Row: {
+          app_version: string | null;
+          created_at: string;
+          id: number;
+          kind: string;
+          message: string;
+          occurred_at: string;
+          platform: string;
+          stack: string | null;
+          title: string | null;
+          update_id: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          app_version?: string | null;
+          created_at?: string;
+          id?: number;
+          kind: string;
+          message: string;
+          occurred_at: string;
+          platform: string;
+          stack?: string | null;
+          title?: string | null;
+          update_id?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          app_version?: string | null;
+          created_at?: string;
+          id?: number;
+          kind?: string;
+          message?: string;
+          occurred_at?: string;
+          platform?: string;
+          stack?: string | null;
+          title?: string | null;
+          update_id?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       app_versions: {
         Row: {
           message: string | null;

@@ -4,6 +4,7 @@
  */
 import { isNetworkError, noteFailure } from '@/lib/connection';
 import { showAlert } from '@/lib/dialog';
+import { reportError } from '@/lib/errorReport';
 
 export type ErrorKind =
   'network' | 'server' | 'permission' | 'notFound' | 'unknown';
@@ -66,6 +67,8 @@ export function showErrorAlert(
 ) {
   const message = errorMessage(e);
   if (__DEV__) console.warn(`[error] ${title}`, e);
+  // 인터넷 문제는 너무 흔하고 앱 잘못이 아니라서 남기지 않는다
+  if (describeError(e).kind !== 'network') void reportError('alert', e, title);
   showAlert(
     title,
     message,
