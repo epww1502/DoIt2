@@ -13,7 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 
 import type { SelectionProps } from './BucketRow';
-import { DonePhoto, PhotoImage } from './DonePhoto';
+import { DonePhotoGallery, PhotoImage } from './DonePhoto';
 import { Selectable } from './Selectable';
 import { StarRating } from './StarRating';
 import { CategoryIcon } from '@/components/bucket/CategoryIcon';
@@ -40,7 +40,8 @@ export function DoneCard({
       className="overflow-hidden rounded-2xl border border-border bg-card active:opacity-80"
     >
       {recordPhotos(done).length > 0 ? (
-        <DonePhoto done={done} />
+        // 목록에서 바로 옆으로 넘겨 본다 (누르면 크게 보기)
+        <DonePhotoGallery done={done} />
       ) : (
         <View className="h-24 items-center justify-center bg-accent">
           <CategoryIcon category={item.category} size={36} />

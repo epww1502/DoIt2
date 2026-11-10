@@ -1,5 +1,5 @@
 import { Image, type ImageStyle } from 'expo-image';
-import { ImageOff, Images } from 'lucide-react-native';
+import { ImageOff } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   Pressable,
@@ -89,25 +89,6 @@ type DonePhotoProps = {
   done: Pick<DoneRecord, 'photoUri' | 'photoPath' | 'photos'>;
   style?: StyleProp<ImageStyle>;
 };
-
-/** 첫 번째 사진을 4:3으로. 여러 장이면 오른쪽 위에 장 수를 보여준다. 없으면 그리지 않는다 */
-export function DonePhoto({ done, style }: DonePhotoProps) {
-  const photos = recordPhotos(done);
-  if (photos.length === 0) return null;
-  return (
-    <View>
-      <PhotoImage photo={photos[0]} style={style} />
-      {photos.length > 1 ? (
-        <View className="absolute right-3 top-3 flex-row items-center gap-1 rounded-full bg-black/60 px-2.5 py-1">
-          <Icon as={Images} size={13} className="text-white" />
-          <Text size={12} weight="600" className="text-white">
-            {photos.length}
-          </Text>
-        </View>
-      ) : null}
-    </View>
-  );
-}
 
 /** 사진 여러 장을 옆으로 넘겨 본다 (아래에 점으로 몇 번째인지) */
 export function DonePhotoGallery({ done }: Pick<DonePhotoProps, 'done'>) {
