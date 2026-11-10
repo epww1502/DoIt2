@@ -13,7 +13,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "type-check": "tsc --noEmit",
     "prepare": "husky",
-    "test": "jest"
+    "test": "jest",
+    "update": "for p in android ios; do npx eas-cli update --channel production --environment production --platform $p --message \"$(git log -1 --pretty=%s)\" || exit 1; done"
   },
   "dependencies": {
     "@expo-google-fonts/jua": "^0.4.1",
