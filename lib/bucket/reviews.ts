@@ -75,7 +75,7 @@ export function sharedRecordPhotos(item: BucketItem): RecordPhoto[] {
 
 /**
  * 공간 기록의 모든 사진 (누가 올렸는지와 함께).
- * 함께 붙어 있던 사진 → 먼저 평가한 사람 순. 첫 장이 목록의 대표 사진이 된다
+ * 대표로 고른 사진 → 함께 붙어 있던 사진 → 먼저 평가한 사람 순. 첫 장이 일지·목록의 대표 사진이다
  */
 export function allRecordPhotos(item: BucketItem): AuthoredPhoto[] {
   const shared = sharedRecordPhotos(item).map((p) => ({ ...p, by: null }));
@@ -84,7 +84,11 @@ export function allRecordPhotos(item: BucketItem): AuthoredPhoto[] {
       (a.createdAt ?? a.updatedAt).localeCompare(b.createdAt ?? b.updatedAt)
     )
     .flatMap((r) => reviewPhotos(r).map((p) => ({ ...p, by: r.userId })));
-  return [...shared, ...byPerson];
+  const all = [...shared, ...byPerson];
+  const coverPath = item.done?.coverPath;
+  const at = coverPath ? all.findIndex((p) => p.path === coverPath) : -1;
+  if (at <= 0) return all;
+  return [all[at], ...all.slice(0, at), ...all.slice(at + 1)];
 }
 
 /** 내 별점. 건너뛰었거나 아직이면 null */

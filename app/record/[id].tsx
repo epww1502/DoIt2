@@ -59,6 +59,9 @@ import {
   type AuthoredPhoto,
 } from '@/lib/bucket/reviews';
 import { showErrorAlert } from '@/lib/errors';
+import { showAlert } from '@/lib/dialog';
+import { hapticSelect } from '@/lib/haptics';
+import { cn } from '@/lib/utils';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
 
 const RATING_LABELS = [
@@ -104,6 +107,10 @@ export default function RecordFormScreen() {
   // 공간에서는 내가 올린 사진만 (다른 사람 사진은 아래에서 보기만)
   const [photos, setPhotos] = useState<RecordPhoto[]>(() =>
     inSpace ? reviewPhotos(mine) : recordPhotos(saved)
+  );
+  // 공간: 일지에 보일 대표 사진 (서버 경로). 사진을 꾹 눌러 고른다
+  const [coverPath, setCoverPath] = useState<string | null>(
+    saved?.coverPath ?? null
   );
   // 쓴 돈 (입력칸 글자. 숫자만 남긴다)
   const [costText, setCostText] = useState(wonInputText(saved?.cost));
@@ -180,6 +187,43 @@ export default function RecordFormScreen() {
   // 다른 사람 사진이 많아서 내 몫이 5장보다 적어졌다
   const sharedFull = inSpace && photoLimit < MAX_RECORD_PHOTOS;
 
+  // 지금 대표 사진 (저장하면 일지에 이 사진이 보인다).
+  // 나만 보기: 첫 장. 공간: 고른 사진, 없으면 처음 올라온 사진 (지금 고친 내 사진까지 넣어서)
+  const coverPhoto: RecordPhoto | undefined = inSpace
+    ? (allRecordPhotos({
+        ...item,
+        done: item.done ? { ...item.done, coverPath } : item.done,
+        reviews: (item.reviews ?? []).map((r) =>
+          r.userId === reviewCtx.userId ? { ...r, photos } : r
+        ),
+      })[0] ?? photos[0])
+    : photos[0];
+  const isCover = (photo: RecordPhoto) =>
+    !!coverPhoto &&
+    ((!!photo.path && photo.path === coverPhoto.path) ||
+      (!!photo.uri && photo.uri === coverPhoto.uri));
+  const totalPhotos = photos.length + otherPhotos.length;
+
+  /** 꾹 누른 사진을 대표로 */
+  const makeCover = (photo: RecordPhoto) => {
+    if (isCover(photo)) return;
+    if (!inSpace) {
+      hapticSelect();
+      setPhotos((prev) => [photo, ...prev.filter((p) => p !== photo)]);
+      return;
+    }
+    // 공간 대표는 서버 경로로 정한다 (새로 고른 사진은 아직 경로가 없다)
+    if (!photo.path) {
+      showAlert(
+        '저장한 뒤에 대표로 정할 수 있어요',
+        '새로 고른 사진은 기록을 저장해서 올라간 다음에 대표 사진으로 정할 수 있어요.'
+      );
+      return;
+    }
+    hapticSelect();
+    setCoverPath(photo.path);
+  };
+
   /** 이번 화면에서 새로 고른 사진이면 지운다 (저장된 사진은 저장할 때 정리) */
   const savedUris = new Set(
     (inSpace ? reviewPhotos(mine) : recordPhotos(saved)).map((p) => p.uri)
@@ -241,6 +285,7 @@ export default function RecordFormScreen() {
         rating,
         review: review.trim(),
         cost: parseWon(costText),
+        coverPath: inSpace ? coverPath : null,
         photoUri: null,
       };
       if (inSpace) {
@@ -517,7 +562,8 @@ export default function RecordFormScreen() {
                 <PhotoThumb
                   key={photo.path ?? photo.uri ?? i}
                   photo={photo}
-                  first={!inSpace && i === 0}
+                  cover={totalPhotos > 1 && isCover(photo)}
+                  onLongPress={() => makeCover(photo)}
                   onRemove={() => removePhotoAt(i)}
                 />
               ))}
@@ -548,9 +594,12 @@ export default function RecordFormScreen() {
                   ? `한 기록에는 모두 합쳐 ${MAX_SHARED_RECORD_PHOTOS}장까지 올릴 수 있어요`
                   : `함께한 사람마다 ${MAX_RECORD_PHOTOS}장씩 따로 올릴 수 있어요`}
               </Text>
-            ) : photos.length > 1 ? (
-              <Text size={12} className="mt-2 text-muted-foreground">
-                첫 번째 사진이 목록에 대표로 보여요
+            ) : null}
+            {totalPhotos > 1 ? (
+              <Text size={12} className="mt-1 text-muted-foreground">
+                {inSpace
+                  ? '사진을 꾹 누르면 일지에 보일 대표 사진으로 정해요 (함께한 사람 사진도)'
+                  : '사진을 꾹 누르면 일지에 보일 대표 사진으로 정해요'}
               </Text>
             ) : null}
           </View>
@@ -560,6 +609,8 @@ export default function RecordFormScreen() {
               photos={otherPhotos}
               member={member}
               itemId={item.id}
+              isCover={isCover}
+              onMakeCover={makeCover}
             />
           ) : null}
         </ScrollView>
@@ -616,10 +667,15 @@ function OthersPhotos({
   photos,
   member,
   itemId,
+  isCover,
+  onMakeCover,
 }: {
   photos: AuthoredPhoto[];
   member: ReturnType<typeof useMemberLookup>;
   itemId: string;
+  isCover: (photo: RecordPhoto) => boolean;
+  /** 꾹 누르면 대표 사진으로 */
+  onMakeCover: (photo: RecordPhoto) => void;
 }) {
   const authors: (string | null)[] = [];
   for (const p of photos) if (!authors.includes(p.by)) authors.push(p.by);
@@ -662,7 +718,9 @@ function OthersPhotos({
                 <SmallThumb
                   key={photo.path ?? photo.uri ?? i}
                   photo={photo}
+                  cover={isCover(photo)}
                   onPress={() => open(photo)}
+                  onLongPress={() => onMakeCover(photo)}
                 />
               ))}
             </ScrollView>
@@ -673,60 +731,85 @@ function OthersPhotos({
   );
 }
 
-/** 누르면 크게 보기 */
+/** 누르면 크게 보기, 꾹 누르면 대표 사진으로 */
 function SmallThumb({
   photo,
+  cover,
   onPress,
+  onLongPress,
 }: {
   photo: RecordPhoto;
+  cover: boolean;
   onPress: () => void;
+  onLongPress: () => void;
 }) {
   const uri = usePhotoSource(photo.uri, photo.path);
   return (
     <Pressable
       accessibilityRole="imagebutton"
-      accessibilityLabel="사진 크게 보기"
+      accessibilityLabel={cover ? '대표 사진, 크게 보기' : '사진 크게 보기'}
+      accessibilityHint="꾹 누르면 대표 사진으로 정해요"
       onPress={onPress}
-      className="overflow-hidden rounded-xl bg-accent active:opacity-70"
+      onLongPress={onLongPress}
+      className={cn(
+        'overflow-hidden rounded-xl bg-accent active:opacity-70',
+        cover && 'border-2 border-primary'
+      )}
       style={{ width: SMALL_THUMB_SIZE, height: SMALL_THUMB_SIZE }}
     >
       <Image
         source={photoImageSource(uri)}
-        style={{ width: SMALL_THUMB_SIZE, height: SMALL_THUMB_SIZE }}
+        style={{ width: '100%', height: '100%' }}
         contentFit="cover"
       />
+      {cover ? <CoverBadge /> : null}
     </Pressable>
   );
 }
 
-/** 기록 사진 한 칸: 오른쪽 위 X로 빼고, 첫 장엔 '대표' 표시 */
+/** 사진 왼쪽 아래 '대표' 표시 */
+function CoverBadge() {
+  return (
+    <View className="absolute bottom-1 left-1 rounded-full bg-primary px-1.5 py-0.5">
+      <Text size={10} weight="700" className="text-white">
+        대표
+      </Text>
+    </View>
+  );
+}
+
+/** 기록 사진 한 칸: 오른쪽 위 X로 빼고, 꾹 누르면 대표로. 대표 사진엔 '대표' 표시 */
 function PhotoThumb({
   photo,
-  first,
+  cover,
+  onLongPress,
   onRemove,
 }: {
   photo: RecordPhoto;
-  first: boolean;
+  cover: boolean;
+  /** 꾹 누르면 대표 사진으로 */
+  onLongPress: () => void;
   onRemove: () => void;
 }) {
   const uri = usePhotoSource(photo.uri, photo.path);
   return (
-    <View
-      className="overflow-hidden rounded-2xl bg-accent"
+    <Pressable
+      accessibilityRole="imagebutton"
+      accessibilityLabel={cover ? '대표 사진' : '사진'}
+      accessibilityHint="꾹 누르면 대표 사진으로 정해요"
+      onLongPress={onLongPress}
+      className={cn(
+        'overflow-hidden rounded-2xl bg-accent active:opacity-80',
+        cover && 'border-2 border-primary'
+      )}
       style={{ width: THUMB_SIZE, height: THUMB_SIZE }}
     >
       <Image
         source={photoImageSource(uri)}
-        style={{ width: THUMB_SIZE, height: THUMB_SIZE }}
+        style={{ width: '100%', height: '100%' }}
         contentFit="cover"
       />
-      {first ? (
-        <View className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5">
-          <Text size={10} weight="600" className="text-white">
-            대표
-          </Text>
-        </View>
-      ) : null}
+      {cover ? <CoverBadge /> : null}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="사진 빼기"
@@ -736,6 +819,6 @@ function PhotoThumb({
       >
         <Icon as={X} size={14} className="text-white" />
       </Pressable>
-    </View>
+    </Pressable>
   );
 }

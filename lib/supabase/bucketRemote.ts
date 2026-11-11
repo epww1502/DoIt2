@@ -57,6 +57,7 @@ function toRemoteDone(done: DoneRecord | null): RemoteDone | null {
     rating: done.rating,
     review: done.review,
     ...(done.cost ? { cost: done.cost } : {}),
+    ...(done.coverPath ? { coverPath: done.coverPath } : {}),
     // 예전 앱은 photoPath 한 장만 읽는다
     photoPath: paths[0] ?? null,
     photos: paths.map((path) => ({ path })),
@@ -131,6 +132,7 @@ export function fromRow(
         rating: remoteDone.rating,
         review: remoteDone.review,
         cost: remoteDone.cost ?? null,
+        coverPath: remoteDone.coverPath ?? null,
         photoUri: null,
       },
       paths.map((path) => ({ path, uri: localUris.get(path) ?? null }))
