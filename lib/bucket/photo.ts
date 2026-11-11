@@ -2,7 +2,21 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
+import { showAlert } from '@/lib/dialog';
+
 const PHOTO_DIR = 'photos';
+
+/**
+ * 사진을 못 받았을 때 안내. 아이폰은 iCloud에만 있는 사진을 고르면 원본을 받아 와야 하는데,
+ * 인터넷이 안 되거나 iCloud에서 못 받으면 실패한다. 여러 장 중 한 장만 실패해도 전부 실패한다.
+ */
+export function showPhotoLoadError() {
+  showAlert(
+    '사진을 받지 못했어요',
+    'iCloud에만 있는 사진은 인터넷이 연결돼 있어야 받을 수 있어요. ' +
+      '사진 앱에서 그 사진을 한 번 열어 다 받은 뒤 다시 골라 주세요.'
+  );
+}
 
 /**
  * 앨범에서 사진 1장을 고른다 (자르기 포함). 고른 파일은 임시 폴더에 있어 지워질 수 있으므로

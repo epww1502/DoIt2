@@ -1,9 +1,8 @@
 import { ImagePlus } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
-import { showAlert } from '@/lib/dialog';
 import { Icon } from '@/components/atoms';
-import { pickPhoto } from '@/lib/bucket/photo';
+import { pickPhoto, showPhotoLoadError } from '@/lib/bucket/photo';
 import { cn } from '@/lib/utils';
 
 import { SpaceAvatar } from './SpaceAvatar';
@@ -30,7 +29,7 @@ export function SpaceIconPicker({
       const uri = await pickPhoto({ aspect: [1, 1] });
       if (uri) onPhoto(uri);
     } catch {
-      showAlert('사진을 불러오지 못했어요', '잠시 후 다시 시도해주세요.');
+      showPhotoLoadError();
     }
   };
 

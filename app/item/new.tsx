@@ -239,7 +239,9 @@ export default function BucketFormScreen() {
 
   const meta = KIND_META[kind];
   const categories = CATEGORIES_BY_KIND[kind];
-  const canSave = title.trim().length > 0;
+  // 고른 사진을 받는 중이면 저장을 막는다 (받기 전에 저장하면 사진이 빠진다)
+  const [photosLoading, setPhotosLoading] = useState(false);
+  const canSave = title.trim().length > 0 && !photosLoading;
 
   /** 카테고리를 바꾸면 실내/실외도 그 카테고리 기본값으로 맞춘다 (직접 바꿀 수 있음) */
   const changeCategory = (next: CategoryKey) => {
@@ -346,6 +348,7 @@ export default function BucketFormScreen() {
             photos={photos}
             onChange={setPhotos}
             onRemove={discardNewPhoto}
+            onLoadingChange={setPhotosLoading}
           />
 
           <View>
@@ -415,7 +418,9 @@ export default function BucketFormScreen() {
 
         <BottomBar>
           <Button
-            label={editing ? '저장하기' : '담기'}
+            label={
+              photosLoading ? '사진 받는 중…' : editing ? '저장하기' : '담기'
+            }
             disabled={!canSave}
             onPress={save}
           />

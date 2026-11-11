@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { ImagePlus, X } from 'lucide-react-native';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
@@ -8,9 +9,8 @@ import {
   photoImageSource,
   usePhotoSource,
 } from '@/components/bucket/DonePhoto';
-import { pickPhotos } from '@/lib/bucket/photo';
+import { pickPhotos, showPhotoLoadError } from '@/lib/bucket/photo';
 import { MAX_ITEM_PHOTOS, type RecordPhoto } from '@/lib/bucket/types';
-import { showAlert } from '@/lib/dialog';
 import { hapticSelect } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +22,8 @@ type ItemPhotosFieldProps = {
   onChange: (photos: RecordPhoto[]) => void;
   /** 이번 화면에서 고른 사진을 뺄 때 (파일 정리용) */
   onRemove: (photo: RecordPhoto) => void;
+  /** 고른 사진을 받는 중인지 (받는 동안은 저장을 막는다) */
+  onLoadingChange?: (loading: boolean) => void;
 };
 
 /**
@@ -32,15 +34,27 @@ export function ItemPhotosField({
   photos,
   onChange,
   onRemove,
+  onLoadingChange,
 }: ItemPhotosFieldProps) {
+  // 고른 사진을 받는 중 (iCloud 사진은 몇 초~수십 초 걸린다)
+  const [loading, setLoading] = useState(false);
+  const setBusy = (busy: boolean) => {
+    setLoading(busy);
+    onLoadingChange?.(busy);
+  };
+
   const add = async () => {
+    if (loading) return;
+    setBusy(true);
     try {
       const uris = await pickPhotos(MAX_ITEM_PHOTOS - photos.length);
       if (uris.length === 0) return;
       // 새 사진은 아직 서버 경로가 없다 (저장할 때 올린다)
       onChange([...photos, ...uris.map((uri) => ({ uri, path: null }))]);
     } catch {
-      showAlert('사진을 불러오지 못했어요', '잠시 후 다시 시도해주세요.');
+      showPhotoLoadError();
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -73,7 +87,9 @@ export function ItemPhotosField({
             onRemove={() => removeAt(i)}
           />
         ))}
-        {photos.length < MAX_ITEM_PHOTOS ? (
+        {loading ? (
+          <PhotoLoadingThumb />
+        ) : photos.length < MAX_ITEM_PHOTOS ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="사진 추가하기"
@@ -92,6 +108,22 @@ export function ItemPhotosField({
         {photos.length > 1
           ? '사진을 누르면 대표 사진으로 바뀌어요. 대표 사진이 목록에서 아이콘 대신 보여요'
           : '대표 사진이 목록에서 아이콘 대신 보여요'}
+      </Text>
+    </View>
+  );
+}
+
+/** 고른 사진을 받는 동안 '사진 추가' 자리에 보이는 칸 */
+export function PhotoLoadingThumb() {
+  return (
+    <View
+      accessibilityLabel="사진 받는 중"
+      className="items-center justify-center gap-1.5 rounded-2xl bg-accent"
+      style={{ width: THUMB_SIZE, height: THUMB_SIZE }}
+    >
+      <ActivityIndicator />
+      <Text variant="muted" size={11}>
+        사진 받는 중
       </Text>
     </View>
   );

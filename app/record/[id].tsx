@@ -14,7 +14,6 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
-import { showAlert } from '@/lib/dialog';
 import { Button, Icon, NavBar, Text, TextField } from '@/components/atoms';
 import { TextArea } from '@/components/atoms/TextArea';
 import { parseWon, wonInputText } from '@/lib/bucket/cost';
@@ -30,7 +29,12 @@ import {
 import { StarRating } from '@/components/bucket/StarRating';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { DATE_FORMAT, todayKey } from '@/lib/date';
-import { deletePhoto, pickPhotos } from '@/lib/bucket/photo';
+import { PhotoLoadingThumb } from '@/components/bucket/ItemPhotosField';
+import {
+  deletePhoto,
+  pickPhotos,
+  showPhotoLoadError,
+} from '@/lib/bucket/photo';
 import {
   dayCount,
   KIND_META,
@@ -88,6 +92,8 @@ export default function RecordFormScreen() {
   const member = useMemberLookup(useBucketStore((s) => s.spaceId));
 
   const [date, setDate] = useState(saved?.date ?? todayKey());
+  // 고른 사진을 받는 중 (iCloud 사진은 몇 초~수십 초 걸린다). 받는 동안은 저장을 막는다
+  const [photosLoading, setPhotosLoading] = useState(false);
   const [rating, setRating] = useState(
     (inSpace ? mine?.rating : saved?.rating) ?? 5
   );
@@ -183,6 +189,8 @@ export default function RecordFormScreen() {
   };
 
   const addPhotos = async () => {
+    if (photosLoading) return;
+    setPhotosLoading(true);
     try {
       const uris = await pickPhotos(photoLimit - photos.length);
       if (uris.length === 0) return;
@@ -192,7 +200,9 @@ export default function RecordFormScreen() {
         ...uris.map((uri) => ({ uri, path: null })),
       ]);
     } catch {
-      showAlert('사진을 불러오지 못했어요', '잠시 후 다시 시도해주세요.');
+      showPhotoLoadError();
+    } finally {
+      setPhotosLoading(false);
     }
   };
 
@@ -511,7 +521,9 @@ export default function RecordFormScreen() {
                   onRemove={() => removePhotoAt(i)}
                 />
               ))}
-              {photos.length < photoLimit ? (
+              {photosLoading ? (
+                <PhotoLoadingThumb />
+              ) : photos.length < photoLimit ? (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="사진 추가하기"
@@ -555,13 +567,15 @@ export default function RecordFormScreen() {
         <BottomBar>
           <Button
             label={
-              saving
-                ? '저장하는 중…'
-                : awaitingMine
-                  ? '내 평가 저장하기'
-                  : '기록 저장하기'
+              photosLoading
+                ? '사진 받는 중…'
+                : saving
+                  ? '저장하는 중…'
+                  : awaitingMine
+                    ? '내 평가 저장하기'
+                    : '기록 저장하기'
             }
-            disabled={saving}
+            disabled={saving || photosLoading}
             onPress={() => void save()}
           />
           {awaitingMine ? (
