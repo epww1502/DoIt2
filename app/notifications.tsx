@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import {
+  CalendarCheck,
   CalendarHeart,
   Camera,
   CircleCheck,
@@ -38,6 +39,7 @@ const KIND_ICON: Record<InboxEntry['kind'], LucideIcon> = {
   photos: Camera,
   liked: Heart,
   wanted: HandHeart,
+  dates: CalendarCheck,
 };
 
 /** '방금', '5분 전', '3시간 전', '어제', '10월 21일' */

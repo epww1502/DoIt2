@@ -113,7 +113,8 @@ export function notifySpace(
     | 'todo'
     | 'photos'
     | 'liked'
-    | 'wanted',
+    | 'wanted'
+    | 'dates',
   itemIds: string[],
   extra?: {
     /** event 'todo': 체크한 할 것 id들 */
@@ -122,6 +123,8 @@ export function notifySpace(
     photoCount?: number;
     /** event 'liked': 하트를 누른 사진 경로 */
     photoPath?: string;
+    /** event 'dates': 방금 고른 날 (YYYY-MM-DD). 다 되는 날이 생겼는지 서버가 본다 */
+    day?: string;
   }
 ) {
   if (itemIds.length === 0) return;

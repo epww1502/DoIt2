@@ -20,7 +20,8 @@ export type InboxEntry = {
     | 'weekend'
     | 'photos'
     | 'liked'
-    | 'wanted';
+    | 'wanted'
+    | 'dates';
   at: number;
   title: string;
   body: string;

@@ -284,6 +284,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      item_date_votes: {
+        Row: {
+          created_at: string;
+          day: string;
+          item_id: string;
+          space_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          day: string;
+          item_id: string;
+          space_id?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          day?: string;
+          item_id?: string;
+          space_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       item_reactions: {
         Row: {
           created_at: string;
@@ -720,6 +744,8 @@ export type CommentReactionRow =
 export type TrashedItemRow =
   Database['public']['Tables']['trashed_items']['Row'];
 export type ItemWantRow = Database['public']['Tables']['item_wants']['Row'];
+export type ItemDateVoteRow =
+  Database['public']['Tables']['item_date_votes']['Row'];
 export type PhotoLikeRow = Database['public']['Tables']['photo_likes']['Row'];
 export type NotificationRow =
   Database['public']['Tables']['notifications']['Row'];

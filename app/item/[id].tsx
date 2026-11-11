@@ -18,6 +18,8 @@ import { useTogether } from '@/hooks/useTogether';
 import { usePullRefresh } from '@/hooks/usePullRefresh';
 import { useItemWants } from '@/hooks/useItemWants';
 import { WantRow } from '@/components/bucket/WantButton';
+import { DateVoteCard } from '@/components/bucket/DateVoteCard';
+import { useSpace } from '@/store/useSpaceStore';
 import { useMemberLookup } from '@/store/useMembersStore';
 import { showAlert } from '@/lib/dialog';
 import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
@@ -71,6 +73,7 @@ export default function BucketDetailScreen() {
   // 하고 싶어요 (함께 쓰는 공간에서만)
   const wants = useItemWants(together ? spaceId : null);
   const member = useMemberLookup(spaceId);
+  const memberCount = useSpace(spaceId)?.memberCount ?? 1;
 
   if (!item) {
     return (
@@ -221,6 +224,17 @@ export default function BucketDetailScreen() {
             mine={wants.wantedByMe(item.id)}
             wanters={wants.wantersOf(item.id).map(member)}
             onPress={() => void wants.toggle(item.id)}
+          />
+        ) : null}
+
+        {/* 함께 쓰는 공간: 같이 갈 날 맞추기 (아직 안 한 것만) */}
+        {together && !done && spaceId ? (
+          <DateVoteCard
+            item={item}
+            spaceId={spaceId}
+            memberCount={memberCount}
+            wantCount={wants.countOf(item.id)}
+            member={member}
           />
         ) : null}
 

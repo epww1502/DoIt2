@@ -15,8 +15,10 @@
 //   (그 사진을 올린 사람에게만, 하트를 막 눌렀을 때만. kind 'reviewed')
 // - { spaceId, event: 'wanted', itemIds: [string] }  '하고 싶어요'를 누름
 //   (막 눌렀을 때만, 같은 사람이 같은 항목으로 12시간 안에 또 보내지 않는다. kind 'added')
+// - { spaceId, event: 'dates', itemIds: [string], day? }  같이 갈 날을 고름
+//   (막 골랐을 때만. 그 날 모두 되면 '다 되는 날' 알림(같은 날은 한 번), 아니면 같은 사람이 12시간에 한 번. kind 'added')
 //
-// 알림함 detail: 'photos' | 'liked' | 'wanted' (새 앱만 보고 아이콘을 고른다. 예전 앱은 kind만 본다)
+// 알림함 detail: 'photos' | 'liked' | 'wanted' | 'dates' (새 앱만 보고 아이콘을 고른다. 예전 앱은 kind만 본다)
 //
 // 막 바뀐 항목(최근 10분)만 알린다. 예전 항목으로 알림을 계속 보내는 걸 막으려고.
 // 받는 사람마다 notifications(알림함)에도 한 줄씩 남긴다 (푸시를 꺼둔 사람도 앱에서 볼 수 있게).
@@ -27,6 +29,9 @@ const MAX_ITEMS = 50;
 const FRESH_MS = 10 * 60 * 1000;
 /** '하고 싶어요'를 껐다 켰다 해도 알림이 계속 가지 않게 */
 const WANTED_QUIET_MS = 12 * 60 * 60 * 1000;
+/** 같은 '다 되는 날' 알림을 다시 보내지 않는 기간 */
+const ALL_DAY_QUIET_MS = 30 * 24 * 60 * 60 * 1000;
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 const admin = createClient(
@@ -45,13 +50,16 @@ type Body = {
     | 'todo'
     | 'photos'
     | 'liked'
-    | 'wanted';
+    | 'wanted'
+    | 'dates';
   itemIds?: string[];
   todoIds?: string[];
   /** event 'photos': 새로 올린 사진 수 */
   photoCount?: number;
   /** event 'liked': 하트를 누른 사진 경로 */
   photoPath?: string;
+  /** event 'dates': 방금 고른 날 (YYYY-MM-DD) */
+  day?: string;
 };
 
 type Todo = { id?: string; text?: string; done?: boolean };
@@ -114,6 +122,7 @@ Deno.serve(async (req) => {
       'photos',
       'liked',
       'wanted',
+      'dates',
     ].includes(event ?? '') ||
     !itemIds.length ||
     (event === 'liked' && !body.photoPath)
@@ -174,6 +183,35 @@ Deno.serve(async (req) => {
     wantCount = wants!.length;
   }
 
+  // 같이 갈 날: 방금 고른 것만. 고른 날에 공간 사람이 모두 되는지도 본다
+  let allDay: string | null = null;
+  if (event === 'dates') {
+    const { data: votes } = await admin
+      .from('item_date_votes')
+      .select('user_id, day, created_at')
+      .eq('item_id', itemIds[0]);
+    const freshVote = votes?.some(
+      (v) =>
+        v.user_id === actor &&
+        Date.now() - new Date(v.created_at).getTime() < FRESH_MS
+    );
+    if (!freshVote) return json({ sent: 0 });
+    // 한국 날짜로 오늘
+    const today = new Date(Date.now() + 9 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const day = body.day;
+    if (day && /^\d{4}-\d{2}-\d{2}$/.test(day) && day >= today) {
+      const memberIds = new Set(members.map((m) => m.user_id));
+      const voters = new Set(
+        (votes ?? [])
+          .filter((v) => v.day === day && memberIds.has(v.user_id))
+          .map((v) => v.user_id)
+      );
+      if (voters.size >= memberIds.size) allDay = day;
+    }
+  }
+
   // 이 공간 항목과, 부른 사람이 남긴 평가·최근 댓글
   const [{ data: items }, { data: reviews }, { data: comments }] =
     await Promise.all([
@@ -204,7 +242,7 @@ Deno.serve(async (req) => {
   const isFresh = (at: string | undefined) =>
     !!at && Date.now() - new Date(at).getTime() < FRESH_MS;
   const fresh = (items ?? []).filter((it) =>
-    event === 'liked' || event === 'wanted'
+    event === 'liked' || event === 'wanted' || event === 'dates'
       ? true
       : event === 'reviewed' || event === 'photos'
         ? isFresh(reviewOf.get(it.id)?.updated_at)
@@ -249,6 +287,14 @@ Deno.serve(async (req) => {
       wantCount >= 2
         ? `${name}님도 ${quote(first.title)}을(를) 하고 싶어해요 🙌 지금 ${wantCount}명이에요`
         : `${name}님이 ${quote(first.title)}을(를) 하고 싶어해요 🙌`;
+  } else if (event === 'dates') {
+    if (allDay) {
+      const [y, m, d] = allDay.split('-').map(Number);
+      const weekday = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+      message = `🎉 모두 되는 날이 생겼어요: ${quote(first.title)} ${m}월 ${d}일 (${weekday})`;
+    } else {
+      message = `${name}님이 ${quote(first.title)} 같이 갈 수 있는 날을 골랐어요 📅`;
+    }
   } else if (event === 'commented') {
     const body = commentOf.get(first.id)?.body ?? '';
     const short = body.length > 30 ? `${body.slice(0, 30)}…` : body;
@@ -278,6 +324,25 @@ Deno.serve(async (req) => {
     if (recent?.some((n) => n.body.startsWith(who))) return json({ sent: 0 });
   }
 
+  // 같이 갈 날: '다 되는 날'은 같은 날로 한 번만, 고른 알림은 같은 사람이 12시간에 한 번만
+  if (event === 'dates') {
+    const quiet = allDay ? ALL_DAY_QUIET_MS : WANTED_QUIET_MS;
+    const since = new Date(Date.now() - quiet).toISOString();
+    const { data: recent } = await admin
+      .from('notifications')
+      .select('id, body')
+      .eq('space_id', spaceId)
+      .eq('item_id', first.id)
+      .eq('detail', 'dates')
+      .gte('created_at', since)
+      .limit(100);
+    const who = `${name}님`;
+    const repeated = allDay
+      ? recent?.some((n) => n.body === message)
+      : recent?.some((n) => n.body.startsWith(who));
+    if (repeated) return json({ sent: 0 });
+  }
+
   // 알림함 (실패해도 푸시는 보낸다)
   await admin
     .from('notifications')
@@ -286,17 +351,20 @@ Deno.serve(async (req) => {
         user_id: userId,
         space_id: spaceId,
         item_id: itemId,
-        // 예전 앱은 'todo'·'photos'·'liked'·'wanted'를 몰라서 아는 종류로 남긴다
+        // 예전 앱은 'todo'·'photos'·'liked'·'wanted'·'dates'를 몰라서 아는 종류로 남긴다
         kind:
           event === 'todo'
             ? 'done'
             : event === 'photos' || event === 'liked'
               ? 'reviewed'
-              : event === 'wanted'
+              : event === 'wanted' || event === 'dates'
                 ? 'added'
                 : event,
         detail:
-          event === 'photos' || event === 'liked' || event === 'wanted'
+          event === 'photos' ||
+          event === 'liked' ||
+          event === 'wanted' ||
+          event === 'dates'
             ? event
             : null,
         title,
