@@ -158,6 +158,7 @@ function RootLayoutInner() {
           />
           <Stack.Screen name="profile" />
           <Stack.Screen name="notifications" />
+          <Stack.Screen name="trash" />
           <Stack.Screen name="account/restore" />
           <Stack.Screen
             name="space/new"

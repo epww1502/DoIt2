@@ -28,6 +28,7 @@ import {
 } from '@/lib/connection';
 import { notifySpace } from '@/lib/push';
 import * as remote from '@/lib/supabase/bucketRemote';
+import { trashItems } from '@/lib/trash';
 import { myReview, reviewPhotos } from '@/lib/bucket/reviews';
 import type {
   BucketItemRow,
@@ -333,7 +334,8 @@ export const useBucketStore = create<BucketState>()(
 
         if (deletes.length > 0) {
           try {
-            await remote.deleteItems(deletes.map((e) => e.itemId));
+            // 바로 지우지 않고 휴지통으로 (48시간 안에 되살릴 수 있다)
+            await trashItems(deletes.map((e) => e.itemId));
           } catch (e) {
             if (isNetworkError(e)) throw e;
             // 서버가 거절한 변경은 계속 붙잡고 있지 않는다
@@ -572,11 +574,19 @@ export const useBucketStore = create<BucketState>()(
           const targets = get().items.filter((it) => idSet.has(it.id));
           const { spaceId } = get();
           for (const t of targets) {
-            deleteRecordPhotos(t.done, spaceId);
-            deletePhotos(itemPhotos(t), spaceId);
-            // 사람마다 올린 기록 사진도 (항목이 지워지면 평가도 같이 지워진다)
-            for (const r of t.reviews ?? [])
-              deletePhotos(reviewPhotos(r), spaceId);
+            const photos = [
+              ...recordPhotos(t.done),
+              ...itemPhotos(t),
+              // 사람마다 올린 기록 사진도 (항목이 지워지면 평가도 같이 지워진다)
+              ...(t.reviews ?? []).flatMap(reviewPhotos),
+            ];
+            if (spaceId) {
+              // 공간: 휴지통에 48시간 남으니 서버 사진은 그대로 둔다 (정리는 휴지통이 한다).
+              // 휴대폰 사본은 서버에 올라간 것만 지운다 (되살리면 서버에서 다시 받는다)
+              for (const p of photos) if (p.path) deletePhoto(p.uri);
+            } else {
+              deletePhotos(photos, null);
+            }
           }
           set({ items: get().items.filter((it) => !idSet.has(it.id)) });
 

@@ -15,6 +15,7 @@ import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import { InboxCard } from '@/components/space/InboxCard';
 import { ProfileCard } from '@/components/space/ProfileCard';
 import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
+import { TrashCard } from '@/components/space/TrashCard';
 import { PALETTES } from '@/constants/palettes';
 import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
 import { installedVersion } from '@/lib/appVersion';
@@ -53,6 +54,7 @@ export default function SettingsScreen() {
         <InboxCard />
         <ProfileCard />
         <SpaceStatusCard />
+        <TrashCard />
 
         <Card className="rounded-2xl">
           <CardContent className="gap-5 p-5">

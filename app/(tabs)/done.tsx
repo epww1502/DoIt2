@@ -152,7 +152,9 @@ export default function DoneScreen() {
   const confirmDelete = () =>
     showAlert(
       `${selectedIds.length}개를 어떻게 지울까요?`,
-      "'기록만 지우기'를 고르면 버킷리스트로 다시 돌아가요.",
+      reviewCtx.inSpace
+        ? "'기록만 지우기'를 고르면 버킷리스트로 다시 돌아가요. '항목까지 지우기'는 휴지통으로 옮겨서 48시간 안에 되살릴 수 있어요."
+        : "'기록만 지우기'를 고르면 버킷리스트로 다시 돌아가요.",
       [
         { text: '취소', style: 'cancel' },
         {

@@ -103,8 +103,8 @@ export default function BucketDetailScreen() {
   const confirmRemove = () => {
     showAlert(
       '버킷리스트에서 지울까요?',
-      together
-        ? '함께한 기록과 사진도 같이 지워져요.'
+      inSpace
+        ? '기록·사진·댓글과 함께 휴지통으로 옮겨요. 48시간 안에는 설정 > 휴지통에서 되살릴 수 있어요.'
         : '기록과 사진도 같이 지워져요.',
       [
         { text: '취소', style: 'cancel' },

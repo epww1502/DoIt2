@@ -503,6 +503,33 @@ export type Database = {
           },
         ];
       };
+      trashed_items: {
+        Row: {
+          id: string;
+          space_id: string;
+          title: string;
+          deleted_by: string | null;
+          deleted_at: string;
+          snapshot: Json;
+        };
+        Insert: {
+          id: string;
+          space_id: string;
+          title: string;
+          deleted_by?: string | null;
+          deleted_at?: string;
+          snapshot: Json;
+        };
+        Update: {
+          id?: string;
+          space_id?: string;
+          title?: string;
+          deleted_by?: string | null;
+          deleted_at?: string;
+          snapshot?: Json;
+        };
+        Relationships: [];
+      };
       spaces: {
         Row: {
           created_at: string;
@@ -560,6 +587,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      trash_items: {
+        Args: { p_ids: string[] };
+        Returns: number;
+      };
+      restore_trashed_item: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
       apply_item_todo_ops: {
         Args: { p_item_id: string; p_ops: Json };
         Returns: undefined;
@@ -682,6 +717,8 @@ export type ItemReactionRow =
   Database['public']['Tables']['item_reactions']['Row'];
 export type CommentReactionRow =
   Database['public']['Tables']['comment_reactions']['Row'];
+export type TrashedItemRow =
+  Database['public']['Tables']['trashed_items']['Row'];
 export type ItemWantRow = Database['public']['Tables']['item_wants']['Row'];
 export type PhotoLikeRow = Database['public']['Tables']['photo_likes']['Row'];
 export type NotificationRow =

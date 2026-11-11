@@ -229,7 +229,9 @@ export default function BucketListScreen() {
   const confirmDelete = () =>
     showAlert(
       `${selectedIds.length}개를 지울까요?`,
-      '지운 항목은 되돌릴 수 없어요.',
+      listSpaceId
+        ? '휴지통으로 옮겨요. 48시간 안에는 설정 > 휴지통에서 되살릴 수 있어요.'
+        : '지운 항목은 되돌릴 수 없어요.',
       [
         { text: '취소', style: 'cancel' },
         {
