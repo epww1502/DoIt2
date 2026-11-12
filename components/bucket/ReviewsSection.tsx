@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { router } from 'expo-router';
 import { Star } from 'lucide-react-native';
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
@@ -23,6 +24,7 @@ import {
 } from '@/store/useMembersStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 
+import { ReviewEditSheet } from './ReviewEditSheet';
 import { StarRating } from './StarRating';
 
 /**
@@ -35,6 +37,8 @@ export function ReviewsSection({ item }: { item: BucketItem }) {
   const saveMyReview = useBucketStore((s) => s.saveMyReview);
   const member = useMemberLookup(spaceId);
   const primary = usePrimaryColor();
+  // 내 평가(별점·한 줄)는 그 자리에서 시트로 고친다
+  const [editing, setEditing] = useState(false);
 
   const mine = myReview(item, ctx.userId);
   const reviews = visibleReviews(item);
@@ -86,7 +90,7 @@ export function ReviewsSection({ item }: { item: BucketItem }) {
           review={mine}
           who={member(mine.userId)}
           big
-          onEdit={goRecord}
+          onEdit={() => setEditing(true)}
         />
       ) : mine ? (
         <View className="flex-row items-center justify-between rounded-2xl p-4 bg-accent">
@@ -144,6 +148,13 @@ export function ReviewsSection({ item }: { item: BucketItem }) {
           {skippedCount}명은 평가를 건너뛰었어요
         </Text>
       ) : null}
+
+      <ReviewEditSheet
+        itemId={item.id}
+        review={editing ? mine : null}
+        onClose={() => setEditing(false)}
+        onOpenRecord={goRecord}
+      />
     </View>
   );
 }

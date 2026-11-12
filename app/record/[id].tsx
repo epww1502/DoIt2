@@ -26,7 +26,7 @@ import {
   photoImageSource,
   usePhotoSource,
 } from '@/components/bucket/DonePhoto';
-import { StarRating } from '@/components/bucket/StarRating';
+import { RATING_LABELS, StarRating } from '@/components/bucket/StarRating';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { DATE_FORMAT, todayKey } from '@/lib/date';
 import { PhotoLoadingThumb } from '@/components/bucket/ItemPhotosField';
@@ -63,15 +63,6 @@ import { showAlert } from '@/lib/dialog';
 import { hapticSelect } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
-
-const RATING_LABELS = [
-  '',
-  '별로였어요',
-  '그저 그랬어요',
-  '괜찮았어요',
-  '좋았어요',
-  '최고였어요!',
-];
 
 /** 함께한 기록 남기기 / 수정 */
 export default function RecordFormScreen() {

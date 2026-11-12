@@ -4,6 +4,16 @@ import { Pressable, View } from 'react-native';
 import { Icon } from '@/components/atoms';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 
+/** 별점마다 붙는 말 (0은 비움) */
+export const RATING_LABELS = [
+  '',
+  '별로였어요',
+  '그저 그랬어요',
+  '괜찮았어요',
+  '좋았어요',
+  '최고였어요!',
+];
+
 type StarRatingProps = {
   value: number;
   /** 없으면 읽기 전용 */

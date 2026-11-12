@@ -4,10 +4,10 @@ import {
   ExternalLink,
   Flag,
   MapPin,
-  Pencil,
+  MoreHorizontal,
   Repeat,
-  Trash2,
 } from 'lucide-react-native';
+import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import {
   SafeAreaView,
@@ -22,7 +22,14 @@ import { DateVoteCard } from '@/components/bucket/DateVoteCard';
 import { useSpace } from '@/store/useSpaceStore';
 import { useMemberLookup } from '@/store/useMembersStore';
 import { showAlert } from '@/lib/dialog';
-import { Badge, Button, Icon, NavBar, Text } from '@/components/atoms';
+import {
+  ActionSheet,
+  Badge,
+  Button,
+  Icon,
+  NavBar,
+  Text,
+} from '@/components/atoms';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { DonePhotoGallery } from '@/components/bucket/DonePhoto';
@@ -74,6 +81,8 @@ export default function BucketDetailScreen() {
   const wants = useItemWants(together ? spaceId : null);
   const member = useMemberLookup(spaceId);
   const memberCount = useSpace(spaceId)?.memberCount ?? 1;
+  // 맨 위 ⋯ 메뉴 (항목 정보 수정 · 지우기)
+  const [menuOpen, setMenuOpen] = useState(false);
 
   if (!item) {
     return (
@@ -152,29 +161,29 @@ export default function BucketDetailScreen() {
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <NavBar
         right={
-          <View className="flex-row">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="수정"
-              hitSlop={6}
-              onPress={() =>
-                router.push({ pathname: '/item/new', params: { id: item.id } })
-              }
-              className="h-10 w-10 items-center justify-center"
-            >
-              <Icon as={Pencil} size={20} />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="삭제"
-              hitSlop={6}
-              onPress={confirmRemove}
-              className="h-10 w-10 items-center justify-center"
-            >
-              <Icon as={Trash2} size={20} className="text-destructive" />
-            </Pressable>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="더 보기"
+            hitSlop={6}
+            onPress={() => setMenuOpen(true)}
+            className="h-10 w-10 items-center justify-center"
+          >
+            <Icon as={MoreHorizontal} size={22} />
+          </Pressable>
         }
+      />
+      <ActionSheet
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        items={[
+          {
+            // 제목·카테고리·장소·메모·링크·할 것 (기록·평가는 아래에서)
+            label: '항목 정보 수정',
+            onPress: () =>
+              router.push({ pathname: '/item/new', params: { id: item.id } }),
+          },
+          { label: '지우기', destructive: true, onPress: confirmRemove },
+        ]}
       />
 
       <ScrollView
@@ -399,7 +408,7 @@ export default function BucketDetailScreen() {
             />
             <View className="flex-row gap-2">
               <Button
-                label="기록 수정"
+                label={inSpace ? '함께한 기록 수정' : '기록 수정'}
                 variant="outline"
                 size="md"
                 className="flex-1"
