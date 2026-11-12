@@ -13,7 +13,10 @@ import { displayName } from '@/store/useProfileStore';
 import { useSpace } from '@/store/useSpaceStore';
 
 export type MemberInfo = {
+  /** 보여줄 이름. 나는 '나' */
   name: string;
+  /** 공간에서 쓰는 닉네임 (나도 닉네임으로). 댓글처럼 나를 닉네임과 같이 보여줄 때 */
+  nickname: string;
   avatarPath: string | null;
   isMe: boolean;
 };
@@ -74,7 +77,12 @@ export function openMemberProfile(userId: string, isMe: boolean) {
   router.push({ pathname: '/space/member', params: { userId } });
 }
 
-const LEFT: MemberInfo = { name: '나간 멤버', avatarPath: null, isMe: false };
+const LEFT: MemberInfo = {
+  name: '나간 멤버',
+  nickname: '나간 멤버',
+  avatarPath: null,
+  isMe: false,
+};
 
 /**
  * 공간 멤버를 user id로 찾는 함수. 아직 못 받았거나 나간 사람이면 '나간 멤버' 대신
@@ -96,10 +104,13 @@ export function useMemberLookup(spaceId: string | null) {
   return (userId: string): MemberInfo => {
     const m = entry?.members.find((x) => x.user_id === userId);
     if (!m) {
-      return entry ? LEFT : { name: '멤버', avatarPath: null, isMe: false };
+      return entry
+        ? LEFT
+        : { name: '멤버', nickname: '멤버', avatarPath: null, isMe: false };
     }
     return {
       name: m.is_me ? '나' : displayName(m.nickname),
+      nickname: displayName(m.nickname),
       avatarPath: m.avatar_path,
       isMe: m.is_me,
     };

@@ -307,7 +307,11 @@ export function ItemSocial({
                 }
                 onLongPress={() => setMenuFor(c)}
                 delayLongPress={350}
-                className="flex-row gap-2.5"
+                // 내 댓글은 오른쪽에 (사진·말풍선 순서를 뒤집는다)
+                className={cn(
+                  'gap-2.5',
+                  mine ? 'flex-row-reverse' : 'flex-row'
+                )}
               >
                 {/* 사진을 누르면 그 사람 프로필 */}
                 <Pressable
@@ -319,10 +323,16 @@ export function ItemSocial({
                 >
                   <PersonAvatar imagePath={who.avatarPath} size={28} />
                 </Pressable>
-                <View className="flex-1 gap-1">
-                  <View className="flex-row items-center gap-2">
+                <View className={cn('flex-1 gap-1', mine && 'items-end')}>
+                  <View
+                    className={cn(
+                      'items-center gap-2',
+                      mine ? 'flex-row-reverse' : 'flex-row'
+                    )}
+                  >
                     <Text weight="600" size={13}>
-                      {who.name}
+                      {/* 내 댓글도 닉네임으로, 옆에 (나) */}
+                      {mine ? `${who.nickname} (나)` : who.name}
                     </Text>
                     <Text variant="muted" size={11}>
                       {commentTime(c.created_at)}
@@ -331,8 +341,10 @@ export function ItemSocial({
                   </View>
                   <View
                     className={cn(
-                      'self-start rounded-2xl rounded-tl-md px-3 py-2',
-                      mine ? '' : 'bg-accent'
+                      'rounded-2xl px-3 py-2',
+                      mine
+                        ? 'self-end rounded-tr-md'
+                        : 'self-start rounded-tl-md bg-accent'
                     )}
                     style={
                       mine ? { backgroundColor: `${primary}1F` } : undefined

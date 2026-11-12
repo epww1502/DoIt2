@@ -17,6 +17,8 @@
     "update": "for p in android ios; do npx eas-cli update --channel production --environment production --platform $p --message \"$(git log -1 --pretty=%s)\" || exit 1; done"
   },
   "dependencies": {
+    "@expo-google-fonts/do-hyeon": "^0.4.1",
+    "@expo-google-fonts/gaegu": "^0.4.1",
     "@expo-google-fonts/jua": "^0.4.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@rn-primitives/slot": "^1.5.2",

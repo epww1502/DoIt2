@@ -83,6 +83,8 @@ export default function BucketDetailScreen() {
   const memberCount = useSpace(spaceId)?.memberCount ?? 1;
   // 맨 위 ⋯ 메뉴 (항목 정보 수정 · 지우기)
   const [menuOpen, setMenuOpen] = useState(false);
+  // 같이 갈 날을 끌어서 고르는 동안은 화면이 같이 스크롤되지 않게
+  const [scrollLocked, setScrollLocked] = useState(false);
 
   if (!item) {
     return (
@@ -188,6 +190,7 @@ export default function BucketDetailScreen() {
 
       <ScrollView
         ref={scrollRef}
+        scrollEnabled={!scrollLocked}
         refreshControl={refreshControl}
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -244,6 +247,7 @@ export default function BucketDetailScreen() {
             memberCount={memberCount}
             wantCount={wants.countOf(item.id)}
             member={member}
+            onDraggingChange={setScrollLocked}
           />
         ) : null}
 

@@ -8,12 +8,19 @@ import {
 } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
+import { useSharedValue } from 'react-native-reanimated';
 
 import { Icon, Text } from '@/components/atoms';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
 import { useDateVotes } from '@/hooks/useDateVotes';
 import {
   bestDays,
+  daysBetween,
   tallyDays,
   voteDayLabel,
   voterCount,
@@ -32,6 +39,11 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const MAX_MONTHS_AHEAD = 6;
 /** 날을 정할 때 따로 정한 알림이 없으면 */
 const DEFAULT_REMIND: GoalRemind[] = ['week', 'day'];
+/** 달력 한 주 줄 높이(h-12 = 48) + 줄 사이 간격(gap-1 = 4) */
+const ROW_PITCH = 52;
+const NO_STYLE = {};
+/** 꾹 누르고 있어야 끌어서 고르기가 시작된다 (그냥 끌면 화면 스크롤) */
+const DRAG_HOLD_MS = 250;
 
 type Props = {
   item: BucketItem;
@@ -41,6 +53,8 @@ type Props = {
   /** '하고 싶어요' 누른 사람 수 (2명 이상이면 날짜 정해 보자고 권한다) */
   wantCount: number;
   member: (userId: string) => MemberInfo;
+  /** 끌어서 고르는 동안 true (바깥 화면 스크롤을 멈추려고) */
+  onDraggingChange?: (dragging: boolean) => void;
 };
 
 /**
@@ -53,6 +67,7 @@ export function DateVoteCard({
   memberCount,
   wantCount,
   member,
+  onDraggingChange,
 }: Props) {
   const votes = useDateVotes(spaceId);
   const updateItem = useBucketStore((s) => s.updateItem);
@@ -115,6 +130,68 @@ export function DateVoteCard({
   const lead = first.day();
   const weeks = Math.ceil((lead + first.daysInMonth()) / 7);
   const thisMonth = dayjs().startOf('month');
+  // 꾹 누른 채 끌어서 기간 고르기: 처음 누른 날이 안 고른 날이면 넣고, 고른 날이면 뺀다
+  const [gridWidth, setGridWidth] = useState(0);
+  const [drag, setDrag] = useState<{
+    from: string;
+    to: string;
+    on: boolean;
+  } | null>(null);
+  // 제스처 콜백(나중에 불림)에서 지금 끄는 기간을 읽으려고 따로 들고 있는 값
+  const dragNow = useSharedValue<typeof drag>(null);
+  const isMineOn = (day: string) =>
+    (byDay.get(day) ?? []).some((u) => member(u).isMe);
+  /** 달력 안 손가락 위치의 날 (빈칸·지난 날이면 null) */
+  const dayAt = (x: number, y: number) => {
+    if (gridWidth <= 0) return null;
+    const col = Math.floor(x / (gridWidth / 7));
+    const row = Math.floor(y / ROW_PITCH);
+    if (col < 0 || col > 6 || row < 0 || row >= weeks) return null;
+    const n = row * 7 + col - lead + 1;
+    if (n < 1 || n > first.daysInMonth()) return null;
+    const day = first.date(n).format(DATE_FORMAT);
+    return day < today ? null : day;
+  };
+  const setDragBoth = (next: typeof drag) => {
+    dragNow.set(next);
+    setDrag(next);
+  };
+  const pan = Gesture.Pan()
+    .runOnJS(true)
+    .activateAfterLongPress(DRAG_HOLD_MS)
+    .onStart((e) => {
+      const day = dayAt(e.x, e.y);
+      if (!day) return;
+      hapticSelect();
+      onDraggingChange?.(true);
+      setDragBoth({ from: day, to: day, on: !isMineOn(day) });
+    })
+    .onUpdate((e) => {
+      const current = dragNow.get();
+      const day = dayAt(e.x, e.y);
+      if (!current || !day || day === current.to) return;
+      hapticSelect();
+      setDragBoth({ ...current, to: day });
+    })
+    .onFinalize(() => {
+      const current = dragNow.get();
+      if (!current) return;
+      setDragBoth(null);
+      onDraggingChange?.(false);
+      void votes.setDays(
+        item.id,
+        daysBetween(current.from, current.to, today),
+        current.on,
+        memberCount
+      );
+    });
+  const inDrag = (day: string) => {
+    if (!drag || day < today) return false;
+    const [a, b] =
+      drag.from <= drag.to ? [drag.from, drag.to] : [drag.to, drag.from];
+    return day >= a && day <= b;
+  };
+
   const canPrev = month.isAfter(thisMonth, 'month');
   const canNext = month.isBefore(
     thisMonth.add(MAX_MONTHS_AHEAD, 'month'),
@@ -153,7 +230,8 @@ export function DateVoteCard({
       {open ? (
         <View className="gap-3">
           <Text variant="muted" size={12}>
-            내가 되는 날을 눌러요. 다시 누르면 빠져요. 숫자는 되는 사람 수예요
+            내가 되는 날을 눌러요. 다시 누르면 빠져요. 꾹 누른 채 끌면 기간을 한
+            번에 골라요. 숫자는 되는 사람 수예요
           </Text>
 
           <View className="flex-row items-center justify-between">
@@ -197,75 +275,92 @@ export function DateVoteCard({
                 </Text>
               ))}
             </View>
-            {Array.from({ length: weeks }, (_, row) => (
-              <View key={row} className="flex-row">
-                {Array.from({ length: 7 }, (_, col) => {
-                  const n = row * 7 + col - lead + 1;
-                  if (n < 1 || n > first.daysInMonth()) {
-                    return <View key={col} className="h-12 flex-1" />;
-                  }
-                  const day = first.date(n).format(DATE_FORMAT);
-                  const users = byDay.get(day) ?? [];
-                  const past = day < today;
-                  const mine = users.some((u) => member(u).isMe);
-                  const all = isAll(users.length);
-                  return (
-                    <Pressable
-                      key={col}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${voteDayLabel(day)}${users.length ? `, ${users.length}명 돼요` : ''}`}
-                      accessibilityState={{ selected: mine, disabled: past }}
-                      disabled={past}
-                      onPress={() => {
-                        hapticSelect();
-                        void votes.toggle(item.id, day, memberCount);
-                      }}
-                      className="h-12 flex-1 items-center"
-                    >
-                      <View
-                        className={cn(
-                          'h-9 w-9 items-center justify-center rounded-full',
-                          mine && 'bg-primary',
-                          day === today && !mine && 'border border-primary'
-                        )}
-                        style={
-                          !mine && users.length > 0
-                            ? { backgroundColor: tint }
-                            : undefined
+            <GestureHandlerRootView style={NO_STYLE}>
+              <GestureDetector gesture={pan}>
+                <View
+                  className="gap-1"
+                  onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}
+                >
+                  {Array.from({ length: weeks }, (_, row) => (
+                    <View key={row} className="flex-row">
+                      {Array.from({ length: 7 }, (_, col) => {
+                        const n = row * 7 + col - lead + 1;
+                        if (n < 1 || n > first.daysInMonth()) {
+                          return <View key={col} className="h-12 flex-1" />;
                         }
-                      >
-                        <Text
-                          size={14}
-                          weight={users.length > 0 ? '700' : '400'}
-                          className={cn(
-                            mine
-                              ? 'text-primary-foreground'
-                              : past
-                                ? 'text-muted'
-                                : users.length > 0
-                                  ? 'text-primary'
-                                  : 'text-foreground'
-                          )}
-                        >
-                          {n}
-                        </Text>
-                      </View>
-                      {users.length > 0 ? (
-                        <Text
-                          size={10}
-                          weight="700"
-                          className={
-                            all ? 'text-primary' : 'text-muted-foreground'
-                          }
-                        >
-                          {all ? '모두' : `${users.length}명`}
-                        </Text>
-                      ) : null}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ))}
+                        const day = first.date(n).format(DATE_FORMAT);
+                        const users = byDay.get(day) ?? [];
+                        const past = day < today;
+                        // 끄는 중이면 그 기간은 넣을지/뺄지 미리 보여준다
+                        const mine = inDrag(day)
+                          ? drag!.on
+                          : users.some((u) => member(u).isMe);
+                        const all = isAll(users.length);
+                        return (
+                          <Pressable
+                            key={col}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${voteDayLabel(day)}${users.length ? `, ${users.length}명 돼요` : ''}`}
+                            accessibilityState={{
+                              selected: mine,
+                              disabled: past,
+                            }}
+                            disabled={past}
+                            onPress={() => {
+                              hapticSelect();
+                              void votes.toggle(item.id, day, memberCount);
+                            }}
+                            className="h-12 flex-1 items-center"
+                          >
+                            <View
+                              className={cn(
+                                'h-9 w-9 items-center justify-center rounded-full',
+                                mine && 'bg-primary',
+                                day === today &&
+                                  !mine &&
+                                  'border border-primary'
+                              )}
+                              style={
+                                !mine && users.length > 0
+                                  ? { backgroundColor: tint }
+                                  : undefined
+                              }
+                            >
+                              <Text
+                                size={14}
+                                weight={users.length > 0 ? '700' : '400'}
+                                className={cn(
+                                  mine
+                                    ? 'text-primary-foreground'
+                                    : past
+                                      ? 'text-muted'
+                                      : users.length > 0
+                                        ? 'text-primary'
+                                        : 'text-foreground'
+                                )}
+                              >
+                                {n}
+                              </Text>
+                            </View>
+                            {users.length > 0 ? (
+                              <Text
+                                size={10}
+                                weight="700"
+                                className={
+                                  all ? 'text-primary' : 'text-muted-foreground'
+                                }
+                              >
+                                {all ? '모두' : `${users.length}명`}
+                              </Text>
+                            ) : null}
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  ))}
+                </View>
+              </GestureDetector>
+            </GestureHandlerRootView>
           </View>
 
           {best.length > 0 ? (

@@ -20,6 +20,8 @@
 //
 // 알림함 detail: 'photos' | 'liked' | 'wanted' | 'dates' (새 앱만 보고 아이콘을 고른다. 예전 앱은 kind만 본다)
 //
+// 받는 사람이 설정에서 끈 종류(profiles.push_muted)는 푸시만 보내지 않는다 (알림함에는 남긴다).
+//
 // 막 바뀐 항목(최근 10분)만 알린다. 예전 항목으로 알림을 계속 보내는 걸 막으려고.
 // 받는 사람마다 notifications(알림함)에도 한 줄씩 남긴다 (푸시를 꺼둔 사람도 앱에서 볼 수 있게).
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
@@ -33,6 +35,18 @@ const WANTED_QUIET_MS = 12 * 60 * 60 * 1000;
 const ALL_DAY_QUIET_MS = 30 * 24 * 60 * 60 * 1000;
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+/** 설정에서 켜고 끄는 알림 묶음 (앱 lib/pushPrefs.ts와 같게) */
+const PUSH_GROUP: Record<string, string> = {
+  added: 'added',
+  done: 'record',
+  reviewed: 'record',
+  photos: 'record',
+  todo: 'todo',
+  commented: 'comment',
+  liked: 'like',
+  wanted: 'plan',
+  dates: 'plan',
+};
 
 const admin = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -252,11 +266,16 @@ Deno.serve(async (req) => {
   );
   if (fresh.length === 0) return json({ sent: 0 });
 
-  const [{ data: space }, name, { data: tokens }] = await Promise.all([
-    admin.from('spaces').select('name, emoji').eq('id', spaceId).single(),
-    displayName(spaceId, actor),
-    admin.from('push_tokens').select('token').in('user_id', others),
-  ]);
+  const [{ data: space }, name, { data: allTokens }, { data: prefs }] =
+    await Promise.all([
+      admin.from('spaces').select('name, emoji').eq('id', spaceId).single(),
+      displayName(spaceId, actor),
+      admin.from('push_tokens').select('token, user_id').in('user_id', others),
+      admin
+        .from('profiles')
+        .select('user_id, push_muted')
+        .in('user_id', others),
+    ]);
   const first = fresh[0];
   let message: string;
   const rating = reviewOf.get(first.id)?.rating ?? 0;
@@ -375,7 +394,15 @@ Deno.serve(async (req) => {
       if (error) console.error('inbox insert failed', error.message);
     });
 
-  if (!tokens?.length) return json({ sent: 0 });
+  // 이 종류를 꺼 둔 사람에게는 푸시를 보내지 않는다
+  const group = PUSH_GROUP[event!];
+  const muted = new Set(
+    (prefs ?? [])
+      .filter((p) => (p.push_muted ?? []).includes(group))
+      .map((p) => p.user_id)
+  );
+  const tokens = (allTokens ?? []).filter((t) => !muted.has(t.user_id));
+  if (!tokens.length) return json({ sent: 0 });
 
   const messages = tokens.map((t) => ({
     to: t.token,

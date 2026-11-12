@@ -462,18 +462,21 @@ export type Database = {
         Row: {
           avatar_path: string | null;
           nickname: string | null;
+          push_muted: string[];
           updated_at: string;
           user_id: string;
         };
         Insert: {
           avatar_path?: string | null;
           nickname?: string | null;
+          push_muted?: string[];
           updated_at?: string;
           user_id?: string;
         };
         Update: {
           avatar_path?: string | null;
           nickname?: string | null;
+          push_muted?: string[];
           updated_at?: string;
           user_id?: string;
         };

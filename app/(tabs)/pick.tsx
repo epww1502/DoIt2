@@ -20,6 +20,7 @@ import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { shownRating } from '@/lib/bucket/reviews';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { PickFan } from '@/components/bucket/PickFan';
+import { PickSlot } from '@/components/bucket/PickSlot';
 import { TodoPills } from '@/components/bucket/TodoPills';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import {
@@ -77,7 +78,7 @@ export default function PickScreen() {
   const reviewCtx = useReviewCtx();
   // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
   const sync = useListSync();
-  const pickAnimation = useSettingsStore((s) => s.pickAnimation);
+  const pickStyle = useSettingsStore((s) => s.pickStyle);
   const redoMinRating = useSettingsStore((s) => s.redoMinRating);
   const setRedoMinRating = useSettingsStore((s) => s.setRedoMinRating);
   const [filter, setFilter] = useState<BucketFilter>(ALL_FILTER);
@@ -201,7 +202,7 @@ export default function PickScreen() {
       current ?? undefined,
       (it) => 1 + wants.countOf(it.id)
     );
-    if (!pickAnimation) {
+    if (pickStyle === 'none') {
       // 설정에서 애니메이션을 끄면 바로 결과
       setCurrentId(picked.id);
       return;
@@ -303,7 +304,15 @@ export default function PickScreen() {
 
           {drawing ? (
             <View className="flex-1 justify-center">
-              <PickFan picked={drawing} onEnd={onDrawEnd} />
+              {pickStyle === 'slot' ? (
+                <PickSlot
+                  candidates={candidates}
+                  picked={drawing}
+                  onEnd={onDrawEnd}
+                />
+              ) : (
+                <PickFan picked={drawing} onEnd={onDrawEnd} />
+              )}
             </View>
           ) : (
             // 위 옵션이 늘어 공간이 좁아도 카드가 아래 버튼과 겹치지 않게 스크롤 안에 둔다
@@ -311,9 +320,22 @@ export default function PickScreen() {
               className="flex-1"
               contentContainerClassName="grow justify-center px-5 py-3"
             >
-              <View
+              {/* 뽑힌 카드를 누르면 바로 그 항목으로 */}
+              <Pressable
+                accessibilityRole={decided ? 'button' : undefined}
+                accessibilityLabel={
+                  decided ? `${current.title} 자세히 보기` : undefined
+                }
+                disabled={!decided}
+                onPress={() =>
+                  current &&
+                  router.push({
+                    pathname: '/item/[id]',
+                    params: { id: current.id },
+                  })
+                }
                 className={cn(
-                  'min-h-[200px] items-center justify-center gap-2 rounded-3xl border-2 p-5',
+                  'min-h-[200px] items-center justify-center gap-2 rounded-3xl border-2 p-5 active:opacity-80',
                   decided
                     ? 'border-primary bg-card'
                     : 'border-dashed border-border bg-card'
@@ -385,7 +407,7 @@ export default function PickScreen() {
                     </Text>
                   </>
                 )}
-              </View>
+              </Pressable>
             </ScrollView>
           )}
 

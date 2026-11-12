@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import type { TitleFont } from '@/constants/fonts';
 import type { BucketSort } from '@/lib/bucket/search';
 import {
   DEFAULT_PALETTE,
@@ -11,12 +12,17 @@ import {
 
 export type DoneView = 'card' | 'compact' | 'calendar';
 export type BucketView = 'list' | 'compact' | 'category' | 'map';
+/** 뽑기 애니메이션: fan(카드 부채꼴), slot(슬롯머신), none(바로 결과) */
+export type PickStyle = 'fan' | 'slot' | 'none';
 
 /** 앱 설정 (이 휴대폰에만 저장) */
 type SettingsState = {
-  /** '오늘 뭐 하지' 뽑을 때 카드가 촤르륵 지나가는 애니메이션. 끄면 바로 결과 */
-  pickAnimation: boolean;
-  setPickAnimation: (value: boolean) => void;
+  /** '오늘 뭐 하지' 뽑을 때 애니메이션 종류 */
+  pickStyle: PickStyle;
+  setPickStyle: (value: PickStyle) => void;
+  /** 제목·버튼·칩 글씨체 (바꾸면 앱을 다시 불러와야 적용된다) */
+  titleFont: TitleFont;
+  setTitleFont: (value: TitleFont) => void;
   /** 앱 테마색 (버튼·칩·탭 아이콘 등) */
   palette: PaletteKey;
   setPalette: (value: PaletteKey) => void;
@@ -55,8 +61,10 @@ type SettingsState = {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      pickAnimation: true,
-      setPickAnimation: (pickAnimation) => set({ pickAnimation }),
+      pickStyle: 'fan',
+      setPickStyle: (pickStyle) => set({ pickStyle }),
+      titleFont: 'jua',
+      setTitleFont: (titleFont) => set({ titleFont }),
       palette: DEFAULT_PALETTE,
       setPalette: (palette) => set({ palette }),
       haptics: true,
@@ -82,10 +90,20 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'doit2-settings',
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as Record<string, unknown>;
+        // v1: 켜고 끄기만 있었다 (끈 사람은 그대로 바로 결과)
+        if (version < 2) {
+          state.pickStyle = state.pickAnimation === false ? 'none' : 'fan';
+          delete state.pickAnimation;
+        }
+        return state as unknown as SettingsState;
+      },
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        pickAnimation: state.pickAnimation,
+        pickStyle: state.pickStyle,
+        titleFont: state.titleFont,
         palette: state.palette,
         haptics: state.haptics,
         redoMinRating: state.redoMinRating,

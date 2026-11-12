@@ -45,3 +45,14 @@ export function voterCount(votes: VoteLike[], today: string) {
 export function voteDayLabel(day: string) {
   return dayjs(day).format('M월 D일 (dd)');
 }
+
+/** 두 날 사이의 모든 날 (순서 상관없이, 둘 다 포함). 오늘 전 날은 뺀다. 끌어서 기간을 고를 때 */
+export function daysBetween(a: string, b: string, today: string): string[] {
+  const [from, to] = a <= b ? [a, b] : [b, a];
+  const days: string[] = [];
+  for (let d = dayjs(from); !d.isAfter(to, 'day'); d = d.add(1, 'day')) {
+    const key = d.format('YYYY-MM-DD');
+    if (key >= today) days.push(key);
+  }
+  return days;
+}

@@ -154,23 +154,100 @@ export function useDateVotes(spaceId: string | null) {
       apply(had);
       return;
     }
-    if (had) return;
-    // 이 날 모두 되면 '다 되는 날' 알림, 아니면 처음 고를 때 한 번 '날짜 골랐어요'
-    const voters = new Set(
-      current()
-        .filter((r) => r.item_id === itemId && r.day === day)
-        .map((r) => r.user_id)
-    );
-    const allKey = `${itemId}:${day}`;
-    if (memberCount >= 2 && voters.size >= memberCount) {
-      if (notifiedAll.has(allKey)) return;
-      notifiedAll.add(allKey);
+    if (!had) notifyPicked(itemId, [day], memberCount);
+  };
+
+  /** 날을 골랐을 때 알림: 그 중 모두 되는 날이 생기면 '다 되는 날', 아니면 처음 고를 때 한 번 */
+  const notifyPicked = (
+    itemId: string,
+    days: string[],
+    memberCount: number
+  ) => {
+    if (!spaceId) return;
+    const rowsNow = useVotesStore.getState().bySpace[spaceId] ?? EMPTY;
+    const allDay = days.find((day) => {
+      const voters = new Set(
+        rowsNow
+          .filter((r) => r.item_id === itemId && r.day === day)
+          .map((r) => r.user_id)
+      );
+      return (
+        memberCount >= 2 &&
+        voters.size >= memberCount &&
+        !notifiedAll.has(`${itemId}:${day}`)
+      );
+    });
+    if (allDay) {
+      notifiedAll.add(`${itemId}:${allDay}`);
       notified.add(itemId);
-      notifySpace(spaceId, 'dates', [itemId], { day });
+      notifySpace(spaceId, 'dates', [itemId], { day: allDay });
     } else if (!notified.has(itemId)) {
       notified.add(itemId);
-      notifySpace(spaceId, 'dates', [itemId], { day });
+      notifySpace(spaceId, 'dates', [itemId], { day: days[0] });
     }
+  };
+
+  /**
+   * 여러 날을 한 번에 넣거나 뺀다 (끌어서 기간 고르기). 이미 그런 날은 건너뛴다.
+   * 먼저 화면에 보여주고, 못 올리면 되돌린다
+   */
+  const setDays = async (
+    itemId: string,
+    days: string[],
+    on: boolean,
+    memberCount: number
+  ) => {
+    if (!spaceId || !userId || days.length === 0) return;
+    const before = useVotesStore.getState().bySpace[spaceId] ?? EMPTY;
+    const mineOn = new Set(
+      before
+        .filter((r) => r.item_id === itemId && r.user_id === userId)
+        .map((r) => r.day)
+    );
+    const changed = days.filter((d) => mineOn.has(d) !== on);
+    if (changed.length === 0) return;
+    const now = new Date().toISOString();
+    const changedSet = new Set(changed);
+    useVotesStore.getState().setRows(
+      spaceId,
+      on
+        ? [
+            ...before,
+            ...changed.map((day) => ({
+              item_id: itemId,
+              user_id: userId,
+              space_id: spaceId,
+              day,
+              created_at: now,
+            })),
+          ]
+        : before.filter(
+            (r) =>
+              !(
+                r.item_id === itemId &&
+                r.user_id === userId &&
+                changedSet.has(r.day)
+              )
+          )
+    );
+    const { error } = on
+      ? await supabase
+          .from('item_date_votes')
+          .insert(
+            changed.map((day) => ({ item_id: itemId, user_id: userId, day }))
+          )
+      : await supabase
+          .from('item_date_votes')
+          .delete()
+          .eq('item_id', itemId)
+          .eq('user_id', userId)
+          .in('day', changed);
+    if (error) {
+      noteFailure(error);
+      useVotesStore.getState().setRows(spaceId, before);
+      return;
+    }
+    if (on) notifyPicked(itemId, changed, memberCount);
   };
 
   /** 날을 정했으면 이 항목 표를 모두 비운다 (다시 맞출 때 처음부터) */
@@ -191,5 +268,5 @@ export function useDateVotes(spaceId: string | null) {
     }
   };
 
-  return { votesOf, toggle, clear };
+  return { votesOf, toggle, setDays, clear };
 }

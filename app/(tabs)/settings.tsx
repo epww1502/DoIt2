@@ -1,10 +1,19 @@
+import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react-native';
-import { Linking, Pressable, ScrollView, View } from 'react-native';
+import {
+  DevSettings,
+  Linking,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
+import * as Updates from 'expo-updates';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   AppSwitch,
   Card,
+  Chip,
   CardContent,
   Icon,
   Segmented,
@@ -16,18 +25,27 @@ import { InboxCard } from '@/components/space/InboxCard';
 import { ProfileCard } from '@/components/space/ProfileCard';
 import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
 import { TrashCard } from '@/components/space/TrashCard';
+import { TITLE_FONTS, type TitleFont } from '@/constants/fonts';
 import { PALETTES } from '@/constants/palettes';
 import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
 import { installedVersion } from '@/lib/appVersion';
 import { showAlert } from '@/lib/dialog';
 import { showErrorAlert } from '@/lib/errors';
+import {
+  fetchMutedGroups,
+  PUSH_GROUPS,
+  saveMutedGroups,
+  toggleGroup,
+  type PushGroup,
+} from '@/lib/pushPrefs';
 import { ensureReminderPermission } from '@/lib/reminders';
 import {
   isPushSupported,
   registerForPush,
   unregisterForPush,
 } from '@/lib/push';
-import { useSettingsStore } from '@/store/useSettingsStore';
+import { useSpaceStore } from '@/store/useSpaceStore';
+import { type PickStyle, useSettingsStore } from '@/store/useSettingsStore';
 import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
@@ -36,10 +54,16 @@ const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: 'dark', label: '다크' },
 ];
 
+const PICK_STYLE_OPTIONS: { value: PickStyle; label: string }[] = [
+  { value: 'fan', label: '카드 뽑기' },
+  { value: 'slot', label: '슬롯머신' },
+  { value: 'none', label: '바로 결과' },
+];
+
 export default function SettingsScreen() {
   const { mode, setMode } = useThemeMode();
-  const pickAnimation = useSettingsStore((s) => s.pickAnimation);
-  const setPickAnimation = useSettingsStore((s) => s.setPickAnimation);
+  const pickStyle = useSettingsStore((s) => s.pickStyle);
+  const setPickStyle = useSettingsStore((s) => s.setPickStyle);
   const haptics = useSettingsStore((s) => s.haptics);
   const setHaptics = useSettingsStore((s) => s.setHaptics);
   const tabBarSpace = useTabBarSpace();
@@ -74,17 +98,27 @@ export default function SettingsScreen() {
               </Text>
               <PalettePicker />
             </View>
+            <TitleFontPicker />
           </CardContent>
         </Card>
 
         <Card className="rounded-2xl">
           <CardContent className="gap-4 p-5">
-            <ToggleRow
-              title="뽑기 애니메이션"
-              description="끄면 추천 탭에서 바로 결과가 나와요"
-              value={pickAnimation}
-              onChange={setPickAnimation}
-            />
+            <View className="gap-3">
+              <View className="gap-0.5">
+                <Text weight="600" size={16}>
+                  뽑기 애니메이션
+                </Text>
+                <Text variant="muted" size={12}>
+                  추천 탭에서 뽑을 때 보여줄 모습이에요
+                </Text>
+              </View>
+              <Segmented
+                options={PICK_STYLE_OPTIONS}
+                value={pickStyle}
+                onChange={setPickStyle}
+              />
+            </View>
             <Separator />
             <ToggleRow
               title="진동"
@@ -94,6 +128,7 @@ export default function SettingsScreen() {
             />
             <Separator />
             <PushToggleRow />
+            <PushGroupRows />
             <Separator />
             <WeekendToggleRow />
           </CardContent>
@@ -245,6 +280,114 @@ function PushToggleRow() {
         if (supported) void change(next);
       }}
     />
+  );
+}
+
+/** 제목·버튼 글씨체 고르기. 켤 때 불러오는 글꼴이라 바꾸면 앱을 다시 불러온다 */
+function TitleFontPicker() {
+  const titleFont = useSettingsStore((s) => s.titleFont);
+  const setTitleFont = useSettingsStore((s) => s.setTitleFont);
+
+  const choose = (font: TitleFont) => {
+    if (font === titleFont) return;
+    setTitleFont(font);
+    showAlert(
+      '글씨체를 바꿀까요?',
+      '앱을 다시 불러오면 바뀐 글씨체로 보여요. 나중에 앱을 다시 켤 때 바꿔도 돼요.',
+      [
+        { text: '나중에', style: 'cancel' },
+        {
+          text: '다시 불러오기',
+          onPress: async () => {
+            // 고른 값이 휴대폰에 저장될 시간을 잠깐 준다
+            await new Promise((r) => setTimeout(r, 300));
+            if (__DEV__) DevSettings.reload();
+            else await Updates.reloadAsync();
+          },
+        },
+      ]
+    );
+  };
+
+  return (
+    <View className="gap-3">
+      <View className="gap-0.5">
+        <Text weight="600" size={16}>
+          글씨체
+        </Text>
+        <Text variant="muted" size={12}>
+          제목·버튼에 쓰는 글씨예요. 본문 글씨는 그대로예요
+        </Text>
+      </View>
+      <View className="flex-row flex-wrap gap-2">
+        {(Object.keys(TITLE_FONTS) as TitleFont[]).map((font) => (
+          <Chip
+            key={font}
+            label={`${TITLE_FONTS[font].label} · ${TITLE_FONTS[font].hint}`}
+            selected={font === titleFont}
+            onPress={() => choose(font)}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/** 알림을 켰을 때: 종류별로 켜고 끄기 (내 프로필에 저장, 폰을 바꿔도 그대로) */
+function PushGroupRows() {
+  const pushEnabled = useSettingsStore((s) => s.pushEnabled);
+  const userId = useSpaceStore((s) => s.userId);
+  const show = isPushSupported() && pushEnabled && Boolean(userId);
+  const [muted, setMuted] = useState<PushGroup[] | null>(null);
+
+  useEffect(() => {
+    if (!show || !userId) return;
+    let cancelled = false;
+    fetchMutedGroups(userId)
+      .then((list) => {
+        if (!cancelled) setMuted(list);
+      })
+      // 못 불러오면 줄을 숨긴다 (모르는 채로 저장하면 서버 값을 덮어쓴다)
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [show, userId]);
+
+  if (!show || !userId || !muted) return null;
+
+  const change = async (group: PushGroup, on: boolean) => {
+    const before = muted;
+    const next = toggleGroup(muted, group, on);
+    setMuted(next);
+    try {
+      await saveMutedGroups(userId, next);
+    } catch (e) {
+      setMuted(before);
+      showErrorAlert('알림 설정을 바꾸지 못했어요', e, () => change(group, on));
+    }
+  };
+
+  return (
+    <View className="gap-3 border-l-2 border-border pl-3">
+      {PUSH_GROUPS.map((g) => (
+        <View key={g.key} className="flex-row items-center gap-3">
+          <View className="flex-1 gap-0.5">
+            <Text weight="600" size={14}>
+              {g.label}
+            </Text>
+            <Text variant="muted" size={12}>
+              {g.description}
+            </Text>
+          </View>
+          <AppSwitch
+            accessibilityLabel={`${g.label} 알림`}
+            value={!muted.includes(g.key)}
+            onValueChange={(on) => void change(g.key, on)}
+          />
+        </View>
+      ))}
+    </View>
   );
 }
 
