@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
-import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppSwitch, Segmented, Text } from '@/components/atoms';
 import type { BucketSetting } from '@/lib/bucket/types';
 
 import { StarRating } from './StarRating';
+import { SheetPanel } from '@/components/atoms/SheetPanel';
 
 /** 뽑기 조건 */
 export type PickFilter = {
@@ -100,10 +100,7 @@ function SheetBody({
         onPress={onClose}
         className="absolute inset-0 bg-black/40"
       />
-      <Animated.View
-        entering={SlideInDown.duration(260)}
-        style={{ maxHeight: '85%' }}
-      >
+      <SheetPanel onClose={onClose} handleOnly style={{ maxHeight: '85%' }}>
         <View
           className="shrink rounded-t-3xl bg-background pt-3"
           style={{ paddingBottom: insets.bottom + 12 }}
@@ -181,7 +178,7 @@ function SheetBody({
             </Pressable>
           </View>
         </View>
-      </Animated.View>
+      </SheetPanel>
     </View>
   );
 }

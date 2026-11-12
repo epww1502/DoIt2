@@ -2,12 +2,12 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, View } from 'react-native';
-import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Icon, Text } from '@/components/atoms';
 import { DATE_FORMAT } from '@/lib/date';
 import { cn } from '@/lib/utils';
+import { SheetPanel } from '@/components/atoms/SheetPanel';
 
 /** 일 → 월 → 연: 제목을 누를 때마다 한 단계 넓게 본다 */
 type CalendarView = 'day' | 'month' | 'year';
@@ -113,7 +113,7 @@ function Calendar({ value, maxDate, onSelect, onClose }: CalendarProps) {
         onPress={onClose}
         className="absolute inset-0 bg-black/40"
       />
-      <Animated.View entering={SlideInDown.duration(260)}>
+      <SheetPanel onClose={onClose}>
         <View
           className="shrink gap-4 rounded-t-3xl bg-background px-5 pt-5"
           style={{ paddingBottom: insets.bottom + 12 }}
@@ -225,7 +225,7 @@ function Calendar({ value, maxDate, onSelect, onClose }: CalendarProps) {
             }
           />
         </View>
-      </Animated.View>
+      </SheetPanel>
     </View>
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Modal, Pressable, View } from 'react-native';
-import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Text } from '@/components/atoms';
@@ -10,6 +9,7 @@ import type { ItemReview } from '@/lib/bucket/types';
 import { useBucketStore } from '@/store/useBucketStore';
 
 import { RATING_LABELS, StarRating } from './StarRating';
+import { SheetPanel } from '@/components/atoms/SheetPanel';
 
 type ReviewEditSheetProps = {
   itemId: string;
@@ -77,7 +77,7 @@ function SheetBody({
         onPress={onClose}
         className="absolute inset-0 bg-black/40"
       />
-      <Animated.View entering={SlideInDown.duration(260)}>
+      <SheetPanel onClose={onClose}>
         <View
           className="gap-4 rounded-t-3xl bg-background px-5 pt-3"
           style={{
@@ -116,7 +116,7 @@ function SheetBody({
             </Text>
           </Pressable>
         </View>
-      </Animated.View>
+      </SheetPanel>
     </View>
   );
 }

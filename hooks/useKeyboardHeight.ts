@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Dimensions,
   Keyboard,
   Platform,
   TextInput,
@@ -51,6 +52,11 @@ export function useKeyboardAwareForm() {
   const keyboardHeight = useKeyboardHeight();
   const scrollRef = useRef<ScrollViewInstance>(null);
   const offsetY = useRef(0);
+  // 위치를 잴 때(조금 뒤) 읽는 키보드 높이
+  const keyboardRef = useRef(0);
+  useEffect(() => {
+    keyboardRef.current = keyboardHeight;
+  }, [keyboardHeight]);
 
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     offsetY.current = e.nativeEvent.contentOffset.y;
@@ -63,7 +69,12 @@ export function useKeyboardAwareForm() {
       if (!input || !scroll) return;
       scroll.measureInWindow((_sx, sy, _sw, sh) => {
         input.measureInWindow((_ix, iy, _iw, ih) => {
-          const overflow = iy + ih + FOCUS_MARGIN - (sy + sh);
+          // 키보드가 스크롤 영역을 덮는 화면도 있어서, 스크롤 영역 끝과 키보드 윗선 중 더 위를 기준으로
+          const visibleBottom = Math.min(
+            sy + sh,
+            Dimensions.get('window').height - keyboardRef.current
+          );
+          const overflow = iy + ih + FOCUS_MARGIN - visibleBottom;
           if (overflow > 0) {
             scroll.scrollTo({ y: offsetY.current + overflow, animated: true });
           }

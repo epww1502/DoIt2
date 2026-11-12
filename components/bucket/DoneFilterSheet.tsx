@@ -1,7 +1,6 @@
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
-import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Chip, Segmented, Text } from '@/components/atoms';
@@ -13,6 +12,7 @@ import {
 } from '@/lib/bucket/types';
 
 import { StarRating } from './StarRating';
+import { SheetPanel } from '@/components/atoms/SheetPanel';
 
 /** 함께한 것 목록 필터 */
 export type DoneFilter = {
@@ -112,10 +112,7 @@ function SheetBody({ items, value, onApply, onClose }: DoneFilterSheetProps) {
         onPress={onClose}
         className="absolute inset-0 bg-black/40"
       />
-      <Animated.View
-        entering={SlideInDown.duration(260)}
-        style={{ maxHeight: '85%' }}
-      >
+      <SheetPanel onClose={onClose} handleOnly style={{ maxHeight: '85%' }}>
         <View
           className="shrink rounded-t-3xl bg-background pt-3"
           style={{ paddingBottom: insets.bottom + 12 }}
@@ -217,7 +214,7 @@ function SheetBody({ items, value, onApply, onClose }: DoneFilterSheetProps) {
             </Pressable>
           </View>
         </View>
-      </Animated.View>
+      </SheetPanel>
     </View>
   );
 }

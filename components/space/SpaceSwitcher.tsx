@@ -9,7 +9,6 @@ import {
 } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
-import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, InlineError, Text } from '@/components/atoms';
@@ -17,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { SpaceAvatar } from './SpaceAvatar';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useSpace, useSpaceStore, type Space } from '@/store/useSpaceStore';
+import { SheetPanel } from '@/components/atoms/SheetPanel';
 
 /** '나만 보기'(공간 없음)를 보여줄 때 쓰는 모양 */
 export const PERSONAL = { emoji: '📱', name: '나만 보기' };
@@ -95,10 +95,7 @@ function SpaceSheet({
           onPress={onClose}
           className="absolute inset-0 bg-black/40"
         />
-        <Animated.View
-          entering={SlideInDown.duration(260)}
-          style={{ maxHeight: '75%' }}
-        >
+        <SheetPanel onClose={onClose} handleOnly style={{ maxHeight: '75%' }}>
           <View
             className="shrink gap-3 rounded-t-3xl bg-background pt-5"
             style={{ paddingBottom: insets.bottom + 12 }}
@@ -168,7 +165,7 @@ function SpaceSheet({
               )}
             </View>
           </View>
-        </Animated.View>
+        </SheetPanel>
       </View>
     </Modal>
   );

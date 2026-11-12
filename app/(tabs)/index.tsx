@@ -553,11 +553,13 @@ export default function BucketListScreen() {
               </Pressable>
             </View>
           ) : null}
+          {/* 필터와 목록 사이 여백 (없으면 목록이 필터 바로 밑에서 잘려 보인다) */}
+          <View className="h-3" />
           {bucketView === 'map' && awaiting.length > 0 ? (
             <Pressable
               accessibilityRole="button"
               onPress={() => setBucketView('list')}
-              className="mx-5 mt-3 flex-row items-center justify-between rounded-xl px-4 py-2.5 bg-accent active:opacity-70"
+              className="mx-5 mb-3 flex-row items-center justify-between rounded-xl px-4 py-2.5 bg-accent active:opacity-70"
             >
               <Text weight="600" size={13}>
                 평가를 기다려요 · {awaiting.length}
@@ -568,7 +570,7 @@ export default function BucketListScreen() {
             </Pressable>
           ) : null}
           {bucketView === 'map' ? (
-            <View className="mt-3 flex-1">
+            <View className="flex-1">
               {hasMapSpot(filtered, true) ? (
                 <ItemsMap
                   items={filtered}
@@ -677,6 +679,7 @@ export default function BucketListScreen() {
       <ActionSheet
         visible={restingOpen}
         onClose={() => setRestingOpen(false)}
+        cancelLabel="닫기"
         header={
           <View className="gap-1">
             <Text weight="700" size={17}>
@@ -697,6 +700,7 @@ export default function BucketListScreen() {
       <ActionSheet
         visible={viewSheetOpen}
         onClose={() => setViewSheetOpen(false)}
+        cancelLabel="닫기"
         header={
           <View className="gap-4">
             <View className="gap-2">

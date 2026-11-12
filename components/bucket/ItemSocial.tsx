@@ -239,6 +239,7 @@ export function ItemSocial({
       <ActionSheet
         visible={whoFor !== null}
         onClose={() => setWhoFor(null)}
+        cancelLabel="닫기"
         header={
           whoFor ? (
             <View className="gap-4">

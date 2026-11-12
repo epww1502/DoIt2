@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { Modal, Pressable, View } from 'react-native';
-import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { cn } from '@/lib/utils';
 
 import { Text } from './Text';
+import { SheetPanel } from './SheetPanel';
 
 export type ActionSheetItem = {
   label: string;
@@ -20,6 +20,8 @@ type ActionSheetProps = {
   /** 맨 위 머리 부분 (사진·이름 등) */
   header?: ReactNode;
   items: ActionSheetItem[];
+  /** 맨 아래 버튼 글자. 고르는 즉시 적용되는 시트(정렬·보기 등)는 '닫기' */
+  cancelLabel?: string;
 };
 
 /** 아래에서 올라오는 선택지 시트. 항목을 누르면 시트를 닫고 그 동작을 한다 */
@@ -28,6 +30,7 @@ export function ActionSheet({
   onClose,
   header,
   items,
+  cancelLabel = '취소',
 }: ActionSheetProps) {
   const insets = useSafeAreaInsets();
 
@@ -47,7 +50,7 @@ export function ActionSheet({
           onPress={onClose}
           className="absolute inset-0 bg-black/40"
         />
-        <Animated.View entering={SlideInDown.duration(260)}>
+        <SheetPanel onClose={onClose}>
           <View
             className="shrink gap-1 rounded-t-3xl bg-background px-3 pt-3"
             style={{ paddingBottom: insets.bottom + 12 }}
@@ -79,11 +82,11 @@ export function ActionSheet({
               className="mt-1 items-center rounded-xl py-3.5 bg-accent active:opacity-70"
             >
               <Text weight="600" size={16} className="text-muted-foreground">
-                취소
+                {cancelLabel}
               </Text>
             </Pressable>
           </View>
-        </Animated.View>
+        </SheetPanel>
       </View>
     </Modal>
   );
