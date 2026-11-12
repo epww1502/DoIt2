@@ -23,6 +23,7 @@ import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import { InboxCard } from '@/components/space/InboxCard';
 import { ProfileCard } from '@/components/space/ProfileCard';
 import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
+import { PushGroupsSheet } from '@/components/space/PushGroupsSheet';
 import { TitleFontSheet } from '@/components/space/TitleFontSheet';
 import { TrashCard } from '@/components/space/TrashCard';
 import { TITLE_FONTS, type TitleFont } from '@/constants/fonts';
@@ -348,6 +349,7 @@ function PushGroupRows() {
   const userId = useSpaceStore((s) => s.userId);
   const show = isPushSupported() && pushEnabled && Boolean(userId);
   const [muted, setMuted] = useState<PushGroup[] | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     if (!show || !userId) return;
@@ -377,26 +379,33 @@ function PushGroupRows() {
     }
   };
 
+  // 다 켰으면 '전부 받음', 아니면 몇 개 받는지만 (자세한 건 누르면 시트에서)
+  const onCount = PUSH_GROUPS.length - muted.length;
   return (
-    <View className="gap-3 border-l-2 border-border pl-3">
-      {PUSH_GROUPS.map((g) => (
-        <View key={g.key} className="flex-row items-center gap-3">
-          <View className="flex-1 gap-0.5">
-            <Text weight="600" size={14}>
-              {g.label}
-            </Text>
-            <Text variant="muted" size={12}>
-              {g.description}
-            </Text>
-          </View>
-          <AppSwitch
-            accessibilityLabel={`${g.label} 알림`}
-            value={!muted.includes(g.key)}
-            onValueChange={(on) => void change(g.key, on)}
-          />
-        </View>
-      ))}
-    </View>
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`받을 알림 종류, ${PUSH_GROUPS.length}개 중 ${onCount}개 받음, 바꾸기`}
+        onPress={() => setSheetOpen(true)}
+        className="flex-row items-center gap-3 active:opacity-70"
+      >
+        <Text weight="600" size={14} className="flex-1">
+          받을 알림 종류
+        </Text>
+        <Text size={14} className="text-muted-foreground">
+          {muted.length === 0
+            ? '전부 받음'
+            : `${PUSH_GROUPS.length}개 중 ${onCount}개`}
+        </Text>
+        <Icon as={ChevronRight} size={18} className="text-muted-foreground" />
+      </Pressable>
+      <PushGroupsSheet
+        visible={sheetOpen}
+        muted={muted}
+        onChange={(group, on) => void change(group, on)}
+        onClose={() => setSheetOpen(false)}
+      />
+    </>
   );
 }
 
