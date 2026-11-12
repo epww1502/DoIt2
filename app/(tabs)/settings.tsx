@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check } from 'lucide-react-native';
+import { Check, ChevronRight } from 'lucide-react-native';
 import {
   DevSettings,
   Linking,
@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AppSwitch,
   Card,
-  Chip,
   CardContent,
   Icon,
   Segmented,
@@ -24,6 +23,7 @@ import { ScreenHeader } from '@/components/bucket/ScreenHeader';
 import { InboxCard } from '@/components/space/InboxCard';
 import { ProfileCard } from '@/components/space/ProfileCard';
 import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
+import { TitleFontSheet } from '@/components/space/TitleFontSheet';
 import { TrashCard } from '@/components/space/TrashCard';
 import { TITLE_FONTS, type TitleFont } from '@/constants/fonts';
 import { PALETTES } from '@/constants/palettes';
@@ -287,6 +287,7 @@ function PushToggleRow() {
 function TitleFontPicker() {
   const titleFont = useSettingsStore((s) => s.titleFont);
   const setTitleFont = useSettingsStore((s) => s.setTitleFont);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const choose = (font: TitleFont) => {
     if (font === titleFont) return;
@@ -310,26 +311,34 @@ function TitleFontPicker() {
   };
 
   return (
-    <View className="gap-3">
-      <View className="gap-0.5">
-        <Text weight="600" size={16}>
-          글씨체
+    <>
+      {/* 지금 글씨체를 그 글씨로 보여주고, 누르면 미리보기와 함께 고른다 */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`글씨체: ${TITLE_FONTS[titleFont].label}, 바꾸기`}
+        onPress={() => setSheetOpen(true)}
+        className="flex-row items-center gap-3 active:opacity-70"
+      >
+        <View className="flex-1 gap-0.5">
+          <Text weight="600" size={16}>
+            글씨체
+          </Text>
+          <Text variant="muted" size={12}>
+            제목·버튼에 쓰는 글씨예요
+          </Text>
+        </View>
+        <Text weight="600" size={15} className="text-primary">
+          {TITLE_FONTS[titleFont].label}
         </Text>
-        <Text variant="muted" size={12}>
-          제목·버튼에 쓰는 글씨예요. 본문 글씨는 그대로예요
-        </Text>
-      </View>
-      <View className="flex-row flex-wrap gap-2">
-        {(Object.keys(TITLE_FONTS) as TitleFont[]).map((font) => (
-          <Chip
-            key={font}
-            label={`${TITLE_FONTS[font].label} · ${TITLE_FONTS[font].hint}`}
-            selected={font === titleFont}
-            onPress={() => choose(font)}
-          />
-        ))}
-      </View>
-    </View>
+        <Icon as={ChevronRight} size={18} className="text-muted-foreground" />
+      </Pressable>
+      <TitleFontSheet
+        visible={sheetOpen}
+        value={titleFont}
+        onSelect={choose}
+        onClose={() => setSheetOpen(false)}
+      />
+    </>
   );
 }
 

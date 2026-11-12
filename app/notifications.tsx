@@ -174,7 +174,8 @@ function InboxRow({ entry }: { entry: InboxEntry }) {
             {timeLabel(entry.at)}
           </Text>
         </View>
-        <Text size={15} weight={unread ? '600' : '400'}>
+        {/* 읽음·안 읽음 모두 본문 글씨체 (600부터는 제목 글씨체라 읽으면 글씨체가 바뀌어 보였다) */}
+        <Text size={15} weight={unread ? '500' : '400'}>
           {entry.body}
         </Text>
       </View>

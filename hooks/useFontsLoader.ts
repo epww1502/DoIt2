@@ -1,6 +1,10 @@
+import { BlackHanSans_400Regular } from '@expo-google-fonts/black-han-sans';
 import { DoHyeon_400Regular } from '@expo-google-fonts/do-hyeon';
 import { Gaegu_700Bold } from '@expo-google-fonts/gaegu';
 import { Jua_400Regular } from '@expo-google-fonts/jua';
+import { SingleDay_400Regular } from '@expo-google-fonts/single-day';
+import { Sunflower_700Bold } from '@expo-google-fonts/sunflower';
+import { YeonSung_400Regular } from '@expo-google-fonts/yeon-sung';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
@@ -24,11 +28,24 @@ const PRETENDARD = {
 };
 
 /** 제목 글씨체 파일 (고딕은 위 Pretendard-Bold를 그대로 쓴다) */
-const TITLE_FILES: Partial<Record<TitleFont, number>> = {
+export const TITLE_FILES: Partial<Record<TitleFont, number>> = {
   jua: Jua_400Regular,
   dohyeon: DoHyeon_400Regular,
   gaegu: Gaegu_700Bold,
+  sunflower: Sunflower_700Bold,
+  blackhan: BlackHanSans_400Regular,
+  singleday: SingleDay_400Regular,
+  yeonsung: YeonSung_400Regular,
 };
+
+/** 제목 글씨체를 모두 불러온다 (고르는 화면에서 미리 보여주려고). 이미 불러온 건 건너뛴다 */
+export function loadAllTitleFonts() {
+  const map: Record<string, number> = {};
+  for (const [font, file] of Object.entries(TITLE_FILES)) {
+    map[TITLE_FONTS[font as TitleFont].family] = file;
+  }
+  return Font.loadAsync(map);
+}
 
 /** 고른 제목 글씨체만 불러온다 (설정을 읽은 뒤에) */
 function loadAll() {

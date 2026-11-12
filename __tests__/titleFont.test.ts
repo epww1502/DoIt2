@@ -16,3 +16,20 @@ describe('applyTitleFont (글씨체 고르기)', () => {
     expect(FONT_WEIGHTS['600']).toBe('Jua');
   });
 });
+
+jest.mock('expo-splash-screen', () => ({ preventAutoHideAsync: jest.fn() }));
+jest.mock('expo-font', () => ({ loadAsync: jest.fn() }));
+jest.mock('@/store/useSettingsStore', () => ({ useSettingsStore: {} }));
+
+describe('제목 글씨체 목록', () => {
+  it('고딕(본문 글꼴 굵게)만 빼고 모두 불러올 파일이 있다', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { TITLE_FILES } = require('@/hooks/useFontsLoader');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { TITLE_FONTS } = require('@/constants/fonts');
+    for (const font of Object.keys(TITLE_FONTS)) {
+      if (font === 'gothic') continue;
+      expect([font, TITLE_FILES[font]]).toEqual([font, expect.anything()]);
+    }
+  });
+});

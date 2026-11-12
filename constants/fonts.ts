@@ -6,6 +6,14 @@ export const TITLE_FONTS = {
   jua: { label: '주아', hint: '동글동글', family: 'Jua' },
   dohyeon: { label: '도현', hint: '또박또박 굵게', family: 'Round-DoHyeon' },
   gaegu: { label: '개구', hint: '손글씨', family: 'Round-Gaegu' },
+  sunflower: { label: '해바라기', hint: '단정하게', family: 'Round-Sunflower' },
+  blackhan: { label: '검은고딕', hint: '아주 굵게', family: 'Round-BlackHan' },
+  singleday: {
+    label: '싱글데이',
+    hint: '귀여운 손글씨',
+    family: 'Round-SingleDay',
+  },
+  yeonsung: { label: '연성', hint: '붓글씨', family: 'Round-YeonSung' },
   gothic: { label: '고딕', hint: '깔끔하게', family: 'Pretendard-Bold' },
 } as const;
 export type TitleFont = keyof typeof TITLE_FONTS;
