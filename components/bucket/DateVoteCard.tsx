@@ -19,8 +19,10 @@ import { Icon, Text } from '@/components/atoms';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
 import { useDateVotes } from '@/hooks/useDateVotes';
 import {
-  bestDays,
+  bestRuns,
   daysBetween,
+  rangeLabels,
+  runLabel,
   tallyDays,
   voteDayLabel,
   voterCount,
@@ -79,9 +81,14 @@ export function DateVoteCard({
   const rows = votes.votesOf(item.id);
   const tally = tallyDays(rows, today);
   const byDay = new Map(tally.map((t) => [t.day, t.users]));
-  const best = bestDays(tally);
+  // 연속되고 되는 사람이 같은 날은 기간으로 묶어서
+  const best = bestRuns(tally);
   const voters = voterCount(rows, today);
   const meId = rows.find((r) => member(r.user_id).isMe)?.user_id;
+  /** 내가 고른 날 (오늘부터) */
+  const myDays = tally
+    .filter((t) => t.users.some((u) => member(u).isMe))
+    .map((t) => t.day);
   const isAll = (n: number) => memberCount >= 2 && n >= memberCount;
 
   const subtitle = (() => {
@@ -90,7 +97,7 @@ export function DateVoteCard({
       const allDays = tally.filter((t) => isAll(t.users.length)).length;
       if (allDays > 0)
         return `다 되는 날이 ${allDays}일 있어요 · ${voters}명이 골랐어요`;
-      return `${voters}명이 골랐어요 · 가장 많이 되는 날 ${voteDayLabel(top.day)}`;
+      return `${voters}명이 골랐어요 · 가장 많이 되는 날 ${runLabel(top.from, top.to)}`;
     }
     if (item.goal)
       return `정한 날 ${voteDayLabel(item.goal.date)} · 다시 맞춰 볼 수 있어요`;
@@ -100,10 +107,14 @@ export function DateVoteCard({
   })();
   const nudge = voters === 0 && !item.goal && wantCount >= 2;
 
-  const decide = (day: string) =>
+  /** 그 기간으로 정한다. 목표 날짜는 하루만 둘 수 있어서 기간이면 시작하는 날로 */
+  const decide = (from: string, to: string) => {
+    const day = from;
     showAlert(
-      `${voteDayLabel(day)}로 정할까요?`,
-      '목표 날짜로 정하고, 그 전에 알려 드려요. 고른 날짜 표는 비워져요.',
+      `${runLabel(from, to)}로 정할까요?`,
+      from === to
+        ? '목표 날짜로 정하고, 그 전에 알려 드려요. 고른 날짜 표는 비워져요.'
+        : `시작하는 날(${voteDayLabel(from)})을 목표 날짜로 정하고, 그 전에 알려 드려요. 고른 날짜 표는 비워져요.`,
       [
         { text: '취소', style: 'cancel' },
         {
@@ -124,6 +135,7 @@ export function DateVoteCard({
         },
       ]
     );
+  };
 
   // 달력: 이 달 1일이 있는 주부터 말일이 있는 주까지
   const first = month.startOf('month');
@@ -363,6 +375,12 @@ export function DateVoteCard({
             </GestureHandlerRootView>
           </View>
 
+          {myDays.length > 0 ? (
+            <Text size={12} className="text-muted-foreground">
+              내가 되는 날 · {rangeLabels(myDays).join(', ')}
+            </Text>
+          ) : null}
+
           {best.length > 0 ? (
             <View className="gap-2">
               <Text weight="600" size={13} className="text-muted-foreground">
@@ -373,12 +391,17 @@ export function DateVoteCard({
                 const all = isAll(t.users.length);
                 return (
                   <View
-                    key={t.day}
+                    key={t.from}
                     className="flex-row items-center gap-2 rounded-xl bg-background px-3 py-2"
                   >
                     <View className="flex-1 gap-1">
                       <Text weight="600" size={14}>
-                        {voteDayLabel(t.day)}
+                        {runLabel(t.from, t.to)}
+                        {t.length > 1 ? (
+                          <Text size={12} className="text-muted-foreground">
+                            {` · ${t.length}일`}
+                          </Text>
+                        ) : null}
                       </Text>
                       <View className="flex-row items-center gap-1.5">
                         <View className="flex-row">
@@ -410,8 +433,8 @@ export function DateVoteCard({
                     </View>
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`${voteDayLabel(t.day)}로 정하기`}
-                      onPress={() => decide(t.day)}
+                      accessibilityLabel={`${runLabel(t.from, t.to)}로 정하기`}
+                      onPress={() => decide(t.from, t.to)}
                       className="h-9 items-center justify-center rounded-full bg-primary px-3 active:opacity-70"
                     >
                       <Text
@@ -419,7 +442,7 @@ export function DateVoteCard({
                         size={13}
                         className="text-primary-foreground"
                       >
-                        이 날로 정하기
+                        {t.length > 1 ? '이 기간으로' : '이 날로 정하기'}
                       </Text>
                     </Pressable>
                   </View>

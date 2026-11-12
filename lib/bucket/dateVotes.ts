@@ -26,15 +26,6 @@ export function tallyDays(votes: VoteLike[], today: string): DayTally[] {
     .sort((a, b) => a.day.localeCompare(b.day));
 }
 
-/** 많이 되는 날부터 (같으면 빠른 날), 최대 limit개 */
-export function bestDays(tally: DayTally[], limit = 3): DayTally[] {
-  return [...tally]
-    .sort(
-      (a, b) => b.users.length - a.users.length || a.day.localeCompare(b.day)
-    )
-    .slice(0, limit);
-}
-
 /** 고른 사람 수 (중복 없이) */
 export function voterCount(votes: VoteLike[], today: string) {
   return new Set(votes.filter((v) => v.day >= today).map((v) => v.user_id))
@@ -55,4 +46,60 @@ export function daysBetween(a: string, b: string, today: string): string[] {
     if (key >= today) days.push(key);
   }
   return days;
+}
+
+/** 연속된 날 묶음 (그 날들에 되는 사람이 같다) */
+export type DayRun = {
+  from: string;
+  to: string;
+  /** 며칠인지 */
+  length: number;
+  users: string[];
+};
+
+const nextDay = (day: string) => dayjs(day).add(1, 'day').format('YYYY-MM-DD');
+const sameUsers = (a: string[], b: string[]) =>
+  a.length === b.length && [...a].sort().join() === [...b].sort().join();
+
+/** 날마다 되는 사람(날짜 순)을, 연속되고 되는 사람이 같은 날끼리 묶는다 */
+export function dayRuns(tally: DayTally[]): DayRun[] {
+  const runs: DayRun[] = [];
+  for (const t of tally) {
+    const last = runs[runs.length - 1];
+    if (last && nextDay(last.to) === t.day && sameUsers(last.users, t.users)) {
+      last.to = t.day;
+      last.length += 1;
+    } else {
+      runs.push({ from: t.day, to: t.day, length: 1, users: t.users });
+    }
+  }
+  return runs;
+}
+
+/** 많이 되는 묶음부터 (같으면 긴 기간, 그다음 빠른 날), 최대 limit개 */
+export function bestRuns(tally: DayTally[], limit = 3): DayRun[] {
+  return dayRuns(tally)
+    .sort(
+      (a, b) =>
+        b.users.length - a.users.length ||
+        b.length - a.length ||
+        a.from.localeCompare(b.from)
+    )
+    .slice(0, limit);
+}
+
+/** 날짜 목록을 연속된 기간으로: ['11월 20일 (금) ~ 23일 (월)', '11월 27일 (금)'] */
+export function rangeLabels(days: string[]): string[] {
+  const sorted = [...new Set(days)].sort();
+  return dayRuns(sorted.map((day) => ({ day, users: [] }))).map((r) =>
+    runLabel(r.from, r.to)
+  );
+}
+
+/** '11월 20일 (금) ~ 23일 (월)'. 달이 다르면 뒤에도 달, 하루면 그 날만 */
+export function runLabel(from: string, to: string) {
+  if (from === to) return voteDayLabel(from);
+  const end = dayjs(to);
+  const sameMonth = dayjs(from).isSame(end, 'month');
+  return `${voteDayLabel(from)} ~ ${end.format(sameMonth ? 'D일 (dd)' : 'M월 D일 (dd)')}`;
 }

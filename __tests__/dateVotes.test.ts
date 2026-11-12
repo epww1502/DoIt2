@@ -1,9 +1,4 @@
-import {
-  bestDays,
-  tallyDays,
-  voteDayLabel,
-  voterCount,
-} from '@/lib/bucket/dateVotes';
+import { tallyDays, voteDayLabel, voterCount } from '@/lib/bucket/dateVotes';
 
 const votes = [
   { day: '2026-11-10', user_id: 'a' },
@@ -23,15 +18,6 @@ describe('같이 갈 날 표', () => {
       '2026-11-22',
     ]);
     expect(tally[2].users).toEqual(['a', 'b']);
-  });
-
-  it('많이 되는 날부터, 같으면 빠른 날부터', () => {
-    const best = bestDays(tallyDays(votes, '2026-11-11'));
-    expect(best.map((t) => t.day)).toEqual([
-      '2026-11-22',
-      '2026-11-15',
-      '2026-11-21',
-    ]);
   });
 
   it('고른 사람 수는 지난 날만 고른 사람을 빼고 센다', () => {
