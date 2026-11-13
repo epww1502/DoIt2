@@ -241,6 +241,18 @@ export function DateVoteCard({
       drag.from <= drag.to ? [drag.from, drag.to] : [drag.to, drag.from];
     return day >= a && day <= b;
   };
+  /** 한 주 줄에서 같은 색으로 이어진 칸 묶음 (열 번호 from~to) */
+  const bandsOfRow = (row: number) => {
+    const bands: { from: number; to: number; fill: 'mine' | 'others' }[] = [];
+    for (let col = 0; col < 7; col++) {
+      const fill = fillOf(row * 7 + col - lead + 1);
+      const last = bands[bands.length - 1];
+      if (!fill) continue;
+      if (last && last.fill === fill && last.to === col - 1) last.to = col;
+      else bands.push({ from: col, to: col, fill });
+    }
+    return bands;
+  };
   /** 그 날 칸을 어떻게 칠하는지: 내가 되는 날(진하게), 다른 사람만 되는 날(연하게) */
   const fillOf = (n: number): 'mine' | 'others' | null => {
     if (n < 1 || n > first.daysInMonth()) return null;
@@ -403,6 +415,22 @@ export function DateVoteCard({
                 >
                   {Array.from({ length: weeks }, (_, row) => (
                     <View key={row} className="flex-row">
+                      {/* 같은 색으로 이어진 날은 주마다 띠 한 조각으로 그린다 (칸마다 그리면 사이에 실선이 생긴다) */}
+                      {bandsOfRow(row).map((b) => (
+                        <View
+                          key={b.from}
+                          pointerEvents="none"
+                          className="absolute top-0 h-9"
+                          style={{
+                            left: `${((b.from + 0.5) / 7) * 100}%`,
+                            right: `${((6 - b.to + 0.5) / 7) * 100}%`,
+                            marginLeft: -BAND_HALF,
+                            marginRight: -BAND_HALF,
+                            borderRadius: BAND_HALF,
+                            backgroundColor: b.fill === 'mine' ? primary : tint,
+                          }}
+                        />
+                      ))}
                       {Array.from({ length: 7 }, (_, col) => {
                         const n = row * 7 + col - lead + 1;
                         if (n < 1 || n > first.daysInMonth()) {
@@ -414,11 +442,6 @@ export function DateVoteCard({
                         const mine = fill === 'mine';
                         const count = othersOn(day) + (mine ? 1 : 0);
                         const all = isAll(count);
-                        // 같은 주에서 옆날도 같은 색이면 띠로 이어서 하나처럼 보이게
-                        const joinLeft =
-                          fill !== null && col > 0 && fillOf(n - 1) === fill;
-                        const joinRight =
-                          fill !== null && col < 6 && fillOf(n + 1) === fill;
                         return (
                           <Pressable
                             key={col}
@@ -432,30 +455,6 @@ export function DateVoteCard({
                             onPress={() => pressDay(day)}
                             className="h-12 flex-1 items-center"
                           >
-                            {fill ? (
-                              <View
-                                pointerEvents="none"
-                                className="absolute top-0 h-9"
-                                style={{
-                                  left: joinLeft ? 0 : '50%',
-                                  right: joinRight ? 0 : '50%',
-                                  marginLeft: joinLeft ? 0 : -BAND_HALF,
-                                  marginRight: joinRight ? 0 : -BAND_HALF,
-                                  borderTopLeftRadius: joinLeft ? 0 : BAND_HALF,
-                                  borderBottomLeftRadius: joinLeft
-                                    ? 0
-                                    : BAND_HALF,
-                                  borderTopRightRadius: joinRight
-                                    ? 0
-                                    : BAND_HALF,
-                                  borderBottomRightRadius: joinRight
-                                    ? 0
-                                    : BAND_HALF,
-                                  // 색은 style로만 준다 (className의 bg와 같이 쓰면 style의 undefined가 덮어써서 안 칠해진다)
-                                  backgroundColor: mine ? primary : tint,
-                                }}
-                              />
-                            ) : null}
                             <View
                               className={cn(
                                 'h-9 w-9 items-center justify-center rounded-full',
