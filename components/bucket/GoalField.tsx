@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { AppSwitch, Chip, Icon, Text } from '@/components/atoms';
+import { goalLabel } from '@/lib/bucket/calendarEvent';
 import {
   DEFAULT_GOAL_REMIND,
   GOAL_REMIND_META,
@@ -59,7 +60,7 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
             목표 날짜 정하기 (선택)
           </Text>
           <Text variant="muted" size={12}>
-            정해두면 그날이 다가올 때 알려줘요
+            하루나 며칠 동안으로 정해두면 다가올 때 알려줘요
           </Text>
         </View>
         <AppSwitch
@@ -82,8 +83,8 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
               size={16}
               className="text-muted-foreground"
             />
-            <Text weight="600" size={16}>
-              {dayjs(value.date).format('YYYY년 M월 D일 (dd)')}
+            <Text weight="600" size={value.until ? 14 : 16}>
+              {goalLabel(value)}
             </Text>
             <Text weight="600" size={14} className="text-primary">
               {goalDday(value.date)}
@@ -117,7 +118,11 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
         visible={pickerOpen}
         value={value?.date ?? dayjs().format(DATE_FORMAT)}
         maxDate={MAX_GOAL_DATE}
+        rangeEnd={value?.until}
         onChange={(date) => value && onChange({ ...value, date, until: null })}
+        onRangeChange={(date, until) =>
+          value && onChange({ ...value, date, until })
+        }
         onClose={() => setPickerOpen(false)}
       />
     </View>

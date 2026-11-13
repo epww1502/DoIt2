@@ -109,10 +109,11 @@ export default function UpcomingScreen() {
         visible={!!redating}
         value={today}
         maxDate={MAX_GOAL_DATE}
-        onChange={(date) => {
+        onChange={() => {}}
+        onRangeChange={(date, until) => {
           if (redating?.goal) {
             updateItem(redating.id, {
-              goal: { ...redating.goal, date, until: null },
+              goal: { ...redating.goal, date, until },
             });
           }
         }}

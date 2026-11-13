@@ -8,6 +8,7 @@ import { Button, Icon, Text } from '@/components/atoms';
 import { DATE_FORMAT } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import { SheetPanel } from '@/components/atoms/SheetPanel';
+import { usePrimaryColor } from '@/store/useSettingsStore';
 
 /** 일 → 월 → 연: 제목을 누를 때마다 한 단계 넓게 본다 */
 type CalendarView = 'day' | 'month' | 'year';
@@ -24,15 +25,24 @@ type DatePickerSheetProps = {
   onClose: () => void;
   /** 이 날짜 이후는 고를 수 없다 (YYYY-MM-DD). 기본은 오늘 */
   maxDate?: string;
+  /**
+   * 주면 기간도 고를 수 있다: 한 번 누르면 하루, 다른 날을 한 번 더 누르면 그 사이.
+   * 확인을 눌러야 반영되고, 하루만 골랐으면 end는 null
+   */
+  onRangeChange?: (start: string, end: string | null) => void;
+  /** 기간으로 정해 둔 마지막 날 (onRangeChange와 함께) */
+  rangeEnd?: string | null;
 };
 
-/** 아래에서 올라오는 달력. 날짜를 고르면 닫힌다 */
+/** 아래에서 올라오는 달력. 날짜를 고르면 닫힌다 (기간 고르기는 확인을 눌러야) */
 export function DatePickerSheet({
   visible,
   value,
   onChange,
   onClose,
   maxDate,
+  onRangeChange,
+  rangeEnd,
 }: DatePickerSheetProps) {
   return (
     <Modal
@@ -53,6 +63,15 @@ export function DatePickerSheet({
             onChange(next);
             onClose();
           }}
+          rangeEnd={rangeEnd}
+          onRangeSelect={
+            onRangeChange
+              ? (start, end) => {
+                  onRangeChange(start, end);
+                  onClose();
+                }
+              : undefined
+          }
         />
       ) : null}
     </Modal>
@@ -64,11 +83,43 @@ type CalendarProps = {
   maxDate?: string;
   onSelect: (value: string) => void;
   onClose: () => void;
+  rangeEnd?: string | null;
+  onRangeSelect?: (start: string, end: string | null) => void;
 };
 
-function Calendar({ value, maxDate, onSelect, onClose }: CalendarProps) {
+/** '11월 17일 (화)' */
+const dayLabel = (day: string) => dayjs(day).format('M월 D일 (dd)');
+
+function Calendar({
+  value,
+  maxDate,
+  onSelect,
+  onClose,
+  rangeEnd,
+  onRangeSelect,
+}: CalendarProps) {
   const insets = useSafeAreaInsets();
-  const selected = dayjs(value);
+  const ranged = !!onRangeSelect;
+  // 기간 고르기: 확인 전까지는 여기에만 (처음엔 정해 둔 날·기간을 보여준다)
+  const [draft, setDraft] = useState<{ start: string; end: string | null }>({
+    start: value,
+    end: rangeEnd && rangeEnd > value ? rangeEnd : null,
+  });
+  // 열고 나서 처음 누르는 날은 항상 새로 시작 (정해 둔 날에 이어 붙지 않게)
+  const [picking, setPicking] = useState(false);
+  const pickRangeDay = (day: string) => {
+    if (!picking || draft.end || day === draft.start) {
+      setDraft({ start: day, end: null });
+      setPicking(true);
+      return;
+    }
+    setDraft(
+      day < draft.start
+        ? { start: day, end: draft.start }
+        : { start: draft.start, end: day }
+    );
+  };
+  const selected = dayjs(ranged ? draft.start : value);
   const max = dayjs(maxDate ?? dayjs().format(DATE_FORMAT)).endOf('day');
 
   const [view, setView] = useState<CalendarView>('day');
@@ -170,8 +221,13 @@ function Calendar({ value, maxDate, onSelect, onClose }: CalendarProps) {
             <DayGrid
               month={cursor}
               selected={selected}
+              end={ranged && draft.end ? dayjs(draft.end) : null}
               max={max}
-              onSelect={(d) => onSelect(d.format(DATE_FORMAT))}
+              onSelect={(d) =>
+                ranged
+                  ? pickRangeDay(d.format(DATE_FORMAT))
+                  : onSelect(d.format(DATE_FORMAT))
+              }
             />
           ) : view === 'month' ? (
             <CellGrid
@@ -211,19 +267,43 @@ function Calendar({ value, maxDate, onSelect, onClose }: CalendarProps) {
             />
           )}
 
-          <Button
-            label="오늘로"
-            variant="outline"
-            size="md"
-            // 오늘이 고를 수 있는 마지막 날보다 뒤면 마지막 날로
-            onPress={() =>
-              onSelect(
-                dayjs().isAfter(max)
-                  ? max.format(DATE_FORMAT)
-                  : dayjs().format(DATE_FORMAT)
-              )
-            }
-          />
+          {ranged ? (
+            <View className="gap-3">
+              <View className="items-center gap-0.5">
+                <Text weight="600" size={15}>
+                  {draft.end
+                    ? `${dayLabel(draft.start)} ~ ${dayLabel(draft.end)} · ${
+                        dayjs(draft.end).diff(dayjs(draft.start), 'day') + 1
+                      }일`
+                    : dayLabel(draft.start)}
+                </Text>
+                <Text variant="muted" size={12}>
+                  {draft.end
+                    ? '다른 날을 누르면 다시 골라요'
+                    : '며칠 동안이면 마지막 날을 한 번 더 눌러요'}
+                </Text>
+              </View>
+              <Button
+                label="확인"
+                size="md"
+                onPress={() => onRangeSelect?.(draft.start, draft.end)}
+              />
+            </View>
+          ) : (
+            <Button
+              label="오늘로"
+              variant="outline"
+              size="md"
+              // 오늘이 고를 수 있는 마지막 날보다 뒤면 마지막 날로
+              onPress={() =>
+                onSelect(
+                  dayjs().isAfter(max)
+                    ? max.format(DATE_FORMAT)
+                    : dayjs().format(DATE_FORMAT)
+                )
+              }
+            />
+          )}
         </View>
       </SheetPanel>
     </View>
@@ -233,16 +313,38 @@ function Calendar({ value, maxDate, onSelect, onClose }: CalendarProps) {
 type DayGridProps = {
   month: Dayjs;
   selected: Dayjs;
+  /** 기간으로 골랐으면 마지막 날 (selected가 첫날) */
+  end?: Dayjs | null;
   max: Dayjs;
   onSelect: (day: Dayjs) => void;
 };
 
+/** 기간 띠의 반 높이 (날짜 동그라미 반지름) */
+const BAND_HALF = 20;
+
 /** 한 달 달력 (일요일 시작, 6줄 고정이라 달마다 높이가 안 바뀐다) */
-function DayGrid({ month, selected, max, onSelect }: DayGridProps) {
+function DayGrid({ month, selected, end, max, onSelect }: DayGridProps) {
   const first = month.startOf('month');
   const start = first.subtract(first.day(), 'day');
   const days = Array.from({ length: 42 }, (_, i) => start.add(i, 'day'));
   const today = dayjs();
+  const primary = usePrimaryColor();
+  const startKey = selected.format(DATE_FORMAT);
+  const endKey = end ? end.format(DATE_FORMAT) : null;
+  /** 이 줄에서 기간에 들어가는 칸 (첫 칸~끝 칸). 없으면 null */
+  const bandOfRow = (row: number) => {
+    if (!endKey) return null;
+    let from = -1;
+    let to = -1;
+    for (let col = 0; col < 7; col++) {
+      const key = days[row * 7 + col].format(DATE_FORMAT);
+      if (key >= startKey && key <= endKey) {
+        if (from < 0) from = col;
+        to = col;
+      }
+    }
+    return from < 0 ? null : { from, to };
+  };
 
   return (
     <View className="gap-1">
@@ -260,49 +362,70 @@ function DayGrid({ month, selected, max, onSelect }: DayGridProps) {
           </Text>
         ))}
       </View>
-      {Array.from({ length: 6 }, (_, row) => (
-        <View key={row} className="flex-row">
-          {days.slice(row * 7, row * 7 + 7).map((d) => {
-            const inMonth = d.month() === month.month();
-            const disabled = d.isAfter(max);
-            const isSelected = d.isSame(selected, 'day');
-            const isToday = d.isSame(today, 'day');
-            return (
-              <Pressable
-                key={d.format(DATE_FORMAT)}
-                accessibilityRole="button"
-                accessibilityLabel={d.format('YYYY년 M월 D일')}
-                accessibilityState={{ selected: isSelected, disabled }}
-                disabled={disabled}
-                onPress={() => onSelect(d)}
-                className="h-11 flex-1 items-center justify-center"
-              >
-                <View
-                  className={cn(
-                    'h-10 w-10 items-center justify-center rounded-full',
-                    isSelected && 'bg-primary',
-                    !isSelected && isToday && 'border border-primary'
-                  )}
+      {Array.from({ length: 6 }, (_, row) => {
+        const band = bandOfRow(row);
+        return (
+          <View key={row} className="flex-row">
+            {/* 기간은 줄마다 연한 띠 한 조각으로 (칸마다 그리면 사이에 실선이 보인다) */}
+            {band ? (
+              <View
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  height: BAND_HALF * 2,
+                  left: `${((band.from + 0.5) / 7) * 100}%`,
+                  right: `${((6 - band.to + 0.5) / 7) * 100}%`,
+                  marginLeft: -BAND_HALF,
+                  marginRight: -BAND_HALF,
+                  borderRadius: BAND_HALF,
+                  backgroundColor: `${primary}33`,
+                }}
+              />
+            ) : null}
+            {days.slice(row * 7, row * 7 + 7).map((d) => {
+              const inMonth = d.month() === month.month();
+              const disabled = d.isAfter(max);
+              const isSelected =
+                d.isSame(selected, 'day') || (!!end && d.isSame(end, 'day'));
+              const isToday = d.isSame(today, 'day');
+              return (
+                <Pressable
+                  key={d.format(DATE_FORMAT)}
+                  accessibilityRole="button"
+                  accessibilityLabel={d.format('YYYY년 M월 D일')}
+                  accessibilityState={{ selected: isSelected, disabled }}
+                  disabled={disabled}
+                  onPress={() => onSelect(d)}
+                  className="h-11 flex-1 items-center justify-center"
                 >
-                  <Text
-                    size={15}
-                    weight={isSelected ? '700' : '400'}
+                  <View
                     className={cn(
-                      isSelected
-                        ? 'text-primary-foreground'
-                        : disabled || !inMonth
-                          ? 'text-muted'
-                          : 'text-foreground'
+                      'h-10 w-10 items-center justify-center rounded-full',
+                      isSelected && 'bg-primary',
+                      !isSelected && isToday && 'border border-primary'
                     )}
                   >
-                    {d.date()}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-      ))}
+                    <Text
+                      size={15}
+                      weight={isSelected ? '700' : '400'}
+                      className={cn(
+                        isSelected
+                          ? 'text-primary-foreground'
+                          : disabled || !inMonth
+                            ? 'text-muted'
+                            : 'text-foreground'
+                      )}
+                    >
+                      {d.date()}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        );
+      })}
     </View>
   );
 }
