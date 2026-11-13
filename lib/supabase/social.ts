@@ -1,6 +1,8 @@
 /**
  * 항목 댓글·이모지 반응 (공간 항목만). 항목 화면을 열 때 받아오고 실시간으로 맞춘다.
  */
+import type { ReactionEmoji } from '@/lib/bucket/reactions';
+
 import { supabase } from './client';
 import type {
   CommentReactionRow,
@@ -9,8 +11,11 @@ import type {
 } from './database.types';
 
 /** 고를 수 있는 반응 (서버 표의 check와 같게) */
-export const REACTION_EMOJIS = ['❤️', '👍', '😆', '🔥', '🥹', '👏'] as const;
-export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
+export {
+  QUICK_REACTION_EMOJIS,
+  REACTION_EMOJIS,
+  type ReactionEmoji,
+} from '@/lib/bucket/reactions';
 
 /** 댓글 최대 글자 수 (서버와 같게) */
 export const MAX_COMMENT_LENGTH = 300;

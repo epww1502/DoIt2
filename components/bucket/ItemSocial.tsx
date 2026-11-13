@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import {
   Check,
   Ellipsis,
+  Plus,
   SendHorizontal,
   SmilePlus,
 } from 'lucide-react-native';
@@ -26,9 +27,11 @@ import { showAlert } from '@/lib/dialog';
 import { showErrorAlert } from '@/lib/errors';
 import {
   MAX_COMMENT_LENGTH,
+  QUICK_REACTION_EMOJIS,
   REACTION_EMOJIS,
   type ReactionEmoji,
 } from '@/lib/supabase/social';
+import { ReactionPickerSheet } from '@/components/bucket/ReactionPickerSheet';
 import { cn } from '@/lib/utils';
 import { openMemberProfile, useMemberLookup } from '@/store/useMembersStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
@@ -62,6 +65,8 @@ export function ItemSocial({
   const { colorScheme } = useThemeMode();
   const theme = themeColors[colorScheme];
   const [pickerOpen, setPickerOpen] = useState(false);
+  /** 반응 전체에서 고르는 시트를 연 곳: 'item'이면 항목, 아니면 그 댓글 id */
+  const [moreFor, setMoreFor] = useState<string | null>(null);
   /** 누가 눌렀는지 보고 있는 반응 */
   const [whoFor, setWhoFor] = useState<ReactionEmoji | null>(null);
   const [draft, setDraft] = useState('');
@@ -117,6 +122,10 @@ export function ItemSocial({
     };
   });
   const used = counts.filter((c) => c.count > 0);
+  // 바로 누르는 한 줄에는 자주 쓰는 것만 (나머지는 '더 보기' 시트에서)
+  const quick = counts.filter((c) =>
+    (QUICK_REACTION_EMOJIS as readonly string[]).includes(c.emoji)
+  );
 
   const toggle = (emoji: ReactionEmoji) => {
     setPickerOpen(false);
@@ -218,20 +227,28 @@ export function ItemSocial({
         </View>
         {pickerOpen ? (
           <View className="flex-row justify-between rounded-2xl px-3 py-2 bg-accent">
-            {counts.map((c) => (
+            {quick.map((c) => (
               <Pressable
                 key={c.emoji}
                 accessibilityRole="button"
                 accessibilityLabel={`${c.emoji} ${c.mine ? '빼기' : '남기기'}`}
                 onPress={() => toggle(c.emoji)}
                 className={cn(
-                  'h-11 w-11 items-center justify-center rounded-full active:opacity-70',
+                  'h-10 w-10 items-center justify-center rounded-full active:opacity-70',
                   c.mine && 'bg-background'
                 )}
               >
                 <Text size={24}>{c.emoji}</Text>
               </Pressable>
             ))}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="다른 반응 더 보기"
+              onPress={() => setMoreFor('item')}
+              className="h-10 w-10 items-center justify-center rounded-full active:opacity-70"
+            >
+              <Icon as={Plus} size={20} className="text-muted-foreground" />
+            </Pressable>
           </View>
         ) : null}
       </View>
@@ -446,7 +463,7 @@ export function ItemSocial({
                 ) : null}
                 {/* 이 댓글에 반응 남기기 */}
                 <View className="flex-row justify-between rounded-2xl px-2 py-1.5 bg-accent">
-                  {REACTION_EMOJIS.map((emoji) => {
+                  {QUICK_REACTION_EMOJIS.map((emoji) => {
                     const mine = commentReactions.some(
                       (r) =>
                         r.comment_id === menuFor.id &&
@@ -460,7 +477,7 @@ export function ItemSocial({
                         accessibilityLabel={`댓글에 ${emoji} ${mine ? '빼기' : '남기기'}`}
                         onPress={() => toggleOnComment(menuFor.id, emoji)}
                         className={cn(
-                          'h-11 w-11 items-center justify-center rounded-full active:opacity-70',
+                          'h-10 w-10 items-center justify-center rounded-full active:opacity-70',
                           mine && 'bg-background'
                         )}
                       >
@@ -468,6 +485,23 @@ export function ItemSocial({
                       </Pressable>
                     );
                   })}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="다른 반응 더 보기"
+                    onPress={() => {
+                      const commentId = menuFor.id;
+                      setMenuFor(null);
+                      // 메뉴가 닫힌 뒤에 고르는 시트를 연다 (시트 두 개가 겹쳐 열리지 않게)
+                      setTimeout(() => setMoreFor(commentId), 250);
+                    }}
+                    className="h-10 w-10 items-center justify-center rounded-full active:opacity-70"
+                  >
+                    <Icon
+                      as={Plus}
+                      size={20}
+                      className="text-muted-foreground"
+                    />
+                  </Pressable>
                 </View>
               </View>
             ) : null
@@ -559,6 +593,29 @@ export function ItemSocial({
           </Pressable>
         </View>
       </View>
+
+      <ReactionPickerSheet
+        visible={moreFor !== null}
+        onClose={() => setMoreFor(null)}
+        isMine={(emoji) =>
+          moreFor === 'item'
+            ? reactions.some(
+                (r) => r.user_id === social.userId && r.emoji === emoji
+              )
+            : commentReactions.some(
+                (r) =>
+                  r.comment_id === moreFor &&
+                  r.user_id === social.userId &&
+                  r.emoji === emoji
+              )
+        }
+        onPick={(emoji) => {
+          const target = moreFor;
+          setMoreFor(null);
+          if (target === 'item') toggle(emoji);
+          else if (target) toggleOnComment(target, emoji);
+        }}
+      />
     </View>
   );
 }
