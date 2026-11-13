@@ -59,6 +59,12 @@ type SettingsState = {
   /** 목록 위의 '백업하기' 안내를 닫았는지 (설정의 백업 줄은 계속 보인다) */
   backupNudgeDismissed: boolean;
   dismissBackupNudge: () => void;
+  /** AI 기능을 쓰면 글이 외부 AI 서비스로 전달된다는 데 동의했는지 */
+  aiConsent: boolean;
+  setAiConsent: (value: boolean) => void;
+  /** 마지막으로 본 개인정보처리방침 공지의 시행일 (YYYY-MM-DD). 본 적 없으면 null */
+  policyNoticeSeen: string | null;
+  setPolicyNoticeSeen: (value: string) => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -92,6 +98,10 @@ export const useSettingsStore = create<SettingsState>()(
       setMemoryHiddenOn: (memoryHiddenOn) => set({ memoryHiddenOn }),
       backupNudgeDismissed: false,
       dismissBackupNudge: () => set({ backupNudgeDismissed: true }),
+      aiConsent: false,
+      setAiConsent: (aiConsent) => set({ aiConsent }),
+      policyNoticeSeen: null,
+      setPolicyNoticeSeen: (policyNoticeSeen) => set({ policyNoticeSeen }),
     }),
     {
       name: 'doit2-settings',
@@ -121,6 +131,8 @@ export const useSettingsStore = create<SettingsState>()(
         pushEnabled: state.pushEnabled,
         memoryHiddenOn: state.memoryHiddenOn,
         backupNudgeDismissed: state.backupNudgeDismissed,
+        aiConsent: state.aiConsent,
+        policyNoticeSeen: state.policyNoticeSeen,
       }),
     }
   )

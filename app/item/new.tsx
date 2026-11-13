@@ -48,7 +48,8 @@ import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
 import { ensureReminderPermission } from '@/lib/reminders';
-import { classifyTitle, fillFromTitle } from '@/lib/ai';
+import { fillFromTitle } from '@/lib/ai';
+import { ensureAiConsent } from '@/lib/aiConsent';
 import { showAlert } from '@/lib/dialog';
 import { cn } from '@/lib/utils';
 import { errorMessage } from '@/lib/errors';
@@ -263,37 +264,14 @@ export default function BucketFormScreen() {
     }
   };
 
-  // 종류·카테고리·실내외를 직접 골랐으면 AI가 다시 바꾸지 않는다
-  const classTouched = useRef(false);
-  const classifiedTitle = useRef('');
+  // 'AI로 채우기'가 골라 준 분류인지 (직접 바꾸면 표시를 지운다)
   const [autoClassed, setAutoClassed] = useState(false);
   const touch =
     <T,>(change: (next: T) => void) =>
     (next: T) => {
-      classTouched.current = true;
       setAutoClassed(false);
       change(next);
     };
-
-  /**
-   * 새로 담을 때 이름을 다 쓰면 AI가 종류·카테고리·실내외를 골라 둔다.
-   * 안 되면(오프라인, 하루 횟수 끝) 조용히 넘어가고 직접 고르면 된다.
-   */
-  const autoClassify = () => {
-    const asked = title.trim();
-    if (editing || classTouched.current || asked.length < 2) return;
-    if (asked === classifiedTitle.current) return;
-    classifiedTitle.current = asked;
-    classifyTitle(asked)
-      .then((cls) => {
-        if (!cls || classTouched.current) return;
-        setKind(cls.kind);
-        setCategory(cls.category);
-        setSetting(cls.setting);
-        setAutoClassed(true);
-      })
-      .catch(() => {});
-  };
 
   /**
    * 'AI로 채우기': 이름만 보고 종류·카테고리·실내외, 장소, 할 것을 채운다.
@@ -302,7 +280,7 @@ export default function BucketFormScreen() {
    */
   const [filling, setFilling] = useState(false);
   const fillWithAi = async () => {
-    if (filling) return;
+    if (filling || !(await ensureAiConsent())) return;
     setFilling(true);
     try {
       const written = todos.filter((t) => t.text.trim() !== '');
@@ -312,8 +290,6 @@ export default function BucketFormScreen() {
         MAX_TODOS - written.length
       );
       if (fill.cls) {
-        // 눌러서 채운 것이라 직접 고른 것보다 앞선다. 이름 칸을 나갈 때 다시 고르지 않게 막는다
-        classTouched.current = true;
         setKind(fill.cls.kind);
         setCategory(fill.cls.category);
         setSetting(fill.cls.setting);
@@ -433,7 +409,6 @@ export default function BucketFormScreen() {
               autoFocus={!editing}
               returnKeyType="next"
               onFocus={ensureFocusedVisible}
-              onBlur={autoClassify}
             />
             {findingPlace ? (
               <Text variant="muted" size={12} className="mt-2">

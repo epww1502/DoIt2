@@ -16,6 +16,7 @@ import { OfflineBanner } from '@/components/sync/OfflineBanner';
 import { PushSync } from '@/components/sync/PushSync';
 import { ReminderSync } from '@/components/sync/ReminderSync';
 import { SpaceSync } from '@/components/sync/SpaceSync';
+import { PolicyNotice } from '@/components/sync/PolicyNotice';
 import { VersionGate } from '@/components/sync/VersionGate';
 import { hexToRgbTriple } from '@/constants/palettes';
 import { NAV_THEME } from '@/constants/theme';
@@ -107,6 +108,8 @@ function RootLayoutInner() {
       <ReminderSync />
       {/* 알림센터: 같은 공간 소식 받기 (화면 없음) */}
       <InboxSync />
+      {/* 개인정보처리방침이 바뀐 것을 한 번 알린다 */}
+      <PolicyNotice />
       <View className="flex-1 bg-background" style={themeVars}>
         {/* 오프라인 안내 띠: 화면 위를 차지해서 아래 화면을 밀어 내린다 */}
         <OfflineBanner />

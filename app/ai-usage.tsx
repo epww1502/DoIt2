@@ -30,14 +30,9 @@ export default function AiUsageScreen() {
       ) : (
         <ScrollView contentContainerClassName="gap-4 px-5 pb-8 pt-2">
           <QuotaCard
-            title="AI로 채우기·추천·여러 개 담기"
+            title="오늘 쓸 수 있는 AI"
             description="버튼을 눌러서 쓸 때마다 한 번씩 들어가요"
             quota={state.data.ai}
-          />
-          <QuotaCard
-            title="카테고리 자동 고르기"
-            description="새로 담을 때 이름을 쓰면 저절로 골라 주는 횟수예요"
-            quota={state.data.auto}
           />
           <Text variant="muted" size={12} className="px-1">
             횟수는 매일 밤 12시(한국 시간)에 다시 채워져요. 다 쓰면 AI 버튼을

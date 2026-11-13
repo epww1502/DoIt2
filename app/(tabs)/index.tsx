@@ -432,6 +432,9 @@ export default function BucketListScreen() {
               items.length === 0 ? '첫 버킷리스트 담기' : '새로 담기'
             }
             onAction={goNew}
+            // 뭘 담을지 떠오르지 않을 때: AI가 몇 개 골라 준다
+            extraLabel="AI 추천 받기"
+            onExtra={goAiSuggest}
             // 해본 게 있으면 여러 개 골라 한 번에 다시 담을 수 있다.
             // 처음 깐 폰이면 대신 쓰던 계정 불러오기
             secondaryLabel={

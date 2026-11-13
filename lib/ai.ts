@@ -6,11 +6,9 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
 import {
-  toAiClass,
   toAiDrafts,
   toAiFill,
   toAiUsage,
-  type AiClass,
   type AiDraft,
   type AiFill,
   type AiUsage,
@@ -48,11 +46,6 @@ export async function fillFromTitle(
 ): Promise<AiFill> {
   const data = await callAi({ action: 'fill', title, todos: existingTodos });
   return toAiFill(data, existingTodos, room);
-}
-
-/** 항목 이름의 종류·카테고리·실내외. 못 고르면 null */
-export async function classifyTitle(title: string): Promise<AiClass | null> {
-  return toAiClass(await callAi({ action: 'classify', title }));
 }
 
 /** 말하듯 쓴 글에서 담을 항목 여러 개 */

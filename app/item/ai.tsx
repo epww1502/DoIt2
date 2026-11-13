@@ -12,6 +12,7 @@ import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { useTogether } from '@/hooks/useTogether';
 import { parseItems, suggestItems } from '@/lib/ai';
+import { ensureAiConsent } from '@/lib/aiConsent';
 import { draftToInput, type AiDraft } from '@/lib/bucket/aiDraft';
 import { getCategory, KIND_META } from '@/lib/bucket/types';
 import { showAlert } from '@/lib/dialog';
@@ -49,7 +50,9 @@ export default function AiAddScreen() {
   /** 이번 화면에서 이미 보여준 추천 (다시 추천받을 때 겹치지 않게) */
   const [shown, setShown] = useState<string[]>([]);
 
-  const fetchDrafts = () => {
+  /** 동의하지 않았으면 null */
+  const fetchDrafts = async () => {
+    if (!(await ensureAiConsent())) return null;
     const known = useBucketStore
       .getState()
       .items.map((it) => it.title)
@@ -58,7 +61,13 @@ export default function AiAddScreen() {
       ? suggestItems([...shown, ...known], together)
       : parseItems(text.trim(), known);
   };
-  const showDrafts = (drafts: AiDraft[]) => {
+  const showDrafts = (drafts: AiDraft[] | null) => {
+    if (!drafts) {
+      // 동의하지 않았으면: 추천은 화면을 닫고, 글로 담기는 쓰던 글로 돌아간다
+      if (suggest) router.back();
+      else setState({ status: 'idle' });
+      return;
+    }
     setState({ status: 'ready', drafts });
     setSelected(new Set(drafts.map((d) => d.title)));
     setShown((prev) => [...prev, ...drafts.map((d) => d.title)]);

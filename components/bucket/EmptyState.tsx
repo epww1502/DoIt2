@@ -9,6 +9,9 @@ type EmptyStateProps = {
   description: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** 주 버튼 바로 아래 두 번째 버튼 (테두리만) */
+  extraLabel?: string;
+  onExtra?: () => void;
   /** 주 버튼 아래 보조 버튼 (작은 회색 글씨) */
   secondaryLabel?: string;
   onSecondary?: () => void;
@@ -20,6 +23,8 @@ export function EmptyState({
   description,
   actionLabel,
   onAction,
+  extraLabel,
+  onExtra,
   secondaryLabel,
   onSecondary,
 }: EmptyStateProps) {
@@ -38,6 +43,15 @@ export function EmptyState({
           size="md"
           onPress={onAction}
           className="mt-4"
+        />
+      ) : null}
+      {extraLabel && onExtra ? (
+        <Button
+          label={extraLabel}
+          variant="outline"
+          size="md"
+          onPress={onExtra}
+          className="mt-1"
         />
       ) : null}
       {secondaryLabel && onSecondary ? (
