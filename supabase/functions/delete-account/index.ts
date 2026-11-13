@@ -54,12 +54,14 @@ Deno.serve(async (req) => {
   if (mineError) return json({ error: 'delete_failed' }, 500);
 
   for (const { space_id } of mine ?? []) {
-    const { data: members } = await admin
+    const { data: members, error: membersError } = await admin
       .from('space_members')
       .select('user_id, joined_at')
       .eq('space_id', space_id)
       .order('joined_at', { ascending: true });
-    const others = (members ?? []).filter((m) => m.user_id !== uid);
+    // 멤버를 못 읽었는데 '혼자 있는 공간'으로 보고 지우면 다른 사람들 것까지 사라진다
+    if (membersError || !members) return json({ error: 'delete_failed' }, 500);
+    const others = members.filter((m) => m.user_id !== uid);
 
     if (others.length === 0) {
       // 혼자 있는 공간: 사진까지 모두 지운다 (항목은 공간과 함께 지워진다)

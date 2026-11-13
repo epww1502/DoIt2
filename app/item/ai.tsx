@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Check } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -98,7 +98,11 @@ export default function AiAddScreen() {
 
   const drafts = state.status === 'ready' ? state.drafts : [];
 
+  // 빠르게 두 번 눌러도 한 번만 담는다
+  const added = useRef(false);
   const addSelected = () => {
+    if (added.current) return;
+    added.current = true;
     const picked = drafts.filter((d) => selected.has(d.title));
     addItems(picked.map(draftToInput));
     hapticSuccess();

@@ -46,12 +46,42 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// 카테고리는 '기타'만 빼고 한 종류에만 속한다. 그래서 카테고리를 먼저 고르게 하고 종류는 거기에 맞춘다
+// (종류 이름 activity와 탐방의 카테고리 activity(액티비티)가 같아서 모델이 자주 헷갈렸다).
+const PLACE_CATEGORIES = ['food', 'cafe', 'trip', 'activity', 'culture'];
+const ACTIVITY_CATEGORIES = ['cook', 'exercise', 'hobby', 'memory', 'event'];
+
 const CATEGORY_GUIDE = `항목의 모양:
-- kind: place(가보고 싶은 장소) 또는 activity(해보고 싶은 일)
-- category: kind가 place면 food(맛집) cafe(카페) trip(여행) activity(액티비티) culture(문화생활) etc(기타) 중 하나,
-  kind가 activity면 cook(요리) exercise(운동) hobby(취미/만들기) memory(추억 남기기) event(이벤트) etc(기타) 중 하나
+- category: 아래에서 가장 잘 맞는 것 하나를 먼저 고른다.
+  [어딘가에 가야 하는 것]
+  food(맛집·식당·술집·노포처럼 먹으러 가는 곳) cafe(카페·디저트 가게)
+  trip(여행, 지역·명소·풍경을 보러 가는 것: 제주도 여행, 해운대 일출 보기)
+  activity(그곳에 가서 몸으로 즐기는 놀이·레저·체험: 놀이공원, 요트, 스카이다이빙, 서핑, 방탈출)
+  culture(보러 가는 것: 전시, 공연, 뮤지컬, 영화, 궁, 박물관)
+  [집이나 어디서든 직접 해보는 것]
+  cook(요리·베이킹) exercise(운동: 러닝, 수영, 자전거, 마라톤) hobby(취미·만들기·배우기)
+  memory(사진·기록처럼 추억을 남기는 것) event(파티·기념일·깜짝 선물)
+  어디에도 맞지 않을 때만 etc(기타).
+- kind: category에 따라 정해진다. food·cafe·trip·activity·culture면 place, cook·exercise·hobby·memory·event면 activity.
+  category가 etc일 때만 내용을 보고 고른다 (가야 하는 곳이면 place, 해보는 일이면 activity).
 - setting: indoor(실내) 또는 outdoor(실외). 비 오는 날 해도 되면 indoor
 - title: 40자 이하의 짧은 한국어 이름 (예: "성수동 파스타집 가기", "같이 생파스타 만들기")`;
+
+/** 종류를 카테고리에 맞춘다 (답 하나, 또는 items 안의 답들). 모델이 어긋나게 줘도 항상 맞물리게 */
+function alignKind(value: unknown): unknown {
+  if (!value || typeof value !== 'object') return value;
+  const obj = value as Record<string, unknown>;
+  if (Array.isArray(obj.items)) {
+    return { ...obj, items: obj.items.map(alignKind) };
+  }
+  if (PLACE_CATEGORIES.includes(obj.category as string)) {
+    return { ...obj, kind: 'place' };
+  }
+  if (ACTIVITY_CATEGORIES.includes(obj.category as string)) {
+    return { ...obj, kind: 'activity' };
+  }
+  return obj;
+}
 
 const DRAFT_PROPERTIES = {
   kind: { type: 'string', enum: ['place', 'activity'] },
@@ -295,7 +325,7 @@ Deno.serve(async (req: Request) => {
     if (!block || block.type !== 'text') {
       return json({ error: 'ai_failed' }, 502);
     }
-    return json(JSON.parse(block.text));
+    return json(alignKind(JSON.parse(block.text)));
   } catch (e) {
     console.error('[ai]', e);
     return json({ error: 'ai_failed' }, 502);

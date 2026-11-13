@@ -50,6 +50,7 @@ import { usePlacePickStore } from '@/store/usePlacePickStore';
 import { ensureReminderPermission } from '@/lib/reminders';
 import { fillFromTitle } from '@/lib/ai';
 import { ensureAiConsent } from '@/lib/aiConsent';
+import { pickAiPlace } from '@/lib/bucket/aiDraft';
 import { showAlert } from '@/lib/dialog';
 import { cn } from '@/lib/utils';
 import { errorMessage } from '@/lib/errors';
@@ -279,10 +280,16 @@ export default function BucketFormScreen() {
    * 이미 고른 장소·적어 둔 위치·할 것은 덮어쓰지 않는다 (할 것은 뒤에 붙인다).
    */
   const [filling, setFilling] = useState(false);
+  // 동의 팝업이 떠 있는 동안 또 눌러도 한 번만 돈다
+  const fillBusy = useRef(false);
   const fillWithAi = async () => {
-    if (filling || !(await ensureAiConsent())) return;
-    setFilling(true);
+    if (fillBusy.current) return;
+    fillBusy.current = true;
     try {
+      if (!(await ensureAiConsent())) return;
+      setFilling(true);
+      // 누를 때 이미 장소를 골랐거나 위치를 적어 뒀으면 장소는 건드리지 않는다
+      const keepPlace = !!place || location.trim() !== '';
       const written = todos.filter((t) => t.text.trim() !== '');
       const fill = await fillFromTitle(
         title.trim(),
@@ -296,23 +303,29 @@ export default function BucketFormScreen() {
         setAutoClassed(true);
       }
       if (fill.todos.length > 0) {
-        setTodos([
-          ...written,
-          ...fill.todos.map((text) => ({ id: newTodoId(), text, done: false })),
-        ]);
+        // 기다리는 동안 쓴 줄을 지우지 않게 지금 목록 뒤에 붙인다
+        setTodos((prev) =>
+          [
+            ...prev,
+            ...fill.todos.map((text) => ({
+              id: newTodoId(),
+              text,
+              done: false,
+            })),
+          ].slice(0, MAX_TODOS)
+        );
       }
-      if (!place) {
-        // 장소 검색이 안 되면 지역 글자만 남긴다
+      if (!keepPlace) {
+        // 이름이 맞는 장소를 찾았을 때만 핀을 붙이고, 아니면 지역 글자만 적는다
         const found = fill.placeQuery
-          ? pickSharedPlace(
+          ? pickAiPlace(
               await searchKakaoPlaces(fill.placeQuery).catch(() => []),
-              fill.placeQuery,
-              null
+              fill.placeQuery
             )
           : null;
         if (found) {
-          setPlace(found);
-          setLocation(found.address);
+          setPlace((prev) => prev ?? found);
+          setLocation((prev) => (prev.trim() ? prev : found.address));
         } else if (fill.location) {
           setLocation((prev) => (prev.trim() ? prev : fill.location));
         }
@@ -321,6 +334,7 @@ export default function BucketFormScreen() {
       showAlert('채우지 못했어요', errorMessage(e));
     } finally {
       setFilling(false);
+      fillBusy.current = false;
     }
   };
 

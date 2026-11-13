@@ -802,8 +802,20 @@ export const useBucketStore = create<BucketState>()(
           // 기록 사진은 공간에서 내 사진(내 평가)이 된다
           const myPhotos = new Map<string, RecordPhoto[]>();
           for (const it of localItems) {
+            const withPhotos = await withUploadedItem(it, spaceId);
+            // 사진을 하나라도 못 올렸으면 여기서 멈춘다. 그냥 넘어가면 사진 없이 올라가고
+            // 아래에서 '나만 보기'를 비워서 그 사진이 어디에도 남지 않는다
+            const unsent = [
+              ...itemPhotos(withPhotos),
+              ...recordPhotos(withPhotos.done),
+            ].some((p) => p.uri && !p.path);
+            if (unsent) {
+              throw new Error(
+                '사진을 올리지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요.'
+              );
+            }
             const next = {
-              ...(await withUploadedItem(it, spaceId)),
+              ...withPhotos,
               id: remote.ensureUuid(it.id),
             };
             if (userId && next.done) {
@@ -825,11 +837,22 @@ export const useBucketStore = create<BucketState>()(
             }
           }
 
-          // 옮긴 뒤 '나만 보기'는 비운다
-          set({
-            items: current === null ? [] : get().items,
-            cache: { ...get().cache, [LOCAL_KEY]: [] },
-          });
+          // 옮긴 것만 '나만 보기'에서 뺀다. 올리는 사이에 새로 담거나 고친 것은 남겨 두고,
+          // 그 사이 다른 공간으로 바꿨어도 그 공간 목록은 건드리지 않는다
+          const moved = new Set(localItems);
+          const now = get();
+          if (now.spaceId === null) {
+            set({ items: now.items.filter((it) => !moved.has(it)) });
+          } else {
+            set({
+              cache: {
+                ...now.cache,
+                [LOCAL_KEY]: (now.cache[LOCAL_KEY] ?? []).filter(
+                  (it) => !moved.has(it)
+                ),
+              },
+            });
+          }
         },
 
         pull: async () => {

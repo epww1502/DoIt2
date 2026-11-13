@@ -28,15 +28,29 @@ const record = (v: unknown) =>
 
 const sameText = (s: string) => s.replace(/\s+/g, '').toLowerCase();
 
-/** 종류·카테고리·실내외. 종류를 모르면 null, 그 종류에 없는 카테고리는 '기타'로 */
+/** 그 카테고리가 속한 종류. '기타'(두 종류 공통)나 모르는 카테고리면 null */
+function kindOfCategory(category: unknown): BucketKind | null {
+  if (category === 'etc') return null;
+  for (const kind of ['place', 'activity'] as const) {
+    if (CATEGORIES_BY_KIND[kind].some((c) => c.key === category)) return kind;
+  }
+  return null;
+}
+
+/**
+ * 종류·카테고리·실내외. 카테고리가 한 종류에만 있으면 종류를 거기에 맞춘다
+ * (AI가 '요트 타기'를 도전인데 탐방의 액티비티로 주는 식으로 어긋나게 줄 때가 있다).
+ * 모르는 카테고리는 '기타'로, 그때 종류도 모르면 null.
+ */
 export function toAiClass(raw: unknown): AiClass | null {
   const { kind, category, setting } = record(raw);
-  if (kind !== 'place' && kind !== 'activity') return null;
+  const owner = kindOfCategory(category);
+  const fixedKind =
+    owner ?? (kind === 'place' || kind === 'activity' ? kind : null);
+  if (!fixedKind) return null;
   return {
-    kind,
-    category: CATEGORIES_BY_KIND[kind].some((c) => c.key === category)
-      ? (category as CategoryKey)
-      : 'etc',
+    kind: fixedKind,
+    category: owner ? (category as CategoryKey) : 'etc',
     setting: setting === 'outdoor' ? 'outdoor' : 'indoor',
   };
 }
@@ -133,6 +147,25 @@ function toQuota(raw: unknown): AiQuota {
 export function toAiUsage(raw: unknown): AiUsage {
   const { ai, auto } = record(raw);
   return { ai: toQuota(ai), auto: toQuota(auto) };
+}
+
+/**
+ * AI가 뽑은 장소 이름으로 검색한 결과에서 붙일 장소를 고른다.
+ * 이름이 서로 들어 있는 곳만 (예: '롯데월드' ↔ '롯데월드 어드벤처'). 없으면 null:
+ * 이름이 다른 첫 번째 결과를 붙이면 엉뚱한 곳에 핀이 찍힌다.
+ */
+export function pickAiPlace<T extends { name: string }>(
+  places: T[],
+  query: string
+): T | null {
+  const want = sameText(query);
+  if (!want) return null;
+  return (
+    places.find((p) => {
+      const name = sameText(p.name);
+      return name !== '' && (name.includes(want) || want.includes(name));
+    }) ?? null
+  );
 }
 
 /** 담을 항목을 addItems에 넣을 모양으로 */

@@ -1,4 +1,5 @@
 import {
+  pickAiPlace,
   toAiClass,
   toAiDrafts,
   toAiFill,
@@ -7,15 +8,32 @@ import {
 } from '@/lib/bucket/aiDraft';
 
 describe('AI가 준 답 거르기', () => {
-  it('종류에 없는 카테고리를 주면 기타로 담는다', () => {
-    // cook(요리)은 도전의 카테고리라 탐방에는 없다
+  it('종류와 카테고리가 어긋나면 종류를 카테고리에 맞춘다', () => {
+    // '요트 타기': 도전이라고 하면서 탐방의 액티비티를 준 경우
+    expect(
+      toAiClass({ kind: 'activity', category: 'activity', setting: 'outdoor' })
+    ).toEqual({ kind: 'place', category: 'activity', setting: 'outdoor' });
+    // cook(요리)은 도전의 카테고리
     expect(
       toAiClass({ kind: 'place', category: 'cook', setting: 'indoor' })
-    ).toEqual({ kind: 'place', category: 'etc', setting: 'indoor' });
+    ).toEqual({ kind: 'activity', category: 'cook', setting: 'indoor' });
+  });
+
+  it('기타나 모르는 카테고리면 종류는 그대로 두고 기타로 담는다', () => {
+    expect(toAiClass({ kind: 'place', category: 'etc' })).toEqual({
+      kind: 'place',
+      category: 'etc',
+      setting: 'indoor',
+    });
+    expect(toAiClass({ kind: 'activity', category: 'sports' })).toEqual({
+      kind: 'activity',
+      category: 'etc',
+      setting: 'indoor',
+    });
   });
 
   it('종류를 모르는 답은 쓰지 않는다', () => {
-    expect(toAiClass({ kind: 'travel', category: 'trip' })).toBeNull();
+    expect(toAiClass({ kind: 'travel', category: 'sports' })).toBeNull();
     expect(toAiClass(null)).toBeNull();
     expect(toAiClass('place')).toBeNull();
   });
@@ -98,5 +116,16 @@ describe('AI가 준 답 거르기', () => {
     expect(usage.ai).toEqual({ used: 20, limit: 20 });
     expect(usage.auto).toEqual({ used: 3, limit: 60 });
     expect(toAiUsage(null).ai).toEqual({ used: 0, limit: 0 });
+  });
+
+  it('장소는 이름이 맞는 곳만 붙이고, 이름이 다른 첫 결과는 붙이지 않는다', () => {
+    const places = [{ name: '성수 파스타' }, { name: '롯데월드 어드벤처' }];
+    expect(pickAiPlace(places, '롯데월드')).toEqual({
+      name: '롯데월드 어드벤처',
+    });
+    // 검색 결과는 있지만 이름이 안 맞는다: 엉뚱한 곳에 핀을 찍지 않는다
+    expect(pickAiPlace(places, '경복궁')).toBeNull();
+    expect(pickAiPlace([], '경복궁')).toBeNull();
+    expect(pickAiPlace(places, '  ')).toBeNull();
   });
 });
