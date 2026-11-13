@@ -15,7 +15,7 @@ import {
 } from 'react-native-gesture-handler';
 import { useSharedValue } from 'react-native-reanimated';
 
-import { Icon, Text } from '@/components/atoms';
+import { Button, Icon, Text } from '@/components/atoms';
 import { PersonAvatar } from '@/components/space/PersonAvatar';
 import { useDateVotes } from '@/hooks/useDateVotes';
 import {
@@ -31,6 +31,7 @@ import {
 import type { BucketItem, GoalRemind } from '@/lib/bucket/types';
 import { DATE_FORMAT, todayKey } from '@/lib/date';
 import { showAlert } from '@/lib/dialog';
+import { showErrorAlert } from '@/lib/errors';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
@@ -93,6 +94,14 @@ export function DateVoteCard({
     .filter((t) => t.users.some((u) => member(u).isMe))
     .map((t) => t.day);
   const isAll = (n: number) => memberCount >= 2 && n >= memberCount;
+  // 고르는 중인 내 날 (확인을 눌러야 저장된다). null이면 저장된 그대로
+  const [draft, setDraft] = useState<string[] | null>(null);
+  const [saving, setSaving] = useState(false);
+  const shownMine = new Set(draft ?? myDays);
+  const savedMine = new Set(myDays);
+  const toAdd = [...shownMine].filter((d) => !savedMine.has(d));
+  const toRemove = myDays.filter((d) => !shownMine.has(d));
+  const dirty = toAdd.length + toRemove.length > 0;
 
   const subtitle = (() => {
     if (voters > 0) {
@@ -154,8 +163,17 @@ export function DateVoteCard({
   } | null>(null);
   // 제스처 콜백(나중에 불림)에서 지금 끄는 기간을 읽으려고 따로 들고 있는 값
   const dragNow = useSharedValue<typeof drag>(null);
-  const isMineOn = (day: string) =>
-    (byDay.get(day) ?? []).some((u) => member(u).isMe);
+  const isMineOn = (day: string) => shownMine.has(day);
+  /** 고르는 중인 날에 넣거나 뺀다 (아직 저장하지 않는다) */
+  const changeDays = (days: string[], on: boolean) =>
+    setDraft((prev) => {
+      const next = new Set(prev ?? myDays);
+      for (const d of days) {
+        if (on) next.add(d);
+        else next.delete(d);
+      }
+      return [...next].sort();
+    });
   /** 달력 안 손가락 위치의 날 (빈칸·지난 날이면 null) */
   const dayAt = (x: number, y: number) => {
     if (gridWidth <= 0) return null;
@@ -193,12 +211,7 @@ export function DateVoteCard({
       if (!current) return;
       setDragBoth(null);
       onDraggingChange?.(false);
-      void votes.setDays(
-        item.id,
-        daysBetween(current.from, current.to, today),
-        current.on,
-        memberCount
-      );
+      changeDays(daysBetween(current.from, current.to, today), current.on);
     });
   const inDrag = (day: string) => {
     if (!drag || day < today) return false;
@@ -211,12 +224,14 @@ export function DateVoteCard({
     if (n < 1 || n > first.daysInMonth()) return null;
     const day = first.date(n).format(DATE_FORMAT);
     if (day < today) return null;
-    const users = byDay.get(day) ?? [];
-    // 끄는 중이면 그 기간은 넣을지/뺄지 미리 보여준다
-    const mine = inDrag(day) ? drag!.on : users.some((u) => member(u).isMe);
-    if (mine) return 'mine';
-    return users.length > 0 ? 'others' : null;
+    if (isMineShown(day)) return 'mine';
+    return othersOn(day) > 0 ? 'others' : null;
   };
+  /** 지금 보여줄 내 선택 (끄는 중이면 그 기간은 넣을지/뺄지 미리) */
+  const isMineShown = (day: string) => (inDrag(day) ? drag!.on : isMineOn(day));
+  /** 그 날 되는 다른 사람 수 */
+  const othersOn = (day: string) =>
+    (byDay.get(day) ?? []).filter((u) => !member(u).isMe).length;
 
   /**
    * 날 누르기: 안 고른 날이면 그 날을 넣고, 고른 날이면 이어서 고른 기간을 통째로 뺀다
@@ -224,12 +239,49 @@ export function DateVoteCard({
    */
   const pressDay = (day: string) => {
     hapticSelect();
-    if (!isMineOn(day)) {
-      void votes.toggle(item.id, day, memberCount);
+    if (!isMineOn(day)) changeDays([day], true);
+    else changeDays(runAround(shownMine, day), false);
+  };
+
+  /** 확인: 고른 날을 저장한다 (넣은 날·뺀 날만 서버에) */
+  const save = async () => {
+    if (!dirty || saving) return;
+    setSaving(true);
+    const added = await votes.setDays(item.id, toAdd, true, memberCount);
+    const removed =
+      added && (await votes.setDays(item.id, toRemove, false, memberCount));
+    setSaving(false);
+    if (added && removed) {
+      setDraft(null);
+      hapticSuccess();
+    } else {
+      showErrorAlert('저장하지 못했어요', null, () => void save());
+    }
+  };
+
+  /** 접기. 저장 안 한 게 있으면 물어본다 */
+  const toggleOpen = () => {
+    if (!open || !dirty) {
+      setOpen((v) => !v);
       return;
     }
-    const mineDays = [...byDay.keys()].filter(isMineOn);
-    void votes.setDays(item.id, runAround(mineDays, day), false, memberCount);
+    showAlert('고른 날을 저장할까요?', '확인을 눌러야 다른 사람에게 보여요.', [
+      {
+        text: '버리기',
+        style: 'destructive',
+        onPress: () => {
+          setDraft(null);
+          setOpen(false);
+        },
+      },
+      {
+        text: '저장',
+        onPress: async () => {
+          await save();
+          setOpen(false);
+        },
+      },
+    ]);
   };
 
   const canPrev = month.isAfter(thisMonth, 'month');
@@ -244,7 +296,7 @@ export function DateVoteCard({
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         accessibilityLabel={`같이 갈 날, ${subtitle}`}
-        onPress={() => setOpen((v) => !v)}
+        onPress={toggleOpen}
         className="flex-row items-center gap-3 active:opacity-70"
       >
         <Icon as={CalendarDays} size={18} className="text-primary" />
@@ -271,7 +323,7 @@ export function DateVoteCard({
         <View className="gap-3">
           <Text variant="muted" size={12}>
             {
-              '내가 되는 날을 눌러요. 꾹 누른 채 끌면 기간을 한 번에 골라요. 고른 날을 다시 누르면 이어진 기간이 통째로 빠져요. 숫자는 되는 사람 수예요'
+              '되는 날을 누르거나 꾹 누른 채 끌어 기간을 골라요. 고른 기간을 다시 누르면 통째로 빠져요. 다 고르면 확인을 눌러요. 진한 칸은 나, 연한 칸은 다른 사람이 되는 날이에요'
             }
           </Text>
 
@@ -330,11 +382,11 @@ export function DateVoteCard({
                           return <View key={col} className="h-12 flex-1" />;
                         }
                         const day = first.date(n).format(DATE_FORMAT);
-                        const users = byDay.get(day) ?? [];
                         const past = day < today;
                         const fill = fillOf(n);
                         const mine = fill === 'mine';
-                        const all = isAll(users.length);
+                        const count = othersOn(day) + (mine ? 1 : 0);
+                        const all = isAll(count);
                         // 같은 주에서 옆날도 같은 색이면 띠로 이어서 하나처럼 보이게
                         const joinLeft =
                           fill !== null && col > 0 && fillOf(n - 1) === fill;
@@ -344,7 +396,7 @@ export function DateVoteCard({
                           <Pressable
                             key={col}
                             accessibilityRole="button"
-                            accessibilityLabel={`${voteDayLabel(day)}${users.length ? `, ${users.length}명 돼요` : ''}`}
+                            accessibilityLabel={`${voteDayLabel(day)}${count ? `, ${count}명 돼요` : ''}`}
                             accessibilityState={{
                               selected: mine,
                               disabled: past,
@@ -389,13 +441,13 @@ export function DateVoteCard({
                             >
                               <Text
                                 size={14}
-                                weight={users.length > 0 ? '700' : '400'}
+                                weight={count > 0 ? '700' : '400'}
                                 className={cn(
                                   mine
                                     ? 'text-primary-foreground'
                                     : past
                                       ? 'text-muted'
-                                      : users.length > 0
+                                      : count > 0
                                         ? 'text-primary'
                                         : 'text-foreground'
                                 )}
@@ -403,7 +455,7 @@ export function DateVoteCard({
                                 {n}
                               </Text>
                             </View>
-                            {users.length > 0 ? (
+                            {count > 0 ? (
                               <Text
                                 size={10}
                                 weight="700"
@@ -411,7 +463,7 @@ export function DateVoteCard({
                                   all ? 'text-primary' : 'text-muted-foreground'
                                 }
                               >
-                                {all ? '모두' : `${users.length}명`}
+                                {all ? '모두' : `${count}명`}
                               </Text>
                             ) : null}
                           </Pressable>
@@ -424,10 +476,30 @@ export function DateVoteCard({
             </GestureHandlerRootView>
           </View>
 
-          {myDays.length > 0 ? (
+          {shownMine.size > 0 ? (
             <Text size={12} className="text-muted-foreground">
-              내가 되는 날 · {rangeLabels(myDays).join(', ')}
+              내가 되는 날 · {rangeLabels([...shownMine]).join(', ')}
             </Text>
+          ) : null}
+
+          {dirty ? (
+            <View className="flex-row gap-2">
+              <Button
+                label="취소"
+                variant="ghost"
+                size="md"
+                className="flex-1"
+                disabled={saving}
+                onPress={() => setDraft(null)}
+              />
+              <Button
+                label={saving ? '저장 중…' : '확인'}
+                size="md"
+                className="flex-1"
+                disabled={saving}
+                onPress={() => void save()}
+              />
+            </View>
           ) : null}
 
           {best.length > 0 ? (

@@ -196,8 +196,9 @@ export function useDateVotes(spaceId: string | null) {
     days: string[],
     on: boolean,
     memberCount: number
-  ) => {
-    if (!spaceId || !userId || days.length === 0) return;
+  ): Promise<boolean> => {
+    if (!spaceId || !userId) return false;
+    if (days.length === 0) return true;
     const before = useVotesStore.getState().bySpace[spaceId] ?? EMPTY;
     const mineOn = new Set(
       before
@@ -205,7 +206,7 @@ export function useDateVotes(spaceId: string | null) {
         .map((r) => r.day)
     );
     const changed = days.filter((d) => mineOn.has(d) !== on);
-    if (changed.length === 0) return;
+    if (changed.length === 0) return true;
     const now = new Date().toISOString();
     const changedSet = new Set(changed);
     useVotesStore.getState().setRows(
@@ -245,9 +246,10 @@ export function useDateVotes(spaceId: string | null) {
     if (error) {
       noteFailure(error);
       useVotesStore.getState().setRows(spaceId, before);
-      return;
+      return false;
     }
     if (on) notifyPicked(itemId, changed, memberCount);
+    return true;
   };
 
   /** 날을 정했으면 이 항목 표를 모두 비운다 (다시 맞출 때 처음부터) */
