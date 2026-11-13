@@ -23,7 +23,6 @@ import {
   bestRuns,
   daysBetween,
   rangeLabels,
-  runAround,
   runLabel,
   tallyDays,
   voteDayLabel,
@@ -258,14 +257,10 @@ export function DateVoteCard({
   const othersOn = (day: string) =>
     (byDay.get(day) ?? []).filter((u) => !isMe(u)).length;
 
-  /**
-   * 날 누르기: 안 고른 날이면 그 날을 넣고, 고른 날이면 이어서 고른 기간을 통째로 뺀다
-   * (하루만 빼려면 꾹 누른 채 그 날만 끌면 된다)
-   */
+  /** 날 누르기: 그 하루만 넣거나 뺀다 (기간 안의 날이면 그 날만 빠지고 나머지 블록은 그대로) */
   const pressDay = (day: string) => {
     hapticSelect();
-    if (!isMineOn(day)) changeDays([day], true);
-    else changeDays(runAround(shownMine, day), false);
+    changeDays([day], !isMineOn(day));
   };
 
   /** 확인: 고른 날을 저장한다 (넣은 날·뺀 날만 서버에) */
@@ -357,7 +352,7 @@ export function DateVoteCard({
         <View className="gap-3">
           <Text variant="muted" size={12}>
             {
-              '되는 날을 누르거나 꾹 누른 채 끌어 기간을 골라요. 고른 기간을 다시 누르면 통째로 빠져요. 다 고르면 확인을 눌러요. 진한 칸은 나, 연한 칸은 다른 사람이 되는 날이에요. 테두리만 남은 칸은 확인을 누르면 빠질 내 날이에요'
+              '되는 날을 누르거나 꾹 누른 채 끌어 기간을 골라요. 고른 날을 다시 누르면 그 날만 빠져요. 다 고르면 확인을 눌러요. 진한 칸은 나, 연한 칸은 다른 사람이 되는 날이에요. 테두리만 남은 칸은 확인을 누르면 빠질 내 날이에요'
             }
           </Text>
 
