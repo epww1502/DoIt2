@@ -443,10 +443,7 @@ export function DateVoteCard({
                             {fill ? (
                               <View
                                 pointerEvents="none"
-                                className={cn(
-                                  'absolute top-0 h-9',
-                                  mine && 'bg-primary'
-                                )}
+                                className="absolute top-0 h-9"
                                 style={{
                                   left: joinLeft ? 0 : '50%',
                                   right: joinRight ? 0 : '50%',
@@ -462,8 +459,9 @@ export function DateVoteCard({
                                   borderBottomRightRadius: joinRight
                                     ? 0
                                     : BAND_HALF,
+                                  // 색은 style로만 준다 (className의 bg와 같이 쓰면 style의 undefined가 덮어써서 안 칠해진다)
                                   backgroundColor: mine
-                                    ? undefined
+                                    ? primary
                                     : leaving
                                       ? 'transparent'
                                       : tint,
