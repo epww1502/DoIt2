@@ -117,7 +117,7 @@ export function GoalField({ value, onChange }: GoalFieldProps) {
         visible={pickerOpen}
         value={value?.date ?? dayjs().format(DATE_FORMAT)}
         maxDate={MAX_GOAL_DATE}
-        onChange={(date) => value && onChange({ ...value, date })}
+        onChange={(date) => value && onChange({ ...value, date, until: null })}
         onClose={() => setPickerOpen(false)}
       />
     </View>

@@ -138,7 +138,7 @@ export function DateVoteCard({
       `${runLabel(from, to)}로 정할까요?`,
       from === to
         ? '목표 날짜로 정하고, 그 전에 알려 드려요. 고른 날짜 표는 비워져요.'
-        : `시작하는 날(${voteDayLabel(from)})을 목표 날짜로 정하고, 그 전에 알려 드려요. 고른 날짜 표는 비워져요.`,
+        : '이 기간을 목표로 정하고, 시작하기 전에 알려 드려요. 고른 날짜 표는 비워져요.',
       [
         { text: '취소', style: 'cancel' },
         {
@@ -147,6 +147,8 @@ export function DateVoteCard({
             updateItem(item.id, {
               goal: {
                 date: day,
+                // 기간으로 정했으면 마지막 날도 (캘린더·날씨·기록 알림에 쓴다)
+                until: to > from ? to : null,
                 remind: item.goal?.remind.length
                   ? item.goal.remind
                   : DEFAULT_REMIND,

@@ -2,7 +2,6 @@ import dayjs from 'dayjs';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   ExternalLink,
-  Flag,
   MapPin,
   MoreHorizontal,
   Repeat,
@@ -44,10 +43,9 @@ import { ReviewsSection } from '@/components/bucket/ReviewsSection';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { StarRating } from '@/components/bucket/StarRating';
 import { useReviewCtx } from '@/hooks/useReviewCtx';
-import { goalDday } from '@/components/bucket/goalDday';
+import { GoalCard } from '@/components/bucket/GoalCard';
 import {
   getCategory,
-  GOAL_REMIND_META,
   isResting,
   itemPhotos,
   KIND_META,
@@ -294,29 +292,8 @@ export default function BucketDetailScreen() {
           </View>
         ) : null}
 
-        {item.goal ? (
-          <View className="flex-row items-center gap-3 rounded-2xl p-4 bg-accent">
-            <Icon as={Flag} size={18} className="text-primary" />
-            <View className="flex-1 gap-0.5">
-              <Text weight="600" size={13} className="text-muted-foreground">
-                목표 날짜
-              </Text>
-              <Text weight="600" size={15}>
-                {dayjs(item.goal.date).format('YYYY년 M월 D일 (dd)')}
-              </Text>
-              <Text variant="muted" size={12}>
-                {item.goal.remind.length > 0
-                  ? `알림: ${item.goal.remind.map((k) => GOAL_REMIND_META[k].label).join(', ')}`
-                  : '알림 없음'}
-              </Text>
-            </View>
-            {!done ? (
-              <Text weight="700" size={16} className="text-primary">
-                {goalDday(item.goal.date)}
-              </Text>
-            ) : null}
-          </View>
-        ) : null}
+        {/* 목표 날짜 (날씨 예보 · 캘린더에 넣기) */}
+        <GoalCard item={item} />
 
         {/* 누르면 지도 앱으로 (안드로이드는 폰이 앱을 고르게, 아이폰은 지도 앱 목록) */}
         {mapTarget ? (

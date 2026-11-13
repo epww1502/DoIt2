@@ -32,7 +32,8 @@ export type TodayWeather = {
   emoji: string;
 };
 
-function describe(code: number): { summary: string; emoji: string } {
+/** WMO 날씨 코드 → 짧은 말·이모지 */
+export function describe(code: number): { summary: string; emoji: string } {
   if (code === 0) return { summary: '맑음', emoji: '☀️' };
   if (code <= 2) return { summary: '구름 조금', emoji: '🌤️' };
   if (code === 3) return { summary: '흐림', emoji: '☁️' };

@@ -360,6 +360,8 @@ export type GoalInfo = {
   date: string;
   /** 알림 받을 시점들 (없으면 알림 없이 날짜만) */
   remind: GoalRemind[];
+  /** 기간으로 정했으면 마지막 날 YYYY-MM-DD (같이 갈 날 맞추기에서). 하루면 없다 */
+  until?: string | null;
 };
 
 export const GOAL_REMIND_META: Record<

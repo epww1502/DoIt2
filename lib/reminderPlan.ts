@@ -3,6 +3,7 @@
  */
 import dayjs from 'dayjs';
 
+import { goalEnd } from '@/lib/bucket/calendarEvent';
 import {
   GOAL_REMIND_META,
   type BucketItem,
@@ -16,6 +17,8 @@ const MAX_SCHEDULED = 60;
 const HORIZON_DAYS = 120;
 /** 주말 추천을 몇 주치 걸어 둘지 */
 const WEEKEND_WEEKS = 4;
+/** 정한 날(기간이면 마지막 날) 다음 날 이 시각에 '기록 남길까요?' */
+const AFTER_HOUR = 20;
 
 export type ReminderSource = {
   /** null이면 '나만 보기' */
@@ -73,6 +76,26 @@ export function planReminders(
           spaceId: source.spaceId,
           itemId: item.id,
         });
+      }
+      // 다녀온 다음 날 저녁: 아직 기록이 없으면 남기자고 (알림을 켠 목표만)
+      if (item.goal.remind.length > 0) {
+        const at = dayjs(goalEnd(item.goal))
+          .add(1, 'day')
+          .hour(AFTER_HOUR)
+          .minute(0)
+          .second(0)
+          .valueOf();
+        if (at > now && at <= horizon) {
+          plan.push({
+            id: `goal:${item.id}:after`,
+            kind: 'goal',
+            at,
+            title: source.title,
+            body: `'${shortTitle(item.title)}' 다녀왔어요? 기억날 때 기록을 남겨 봐요 📸`,
+            spaceId: source.spaceId,
+            itemId: item.id,
+          });
+        }
       }
     }
   }

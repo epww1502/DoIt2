@@ -42,8 +42,27 @@ describe('목표 날짜 알림', () => {
       ['goal:a:week', '11-03 10:00'],
       ['goal:a:day', '11-09 20:00'],
       ['goal:a:morning', '11-10 09:00'],
+      ['goal:a:after', '11-11 20:00'],
     ]);
     expect(plan[1].body).toContain('내일이');
+    expect(plan[3].body).toContain('기록');
+  });
+
+  it('기간으로 정했으면 마지막 날 다음 날 기록 알림', () => {
+    const plan = planReminders(
+      [
+        source([
+          item('a', {
+            goal: { date: '2026-11-17', until: '2026-11-20', remind: ['day'] },
+          }),
+        ]),
+      ],
+      { weekend: false, now: NOW }
+    );
+    expect(plan.map((p) => [p.id, dayjs(p.at).format('MM-DD HH:mm')])).toEqual([
+      ['goal:a:day', '11-16 20:00'],
+      ['goal:a:after', '11-21 20:00'],
+    ]);
   });
 
   it('이미 지난 시각, 해낸 항목, 알림을 끈 항목은 걸지 않는다', () => {
@@ -63,7 +82,10 @@ describe('목표 날짜 알림', () => {
       ],
       { weekend: false, now: NOW }
     );
-    expect(plan.map((p) => p.id)).toEqual(['goal:past:morning']);
+    expect(plan.map((p) => p.id)).toEqual([
+      'goal:past:morning',
+      'goal:past:after',
+    ]);
   });
 });
 
