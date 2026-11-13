@@ -6,12 +6,14 @@ import {
   Inbox,
   LayoutGrid,
   List,
+  ListPlus,
   Map as MapIcon,
   Rows3,
   RotateCcw,
   Repeat as RepeatIcon,
   Search,
   SlidersHorizontal,
+  Sparkles,
   X,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -189,6 +191,9 @@ export default function BucketListScreen() {
   const canImport = useImportSources().length > 0;
   const goImport = () => router.push('/item/import');
   const goShared = () => router.push('/item/shared');
+  const goAiSuggest = () =>
+    router.push({ pathname: '/item/ai', params: { mode: 'suggest' } });
+  const goAiParse = () => router.push('/item/ai');
   // 처음 깐 폰(공간도 담은 것도 없음)이면 쓰던 계정을 불러올 수 있게
   const isFreshStart = useSpaceStore(
     (s) => s.status === 'ready' && s.spaces.length === 0
@@ -284,6 +289,12 @@ export default function BucketListScreen() {
 
   const footer = !selection.selecting ? (
     <View className="flex-row flex-wrap items-center justify-center gap-x-5 gap-y-2 py-3">
+      <FooterLink icon={Sparkles} label="AI 추천 받기" onPress={goAiSuggest} />
+      <FooterLink
+        icon={ListPlus}
+        label="말하듯 써서 여러 개 담기"
+        onPress={goAiParse}
+      />
       {doneCount > 0 ? (
         <FooterLink
           icon={RotateCcw}

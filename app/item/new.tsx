@@ -1,11 +1,13 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Sparkles } from 'lucide-react-native';
 import { useCallback, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   Button,
   Chip,
+  Icon,
   NavBar,
   Segmented,
   Text,
@@ -18,7 +20,7 @@ import { GoalField } from '@/components/bucket/GoalField';
 import { RepeatField } from '@/components/bucket/RepeatField';
 import { ItemPhotosField } from '@/components/bucket/ItemPhotosField';
 import { LinksField } from '@/components/bucket/LinksField';
-import { TodoListField } from '@/components/bucket/TodoListField';
+import { MAX_TODOS, TodoListField } from '@/components/bucket/TodoListField';
 import { PlaceField } from '@/components/bucket/PlaceField';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
 import { deletePhoto } from '@/lib/bucket/photo';
@@ -28,6 +30,7 @@ import {
   itemPhotos,
   itemTodos,
   KIND_META,
+  newTodoId,
   MAX_LINKS,
   SETTING_META,
   type BucketKind,
@@ -45,7 +48,9 @@ import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
 import { ensureReminderPermission } from '@/lib/reminders';
+import { classifyTitle, splitIntoTodos } from '@/lib/ai';
 import { showAlert } from '@/lib/dialog';
+import { errorMessage } from '@/lib/errors';
 import { searchKakaoPlaces } from '@/lib/kakao';
 import { fetchLinkPreview } from '@/lib/linkPreview';
 import {
@@ -257,6 +262,65 @@ export default function BucketFormScreen() {
     }
   };
 
+  // 종류·카테고리·실내외를 직접 골랐으면 AI가 다시 바꾸지 않는다
+  const classTouched = useRef(false);
+  const classifiedTitle = useRef('');
+  const [autoClassed, setAutoClassed] = useState(false);
+  const touch =
+    <T,>(change: (next: T) => void) =>
+    (next: T) => {
+      classTouched.current = true;
+      setAutoClassed(false);
+      change(next);
+    };
+
+  /**
+   * 새로 담을 때 이름을 다 쓰면 AI가 종류·카테고리·실내외를 골라 둔다.
+   * 안 되면(오프라인, 하루 횟수 끝) 조용히 넘어가고 직접 고르면 된다.
+   */
+  const autoClassify = () => {
+    const asked = title.trim();
+    if (editing || classTouched.current || asked.length < 2) return;
+    if (asked === classifiedTitle.current) return;
+    classifiedTitle.current = asked;
+    classifyTitle(asked)
+      .then((cls) => {
+        if (!cls || classTouched.current) return;
+        setKind(cls.kind);
+        setCategory(cls.category);
+        setSetting(cls.setting);
+        setAutoClassed(true);
+      })
+      .catch(() => {});
+  };
+
+  /** AI가 이름을 보고 할 것을 채운다 (이미 적은 것은 그대로 두고 뒤에 붙인다) */
+  const [splitting, setSplitting] = useState(false);
+  const fillTodos = async () => {
+    if (splitting) return;
+    setSplitting(true);
+    try {
+      const written = todos.filter((t) => t.text.trim() !== '');
+      const texts = await splitIntoTodos(
+        title.trim(),
+        written.map((t) => t.text),
+        MAX_TODOS - written.length
+      );
+      if (texts.length === 0) {
+        showAlert('더 채울 할 것을 찾지 못했어요');
+        return;
+      }
+      setTodos([
+        ...written,
+        ...texts.map((text) => ({ id: newTodoId(), text, done: false })),
+      ]);
+    } catch (e) {
+      showAlert('할 것을 채우지 못했어요', errorMessage(e));
+    } finally {
+      setSplitting(false);
+    }
+  };
+
   const save = () => {
     if (!canSave) return;
     const input = {
@@ -306,7 +370,7 @@ export default function BucketFormScreen() {
           <Segmented
             options={KIND_OPTIONS}
             value={kind}
-            onChange={changeKind}
+            onChange={touch(changeKind)}
           />
 
           <View>
@@ -324,6 +388,7 @@ export default function BucketFormScreen() {
               autoFocus={!editing}
               returnKeyType="next"
               onFocus={ensureFocusedVisible}
+              onBlur={autoClassify}
             />
             {findingPlace ? (
               <Text variant="muted" size={12} className="mt-2">
@@ -343,6 +408,21 @@ export default function BucketFormScreen() {
             onFocus={ensureFocusedVisible}
             onPickPlace={openTodoSearch}
           />
+          {title.trim() && todos.length < MAX_TODOS ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ busy: splitting }}
+              disabled={splitting}
+              hitSlop={8}
+              onPress={() => void fillTodos()}
+              className="-mt-3 flex-row items-center gap-1.5 self-start active:opacity-60"
+            >
+              <Icon as={Sparkles} size={14} className="text-primary" />
+              <Text weight="600" size={13} className="text-primary">
+                {splitting ? '할 것을 채우는 중…' : 'AI로 할 것 채우기'}
+              </Text>
+            </Pressable>
+          ) : null}
 
           <ItemPhotosField
             photos={photos}
@@ -352,7 +432,9 @@ export default function BucketFormScreen() {
           />
 
           <View>
-            <FieldLabel>카테고리</FieldLabel>
+            <FieldLabel>
+              {autoClassed ? '카테고리 (AI가 골랐어요)' : '카테고리'}
+            </FieldLabel>
             <View className="flex-row flex-wrap gap-2">
               {categories.map((c) => (
                 <Chip
@@ -360,7 +442,7 @@ export default function BucketFormScreen() {
                   category={c.key}
                   label={c.label}
                   selected={category === c.key}
-                  onPress={() => changeCategory(c.key)}
+                  onPress={() => touch(changeCategory)(c.key)}
                 />
               ))}
             </View>
@@ -371,7 +453,7 @@ export default function BucketFormScreen() {
             <Segmented
               options={SETTING_OPTIONS}
               value={setting}
-              onChange={setSetting}
+              onChange={touch(setSetting)}
             />
             <Text variant="muted" size={12} className="mt-2">
               비 오는 날에는 &apos;오늘 뭐 하지&apos;에서 실외를 빼고 뽑아요

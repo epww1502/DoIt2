@@ -138,6 +138,10 @@ function RootLayoutInner() {
             options={{ animation: 'slide_from_bottom' }}
           />
           <Stack.Screen
+            name="item/ai"
+            options={{ animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
             name="item/redo"
             options={{ animation: 'slide_from_bottom' }}
           />
