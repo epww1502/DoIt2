@@ -52,6 +52,8 @@ import {
 import { AwaitingReviews } from '@/components/bucket/AwaitingReviews';
 import { BackupCard, useBackupNudge } from '@/components/space/BackupCard';
 import { InProgressSection } from '@/components/bucket/InProgressSection';
+import { UpcomingCard } from '@/components/bucket/UpcomingCard';
+import { buildUpcoming } from '@/lib/bucket/upcoming';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import {
   SyncEmpty,
@@ -335,13 +337,17 @@ export default function BucketListScreen() {
   // '나만 보기'에 몇 개 쌓였으면 서버에 백업하라고 한 번 권한다
   const showBackup = useBackupNudge() && !selection.selecting;
   const dismissBackupNudge = useSettingsStore((s) => s.dismissBackupNudge);
+  // 목표 날짜가 잡힌 것들 (맨 위 한 줄, 누르면 날짜순 모아보기)
+  const upcoming = useMemo(() => buildUpcoming(items, today), [items, today]);
+  const showUpcoming = upcoming.total > 0 && !selection.selecting;
   const awaitingHeader =
-    showBackup || showAwaiting || inProgress.length > 0 ? (
+    showBackup || showAwaiting || showUpcoming || inProgress.length > 0 ? (
       <View className="gap-3">
         {showBackup ? <BackupCard onDismiss={dismissBackupNudge} /> : null}
         {showAwaiting ? (
           <AwaitingReviews items={awaiting} className="" />
         ) : null}
+        {showUpcoming ? <UpcomingCard upcoming={upcoming} /> : null}
         <InProgressSection items={inProgress} />
       </View>
     ) : undefined;
