@@ -178,10 +178,13 @@ export function ItemSocial({
       {
         text: '지우기',
         style: 'destructive',
-        onPress: () =>
+        onPress: () => {
+          // 고치던 댓글을 지우면 입력칸도 비운다 (없는 댓글을 고치는 상태로 남지 않게)
+          if (editingId === id) cancelEdit();
           social
             .removeComment(id)
-            .catch((e) => showErrorAlert('댓글을 지우지 못했어요', e)),
+            .catch((e) => showErrorAlert('댓글을 지우지 못했어요', e));
+        },
       },
     ]);
 
@@ -339,7 +342,13 @@ export function ItemSocial({
                 </Pressable>
                 <View className="flex-1 gap-0.5">
                   <View className="flex-row items-center gap-2">
-                    <Text weight="600" size={13}>
+                    {/* 이름이 길면 줄여서, 시간이 줄 밖으로 밀리지 않게 */}
+                    <Text
+                      weight="600"
+                      size={13}
+                      numberOfLines={1}
+                      className="shrink"
+                    >
                       {/* 내 댓글도 닉네임으로, 옆에 (나) */}
                       {mine ? `${who.nickname} (나)` : who.name}
                     </Text>

@@ -18,6 +18,8 @@
 // - { spaceId, event: 'dates', itemIds: [string], day? }  같이 갈 날을 고름
 //   (막 골랐을 때만. 그 날 모두 되면 '다 되는 날' 알림(같은 날은 한 번), 아니면 같은 사람이 12시간에 한 번. kind 'added')
 //
+// 같은 사람이 같은 항목으로 똑같은 알림을 10분 안에 다시 보내면 무시한다 (알림함의 actor_id로 구분).
+//
 // 알림함 detail: 'photos' | 'liked' | 'wanted' | 'dates' (새 앱만 보고 아이콘을 고른다. 예전 앱은 kind만 본다)
 //
 // 받는 사람이 설정에서 끈 종류(profiles.push_muted)는 푸시만 보내지 않는다 (알림함에는 남긴다).
@@ -333,14 +335,14 @@ Deno.serve(async (req) => {
     const since = new Date(Date.now() - WANTED_QUIET_MS).toISOString();
     const { data: recent } = await admin
       .from('notifications')
-      .select('id, body')
+      .select('id')
       .eq('space_id', spaceId)
       .eq('item_id', first.id)
       .eq('detail', 'wanted')
+      .eq('actor_id', actor)
       .gte('created_at', since)
-      .limit(50);
-    const who = `${name}님`;
-    if (recent?.some((n) => n.body.startsWith(who))) return json({ sent: 0 });
+      .limit(1);
+    if (recent?.length) return json({ sent: 0 });
   }
 
   // 같이 갈 날: '다 되는 날'은 같은 날로 한 번만, 고른 알림은 같은 사람이 12시간에 한 번만
@@ -349,17 +351,34 @@ Deno.serve(async (req) => {
     const since = new Date(Date.now() - quiet).toISOString();
     const { data: recent } = await admin
       .from('notifications')
-      .select('id, body')
+      .select('id, body, actor_id')
       .eq('space_id', spaceId)
       .eq('item_id', first.id)
       .eq('detail', 'dates')
       .gte('created_at', since)
       .limit(100);
-    const who = `${name}님`;
     const repeated = allDay
       ? recent?.some((n) => n.body === message)
-      : recent?.some((n) => n.body.startsWith(who));
+      : recent?.some((n) => n.actor_id === actor);
     if (repeated) return json({ sent: 0 });
+  }
+
+  // 그 밖의 알림: 같은 사람이 같은 항목으로 똑같은 알림을 방금 보냈으면 또 보내지 않는다
+  // (같은 요청을 되풀이해서 다른 멤버에게 푸시를 계속 보내는 것을 막는다. 새 댓글처럼 문구가 다르면 보낸다)
+  if (event !== 'wanted' && event !== 'dates') {
+    const since = new Date(Date.now() - FRESH_MS).toISOString();
+    const same = admin
+      .from('notifications')
+      .select('id')
+      .eq('space_id', spaceId)
+      .eq('actor_id', actor)
+      .eq('body', message)
+      .gte('created_at', since);
+    // 여러 개를 한 번에 담은 알림은 항목 없이 남는다
+    const { data: recent } = await (
+      itemId ? same.eq('item_id', itemId) : same.is('item_id', null)
+    ).limit(1);
+    if (recent?.length) return json({ sent: 0 });
   }
 
   // 알림함 (실패해도 푸시는 보낸다)
@@ -388,6 +407,8 @@ Deno.serve(async (req) => {
             : null,
         title,
         body: message,
+        // 누가 한 일인지 (같은 알림을 또 보내지 않을 때 쓴다)
+        actor_id: actor,
       }))
     )
     .then(({ error }) => {

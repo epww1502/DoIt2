@@ -18,7 +18,13 @@ import {
   type LucideIcon,
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, SectionList, View } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  SectionList,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
@@ -415,7 +421,10 @@ export default function BucketListScreen() {
       {items.length === 0 && sync.kind !== 'ok' ? (
         <SyncEmpty sync={sync} />
       ) : todo.length === 0 ? (
-        <>
+        // 작은 화면에서도 맨 아래 버튼이 떠 있는 탭바에 가리지 않게 스크롤되게 하고 탭바만큼 띄운다
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: tabBarSpace }}
+        >
           {showAwaiting ? <AwaitingReviews items={awaiting} /> : null}
           <EmptyState
             title={
@@ -456,7 +465,7 @@ export default function BucketListScreen() {
                     : goShared
             }
           />
-        </>
+        </ScrollView>
       ) : (
         <>
           <CategoryFilter

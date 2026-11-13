@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Check, ChevronRight } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -154,7 +154,11 @@ function PickItems({
     });
   };
 
+  // 빠르게 두 번 눌러도 한 번만 가져온다
+  const imported = useRef(false);
   const importSelected = () => {
+    if (imported.current) return;
+    imported.current = true;
     const picked = items.filter((it) => selected.has(it.id));
     addItems(
       picked.map((it) => ({

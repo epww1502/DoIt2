@@ -338,8 +338,11 @@ export default function BucketFormScreen() {
     }
   };
 
+  // 빠르게 두 번 눌러도 한 번만 담는다 (화면이 닫히는 동안 또 눌릴 수 있다)
+  const saved = useRef(false);
   const save = () => {
-    if (!canSave) return;
+    if (!canSave || saved.current) return;
+    saved.current = true;
     const input = {
       kind,
       title: title.trim(),

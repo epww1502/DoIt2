@@ -1,11 +1,35 @@
 // 카카오 로컬 API 프록시. 카카오 REST API 키를 앱 대신 서버에 둔다.
 // 필요한 시크릿: KAKAO_REST_API_KEY (대시보드 > Edge Functions > Secrets)
+// 로그인한 앱만 부르고(verify_jwt), 한 사람이 하루 500번까지 부를 수 있다 (넘으면 429 { error: 'limit' }).
 // 배포된 버전과 같은 코드다. 바꾸면 Supabase MCP deploy_edge_function 또는 supabase CLI로 다시 배포한다.
 //
 // 요청 본문
 // - { query: string }                         키워드로 장소 검색 → { places: Place[] }
 // - { action: 'address', latitude, longitude } 좌표 → 주소       → { address, buildingName }
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'npm:@supabase/supabase-js@2';
+
+/** 한 사람이 하루에 부를 수 있는 횟수 (마구 불러 카카오 하루 사용량을 다 쓰지 못하게) */
+const DAILY_LIMIT = 500;
+
+const admin = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
+
+/** 로그인 토큰에서 사용자 id를 읽는다. 서명은 게이트웨이(verify_jwt)가 이미 확인했다 */
+function userIdOf(req: Request): string | null {
+  try {
+    const token =
+      req.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
+    const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const sub = JSON.parse(atob(payload)).sub;
+    return typeof sub === 'string' && sub ? sub : null;
+  } catch {
+    return null;
+  }
+}
 
 const PAGE_SIZE = 15;
 const MAX_QUERY_LENGTH = 50;
@@ -113,6 +137,16 @@ Deno.serve(async (req: Request) => {
 
   const key = Deno.env.get('KAKAO_REST_API_KEY');
   if (!key) return json({ error: 'kakao_key_missing' }, 500);
+
+  const userId = userIdOf(req);
+  if (!userId) return json({ error: 'unauthorized' }, 401);
+  const { data: allowed, error: usageError } = await admin.rpc('use_ai', {
+    p_user: userId,
+    p_kind: 'kakao',
+    p_limit: DAILY_LIMIT,
+  });
+  if (usageError) return json({ error: 'usage_failed' }, 500);
+  if (!allowed) return json({ error: 'limit' }, 429);
 
   let body: Record<string, unknown>;
   try {

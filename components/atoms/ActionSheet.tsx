@@ -57,9 +57,10 @@ export function ActionSheet({
           >
             <View className="mb-2 h-1 w-10 self-center rounded-full bg-border" />
             {header ? <View className="px-2 pb-3">{header}</View> : null}
-            {items.map((item) => (
+            {items.map((item, index) => (
               <Pressable
-                key={item.label}
+                // 글자가 같은 항목이 둘 있어도 겹치지 않게 순서를 붙인다
+                key={`${index}:${item.label}`}
                 accessibilityRole="button"
                 onPress={() => {
                   onClose();

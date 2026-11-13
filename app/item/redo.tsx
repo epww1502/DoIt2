@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { router } from 'expo-router';
 import { Check } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -78,7 +78,11 @@ export default function RedoScreen() {
       allSelected ? new Set() : new Set(selectable.map((it) => it.id))
     );
 
+  // 빠르게 두 번 눌러도 한 번만 담는다
+  const added = useRef(false);
   const redo = () => {
+    if (added.current) return;
+    added.current = true;
     // 화면에 보이는 순서(최근에 한 순) 그대로 담는다
     const picked = done.filter((it) => selected.has(it.id));
     addItems(picked.map(toInput));
