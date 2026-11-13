@@ -3,12 +3,19 @@
 // 배포된 버전과 같은 코드다. 바꾸면 Supabase MCP deploy_edge_function 또는 supabase CLI로 다시 배포한다.
 //
 // 요청 본문 (로그인한 사용자의 JWT 필요)
+// - { action: 'fill', title, todos?: string[] }    이름만 보고 나머지를 채운다
+//                                                  → { kind, category, setting, place, location, todos }
+//   place: 카카오 장소 검색에 넣을 장소 이름 (한 곳을 특정할 수 없으면 빈 글자)
+//   location: 이름에 드러난 지역 (없으면 빈 글자), todos: 여러 단계가 필요할 때만
 // - { action: 'split', title, todos?: string[] }   항목을 할 것으로 쪼갠다 → { todos: string[] }
+//   (fill이 나오기 전 앱이 쓴다)
 // - { action: 'classify', title }                  종류·카테고리·실내외 → { kind, category, setting }
 // - { action: 'parse', text }                      문장에서 항목 여러 개 → { items: Draft[] }
 // - { action: 'suggest', titles: string[], together: boolean }
 //                                                  담아 둔 것과 어울리는 새 항목 → { items: Draft[] }
 //   Draft = { title, kind, category, setting }
+// - { action: 'usage' }                           오늘 쓴 횟수와 한도 (횟수에 들어가지 않는다)
+//                                                  → { ai: { used, limit }, auto: { used, limit } }
 //
 // 하루 한도(한국 날짜)를 넘으면 429 { error: 'limit' }.
 // 답의 모양은 앱(lib/bucket/aiDraft.ts)이 한 번 더 걸러서 쓴다.
@@ -96,6 +103,25 @@ type Job = {
 const text = (v: unknown, max: number) =>
   typeof v === 'string' ? v.trim().slice(0, max) : '';
 
+/** 오늘(한국 날짜) 쓴 횟수와 한도 */
+async function usageOf(userId: string) {
+  const today = new Date(Date.now() + 9 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const { data, error } = await admin
+    .from('ai_usage')
+    .select('kind, count')
+    .eq('user_id', userId)
+    .eq('day', today);
+  if (error) return json({ error: 'usage_failed' }, 500);
+  const used = (kind: string) =>
+    data.find((row) => row.kind === kind)?.count ?? 0;
+  return json({
+    ai: { used: used('ai'), limit: DAILY_LIMIT },
+    auto: { used: used('auto'), limit: DAILY_AUTO_LIMIT },
+  });
+}
+
 /** 요청을 확인하고 Claude에게 시킬 일로 바꾼다. 잘못된 요청이면 null */
 function toJob(body: Record<string, unknown>): Job | null {
   if (body.action === 'split') {
@@ -119,6 +145,42 @@ function toJob(body: Record<string, unknown>): Job | null {
         type: 'object',
         properties: { todos: { type: 'array', items: { type: 'string' } } },
         required: ['todos'],
+        additionalProperties: false,
+      },
+    };
+  }
+
+  if (body.action === 'fill') {
+    const title = text(body.title, MAX_TITLE);
+    if (!title) return null;
+    const todos = Array.isArray(body.todos)
+      ? body.todos
+          .map((t) => text(t, 60))
+          .filter(Boolean)
+          .slice(0, 30)
+      : [];
+    return {
+      usage: 'ai',
+      limit: DAILY_LIMIT,
+      effort: 'low',
+      system:
+        '함께 쓰는 버킷리스트 앱의 도우미다. 사용자가 쓴 항목 이름만 보고 나머지 칸을 채운다.\n' +
+        `${CATEGORY_GUIDE}\n` +
+        '- place: 지도 앱에서 검색하면 바로 그곳이 나올 만큼 구체적인 장소 이름 (예: "롯데월드", "성수동 대림창고", "경복궁"). ' +
+        '이름만으로 한 곳을 특정할 수 없으면(예: "성수동 그 파스타집", "같이 요리하기") 빈 문자열. 지어내지 않는다.\n' +
+        '- location: 이름에 지역이 드러나 있으면 그 지역 (예: "서울 성수동", "제주도"). 없으면 빈 문자열.\n' +
+        '- todos: 여행·준비가 필요한 일처럼 여러 단계가 있어야 해낼 수 있을 때만, 하는 순서대로 3~7개, 각각 30자 이하의 짧은 한국어. ' +
+        '가게 한 곳에 가는 것처럼 단순하면 빈 배열. 이미 있는 할 것과 겹치는 건 뺀다.',
+      user: `항목: ${title}\n이미 있는 할 것: ${todos.length > 0 ? todos.join(', ') : '없음'}`,
+      schema: {
+        type: 'object',
+        properties: {
+          ...DRAFT_PROPERTIES,
+          place: { type: 'string' },
+          location: { type: 'string' },
+          todos: { type: 'array', items: { type: 'string' } },
+        },
+        required: ['kind', 'category', 'setting', 'place', 'location', 'todos'],
         additionalProperties: false,
       },
     };
@@ -200,6 +262,7 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json({ error: 'invalid_body' }, 400);
   }
+  if (body?.action === 'usage') return usageOf(auth.user.id);
   const job = toJob(body ?? {});
   if (!job) return json({ error: 'invalid_request' }, 400);
 

@@ -1,4 +1,10 @@
-import { toAiClass, toAiDrafts, toAiTodoTexts } from '@/lib/bucket/aiDraft';
+import {
+  toAiClass,
+  toAiDrafts,
+  toAiFill,
+  toAiTodoTexts,
+  toAiUsage,
+} from '@/lib/bucket/aiDraft';
 
 describe('AI가 준 답 거르기', () => {
   it('종류에 없는 카테고리를 주면 기타로 담는다', () => {
@@ -54,5 +60,43 @@ describe('AI가 준 답 거르기', () => {
     ]);
     expect(toAiTodoTexts(raw, [], 1)).toEqual(['항공권 예매']);
     expect(toAiTodoTexts(raw, [], 0)).toEqual([]);
+  });
+
+  it('AI로 채우기: 장소를 못 찾았으면 빈 글자로, 분류를 못 했으면 그대로 두게 null로 준다', () => {
+    expect(
+      toAiFill(
+        {
+          kind: 'place',
+          category: 'trip',
+          setting: 'outdoor',
+          place: ' 경복궁 ',
+          location: '서울 종로구',
+          todos: ['한복 빌리기', '한복 빌리기'],
+        },
+        [],
+        30
+      )
+    ).toEqual({
+      cls: { kind: 'place', category: 'trip', setting: 'outdoor' },
+      placeQuery: '경복궁',
+      location: '서울 종로구',
+      todos: ['한복 빌리기'],
+    });
+    expect(toAiFill({ place: 3, todos: 'x' }, [], 30)).toEqual({
+      cls: null,
+      placeQuery: '',
+      location: '',
+      todos: [],
+    });
+  });
+
+  it('사용량: 한도보다 많이 쓴 것으로 와도 남은 횟수는 0 아래로 내려가지 않는다', () => {
+    const usage = toAiUsage({
+      ai: { used: 25, limit: 20 },
+      auto: { used: 3, limit: 60 },
+    });
+    expect(usage.ai).toEqual({ used: 20, limit: 20 });
+    expect(usage.auto).toEqual({ used: 3, limit: 60 });
+    expect(toAiUsage(null).ai).toEqual({ used: 0, limit: 0 });
   });
 });

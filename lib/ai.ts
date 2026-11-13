@@ -8,9 +8,12 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import {
   toAiClass,
   toAiDrafts,
-  toAiTodoTexts,
+  toAiFill,
+  toAiUsage,
   type AiClass,
   type AiDraft,
+  type AiFill,
+  type AiUsage,
 } from '@/lib/bucket/aiDraft';
 import { supabase } from '@/lib/supabase/client';
 
@@ -34,14 +37,17 @@ async function callAi(body: Record<string, unknown>): Promise<unknown> {
   return data;
 }
 
-/** 항목 이름을 보고 새로 넣을 할 것들 (이미 있는 것과 겹치지 않게, 남은 자리만큼) */
-export async function splitIntoTodos(
+/**
+ * 항목 이름만 보고 나머지(분류, 장소 이름, 지역, 할 것)를 채울 값.
+ * 할 것은 이미 있는 것과 겹치지 않게, 남은 자리(room)만큼만 온다.
+ */
+export async function fillFromTitle(
   title: string,
-  existing: string[],
+  existingTodos: string[],
   room: number
-): Promise<string[]> {
-  const data = await callAi({ action: 'split', title, todos: existing });
-  return toAiTodoTexts(data, existing, room);
+): Promise<AiFill> {
+  const data = await callAi({ action: 'fill', title, todos: existingTodos });
+  return toAiFill(data, existingTodos, room);
 }
 
 /** 항목 이름의 종류·카테고리·실내외. 못 고르면 null */
@@ -64,4 +70,9 @@ export async function suggestItems(
 ): Promise<AiDraft[]> {
   const data = await callAi({ action: 'suggest', titles: existing, together });
   return toAiDrafts(data, existing);
+}
+
+/** 오늘 쓴 AI 횟수와 하루 한도 (이걸 불러도 횟수는 늘지 않는다) */
+export async function fetchAiUsage(): Promise<AiUsage> {
+  return toAiUsage(await callAi({ action: 'usage' }));
 }

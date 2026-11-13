@@ -48,8 +48,9 @@ import type { SegmentedOption } from '@/components/atoms/Segmented';
 import { useBucketItem, useBucketStore } from '@/store/useBucketStore';
 import { usePlacePickStore } from '@/store/usePlacePickStore';
 import { ensureReminderPermission } from '@/lib/reminders';
-import { classifyTitle, splitIntoTodos } from '@/lib/ai';
+import { classifyTitle, fillFromTitle } from '@/lib/ai';
 import { showAlert } from '@/lib/dialog';
+import { cn } from '@/lib/utils';
 import { errorMessage } from '@/lib/errors';
 import { searchKakaoPlaces } from '@/lib/kakao';
 import { fetchLinkPreview } from '@/lib/linkPreview';
@@ -294,30 +295,56 @@ export default function BucketFormScreen() {
       .catch(() => {});
   };
 
-  /** AI가 이름을 보고 할 것을 채운다 (이미 적은 것은 그대로 두고 뒤에 붙인다) */
-  const [splitting, setSplitting] = useState(false);
-  const fillTodos = async () => {
-    if (splitting) return;
-    setSplitting(true);
+  /**
+   * 'AI로 채우기': 이름만 보고 종류·카테고리·실내외, 장소, 할 것을 채운다.
+   * 장소는 AI가 뽑은 이름을 카카오에서 찾아 붙이고, 못 찾으면 지역만 적는다.
+   * 이미 고른 장소·적어 둔 위치·할 것은 덮어쓰지 않는다 (할 것은 뒤에 붙인다).
+   */
+  const [filling, setFilling] = useState(false);
+  const fillWithAi = async () => {
+    if (filling) return;
+    setFilling(true);
     try {
       const written = todos.filter((t) => t.text.trim() !== '');
-      const texts = await splitIntoTodos(
+      const fill = await fillFromTitle(
         title.trim(),
         written.map((t) => t.text),
         MAX_TODOS - written.length
       );
-      if (texts.length === 0) {
-        showAlert('더 채울 할 것을 찾지 못했어요');
-        return;
+      if (fill.cls) {
+        // 눌러서 채운 것이라 직접 고른 것보다 앞선다. 이름 칸을 나갈 때 다시 고르지 않게 막는다
+        classTouched.current = true;
+        setKind(fill.cls.kind);
+        setCategory(fill.cls.category);
+        setSetting(fill.cls.setting);
+        setAutoClassed(true);
       }
-      setTodos([
-        ...written,
-        ...texts.map((text) => ({ id: newTodoId(), text, done: false })),
-      ]);
+      if (fill.todos.length > 0) {
+        setTodos([
+          ...written,
+          ...fill.todos.map((text) => ({ id: newTodoId(), text, done: false })),
+        ]);
+      }
+      if (!place) {
+        // 장소 검색이 안 되면 지역 글자만 남긴다
+        const found = fill.placeQuery
+          ? pickSharedPlace(
+              await searchKakaoPlaces(fill.placeQuery).catch(() => []),
+              fill.placeQuery,
+              null
+            )
+          : null;
+        if (found) {
+          setPlace(found);
+          setLocation(found.address);
+        } else if (fill.location) {
+          setLocation((prev) => (prev.trim() ? prev : fill.location));
+        }
+      }
     } catch (e) {
-      showAlert('할 것을 채우지 못했어요', errorMessage(e));
+      showAlert('채우지 못했어요', errorMessage(e));
     } finally {
-      setSplitting(false);
+      setFilling(false);
     }
   };
 
@@ -374,7 +401,25 @@ export default function BucketFormScreen() {
           />
 
           <View>
-            <FieldLabel>{meta.question}</FieldLabel>
+            <View className="flex-row items-start justify-between">
+              <FieldLabel>{meta.question}</FieldLabel>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ busy: filling, disabled: !title.trim() }}
+                disabled={filling || !title.trim()}
+                hitSlop={8}
+                onPress={() => void fillWithAi()}
+                className={cn(
+                  'flex-row items-center gap-1 active:opacity-60',
+                  !title.trim() && 'opacity-40'
+                )}
+              >
+                <Icon as={Sparkles} size={14} className="text-primary" />
+                <Text weight="600" size={13} className="text-primary">
+                  {filling ? '채우는 중…' : 'AI로 채우기'}
+                </Text>
+              </Pressable>
+            </View>
             <TextField
               value={title}
               onChangeText={(next) => {
@@ -408,21 +453,6 @@ export default function BucketFormScreen() {
             onFocus={ensureFocusedVisible}
             onPickPlace={openTodoSearch}
           />
-          {title.trim() && todos.length < MAX_TODOS ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ busy: splitting }}
-              disabled={splitting}
-              hitSlop={8}
-              onPress={() => void fillTodos()}
-              className="-mt-3 flex-row items-center gap-1.5 self-start active:opacity-60"
-            >
-              <Icon as={Sparkles} size={14} className="text-primary" />
-              <Text weight="600" size={13} className="text-primary">
-                {splitting ? '할 것을 채우는 중…' : 'AI로 할 것 채우기'}
-              </Text>
-            </Pressable>
-          ) : null}
 
           <ItemPhotosField
             photos={photos}

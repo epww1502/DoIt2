@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Check, ChevronRight } from 'lucide-react-native';
 import {
@@ -132,6 +133,30 @@ export default function SettingsScreen() {
             <PushGroupRows />
             <Separator />
             <WeekendToggleRow />
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl">
+          <CardContent className="p-5">
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/ai-usage')}
+              className="flex-row items-center gap-3 active:opacity-70"
+            >
+              <View className="flex-1 gap-0.5">
+                <Text weight="600" size={16}>
+                  AI 사용량
+                </Text>
+                <Text variant="muted" size={12}>
+                  오늘 AI를 몇 번 더 쓸 수 있는지 봐요
+                </Text>
+              </View>
+              <Icon
+                as={ChevronRight}
+                size={18}
+                className="text-muted-foreground"
+              />
+            </Pressable>
           </CardContent>
         </Card>
 

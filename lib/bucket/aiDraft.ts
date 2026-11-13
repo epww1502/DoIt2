@@ -81,6 +81,60 @@ export function toAiTodoTexts(
   return texts;
 }
 
+/** 'AI로 채우기'의 답: 분류, 카카오에서 찾아볼 장소 이름, 지역, 새로 넣을 할 것 */
+export type AiFill = {
+  /** 종류를 못 골랐으면 null (그대로 둔다) */
+  cls: AiClass | null;
+  /** 카카오 장소 검색에 넣을 이름. 한 곳을 특정하지 못했으면 빈 글자 */
+  placeQuery: string;
+  /** 이름에 드러난 지역. 없으면 빈 글자 */
+  location: string;
+  todos: string[];
+};
+
+const shortText = (v: unknown, max: number) =>
+  typeof v === 'string' ? v.trim().slice(0, max) : '';
+
+export function toAiFill(
+  raw: unknown,
+  existingTodos: string[],
+  room: number
+): AiFill {
+  const { place, location } = record(raw);
+  return {
+    cls: toAiClass(raw),
+    // 카카오 검색어는 50자까지
+    placeQuery: shortText(place, 50),
+    location: shortText(location, 40),
+    todos: toAiTodoTexts(raw, existingTodos, room),
+  };
+}
+
+/** 오늘 쓴 횟수와 하루 한도 */
+export type AiQuota = { used: number; limit: number };
+export type AiUsage = {
+  /** 눌러서 쓰는 기능 (AI로 채우기, 여러 개 담기, 추천) */
+  ai: AiQuota;
+  /** 이름을 쓰면 저절로 되는 카테고리 고르기 */
+  auto: AiQuota;
+};
+
+function toQuota(raw: unknown): AiQuota {
+  const { used, limit } = record(raw);
+  const count = (v: unknown) =>
+    typeof v === 'number' && Number.isFinite(v)
+      ? Math.max(0, Math.floor(v))
+      : 0;
+  const max = count(limit);
+  // 한도를 넘겨 쓴 것으로 와도 남은 횟수가 음수가 되지 않게 한다
+  return { used: Math.min(count(used), max), limit: max };
+}
+
+export function toAiUsage(raw: unknown): AiUsage {
+  const { ai, auto } = record(raw);
+  return { ai: toQuota(ai), auto: toQuota(auto) };
+}
+
 /** 담을 항목을 addItems에 넣을 모양으로 */
 export function draftToInput(draft: AiDraft): BucketInput {
   return { ...draft, location: '', place: null, memo: '' };
