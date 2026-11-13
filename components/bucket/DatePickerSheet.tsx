@@ -330,10 +330,10 @@ function DayGrid({ month, selected, end, max, onSelect }: DayGridProps) {
   const today = dayjs();
   const primary = usePrimaryColor();
   const startKey = selected.format(DATE_FORMAT);
-  const endKey = end ? end.format(DATE_FORMAT) : null;
-  /** 이 줄에서 기간에 들어가는 칸 (첫 칸~끝 칸). 없으면 null */
+  // 하루만 골랐으면 그날 하나짜리 기간으로 본다 (같은 둥근 블록으로 그린다)
+  const endKey = end ? end.format(DATE_FORMAT) : startKey;
+  /** 이 줄에서 고른 날이 들어가는 칸 (첫 칸~끝 칸). 없으면 null */
   const bandOfRow = (row: number) => {
-    if (!endKey) return null;
     let from = -1;
     let to = -1;
     for (let col = 0; col < 7; col++) {
@@ -388,9 +388,7 @@ function DayGrid({ month, selected, end, max, onSelect }: DayGridProps) {
               const disabled = d.isAfter(max);
               const key = d.format(DATE_FORMAT);
               // 기간이면 그 사이 날도 모두 고른 날
-              const isSelected = endKey
-                ? key >= startKey && key <= endKey
-                : key === startKey;
+              const isSelected = key >= startKey && key <= endKey;
               const isToday = d.isSame(today, 'day');
               return (
                 <Pressable
@@ -405,8 +403,7 @@ function DayGrid({ month, selected, end, max, onSelect }: DayGridProps) {
                   <View
                     className={cn(
                       'h-10 w-10 items-center justify-center rounded-full',
-                      // 기간은 뒤의 띠가 칠한다
-                      isSelected && !endKey && 'bg-primary',
+                      // 고른 날의 색은 뒤의 블록이 칠한다
                       !isSelected && isToday && 'border border-primary'
                     )}
                   >
