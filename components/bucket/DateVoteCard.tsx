@@ -38,6 +38,7 @@ import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
 import type { MemberInfo } from '@/store/useMembersStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 /** 날짜 동그라미(h-9 = 36)의 반지름. 이어진 날은 이 높이의 띠로 묶는다 */
@@ -77,6 +78,9 @@ export function DateVoteCard({
   onDraggingChange,
 }: Props) {
   const votes = useDateVotes(spaceId);
+  // 내 표인지는 계정 id로 본다 (멤버 목록을 아직 못 받았어도 내 날이 진하게 보이게)
+  const myId = useSpaceStore((s) => s.userId);
+  const isMe = (userId: string) => userId === myId;
   const updateItem = useBucketStore((s) => s.updateItem);
   const tint = `${usePrimaryColor()}33`;
   const [open, setOpen] = useState(false);
@@ -89,11 +93,9 @@ export function DateVoteCard({
   // 연속되고 되는 사람이 같은 날은 기간으로 묶어서
   const best = bestRuns(tally);
   const voters = voterCount(rows, today);
-  const meId = rows.find((r) => member(r.user_id).isMe)?.user_id;
+  const meId = rows.find((r) => isMe(r.user_id))?.user_id;
   /** 내가 고른 날 (오늘부터) */
-  const myDays = tally
-    .filter((t) => t.users.some((u) => member(u).isMe))
-    .map((t) => t.day);
+  const myDays = tally.filter((t) => t.users.some(isMe)).map((t) => t.day);
   const isAll = (n: number) => memberCount >= 2 && n >= memberCount;
   // 고르는 중인 내 날 (확인을 눌러야 저장된다). null이면 저장된 그대로
   const [draft, setDraft] = useState<string[] | null>(null);
@@ -232,7 +234,7 @@ export function DateVoteCard({
   const isMineShown = (day: string) => (inDrag(day) ? drag!.on : isMineOn(day));
   /** 그 날 되는 다른 사람 수 */
   const othersOn = (day: string) =>
-    (byDay.get(day) ?? []).filter((u) => !member(u).isMe).length;
+    (byDay.get(day) ?? []).filter((u) => !isMe(u)).length;
 
   /**
    * 날 누르기: 안 고른 날이면 그 날을 넣고, 고른 날이면 이어서 고른 기간을 통째로 뺀다
