@@ -324,11 +324,8 @@ export function ItemSocial({
                 }
                 onLongPress={() => setMenuFor(c)}
                 delayLongPress={350}
-                // 내 댓글은 오른쪽에 (사진·말풍선 순서를 뒤집는다)
-                className={cn(
-                  'gap-2.5',
-                  mine ? 'flex-row-reverse' : 'flex-row'
-                )}
+                // 누구 댓글이든 왼쪽부터: 사진, 그 옆에 이름·시간과 글 (말풍선 없이)
+                className="flex-row gap-3"
               >
                 {/* 사진을 누르면 그 사람 프로필 */}
                 <Pressable
@@ -338,15 +335,10 @@ export function ItemSocial({
                   onPress={() => openMemberProfile(c.user_id, mine)}
                   className="active:opacity-70"
                 >
-                  <PersonAvatar imagePath={who.avatarPath} size={28} />
+                  <PersonAvatar imagePath={who.avatarPath} size={32} />
                 </Pressable>
-                <View className={cn('flex-1 gap-1', mine && 'items-end')}>
-                  <View
-                    className={cn(
-                      'items-center gap-2',
-                      mine ? 'flex-row-reverse' : 'flex-row'
-                    )}
-                  >
+                <View className="flex-1 gap-0.5">
+                  <View className="flex-row items-center gap-2">
                     <Text weight="600" size={13}>
                       {/* 내 댓글도 닉네임으로, 옆에 (나) */}
                       {mine ? `${who.nickname} (나)` : who.name}
@@ -356,22 +348,10 @@ export function ItemSocial({
                       {c.edited_at ? ' (수정됨)' : ''}
                     </Text>
                   </View>
-                  <View
-                    className={cn(
-                      'rounded-2xl px-3 py-2',
-                      mine
-                        ? 'self-end rounded-tr-md'
-                        : 'self-start rounded-tl-md bg-accent'
-                    )}
-                    style={
-                      mine ? { backgroundColor: `${primary}1F` } : undefined
-                    }
-                  >
-                    <Text size={14}>{c.body}</Text>
-                  </View>
+                  <Text size={14}>{c.body}</Text>
                   {/* 댓글에 남긴 반응 (누르면 내 반응을 남기거나 뺀다) */}
                   {reactionsOf(c.id).length > 0 ? (
-                    <View className="flex-row flex-wrap gap-1.5">
+                    <View className="mt-1 flex-row flex-wrap gap-1.5">
                       {reactionsOf(c.id).map((rc) => (
                         <Pressable
                           key={rc.emoji}
