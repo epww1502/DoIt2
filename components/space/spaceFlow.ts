@@ -69,6 +69,22 @@ export async function enterSpace(spaceId: string, spaceName: string) {
 }
 
 /**
+ * '나만 보기'를 서버에 백업한다: 개인 공간(이미 있으면 그 공간)에 항목·기록·사진을 올리고 그 공간으로 넘어간다.
+ * 그 뒤로 담는 것은 공간이라 저절로 서버에 저장된다. 실패하면 던지고, '나만 보기'는 그대로 남는다.
+ */
+export async function backupLocal() {
+  const { spaces, createSpace } = useSpaceStore.getState();
+  const space =
+    spaces.find((s) => s.is_personal) ??
+    (await createSpace('나의 공간', SPACE_EMOJIS[0], true));
+  await useBucketStore.getState().moveLocalTo(space.id);
+  await useBucketStore
+    .getState()
+    .switchSpace(space.id)
+    .catch(() => {});
+}
+
+/**
  * 공간에서 나가기 (확인을 받고). 보고 있던 공간이면 '나만 보기'로 돌아간다.
  * 나갔으면 onLeft를 부른다.
  */

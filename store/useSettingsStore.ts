@@ -56,6 +56,9 @@ type SettingsState = {
   /** 일지 맨 위 추억을 '오늘은 그만 보기'로 숨긴 날 (YYYY-MM-DD) */
   memoryHiddenOn: string | null;
   setMemoryHiddenOn: (value: string | null) => void;
+  /** 목록 위의 '백업하기' 안내를 닫았는지 (설정의 백업 줄은 계속 보인다) */
+  backupNudgeDismissed: boolean;
+  dismissBackupNudge: () => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -87,6 +90,8 @@ export const useSettingsStore = create<SettingsState>()(
       setPushEnabled: (pushEnabled) => set({ pushEnabled }),
       memoryHiddenOn: null,
       setMemoryHiddenOn: (memoryHiddenOn) => set({ memoryHiddenOn }),
+      backupNudgeDismissed: false,
+      dismissBackupNudge: () => set({ backupNudgeDismissed: true }),
     }),
     {
       name: 'doit2-settings',
@@ -115,6 +120,7 @@ export const useSettingsStore = create<SettingsState>()(
         weekendReminder: state.weekendReminder,
         pushEnabled: state.pushEnabled,
         memoryHiddenOn: state.memoryHiddenOn,
+        backupNudgeDismissed: state.backupNudgeDismissed,
       }),
     }
   )

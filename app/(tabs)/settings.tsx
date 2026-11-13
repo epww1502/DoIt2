@@ -21,6 +21,7 @@ import {
   Text,
 } from '@/components/atoms';
 import { ScreenHeader } from '@/components/bucket/ScreenHeader';
+import { BackupCard, useBackupOffer } from '@/components/space/BackupCard';
 import { InboxCard } from '@/components/space/InboxCard';
 import { ProfileCard } from '@/components/space/ProfileCard';
 import { SpaceStatusCard } from '@/components/space/SpaceStatusCard';
@@ -80,6 +81,7 @@ export default function SettingsScreen() {
         <InboxCard />
         <ProfileCard />
         <SpaceStatusCard />
+        <SettingsBackup />
         <TrashCard />
 
         <Card className="rounded-2xl">
@@ -166,6 +168,11 @@ export default function SettingsScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+/** '나만 보기'에 하나라도 있으면 백업 줄을 계속 보여준다 (목록 위 안내를 닫았어도) */
+function SettingsBackup() {
+  return useBackupOffer(1) ? <BackupCard /> : null;
 }
 
 /** 테마색 동그라미 지름과 선택 고리 지름 */

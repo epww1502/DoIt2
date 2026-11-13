@@ -44,6 +44,7 @@ import {
   type BucketFilter,
 } from '@/components/bucket/CategoryFilter';
 import { AwaitingReviews } from '@/components/bucket/AwaitingReviews';
+import { BackupCard, useBackupNudge } from '@/components/space/BackupCard';
 import { InProgressSection } from '@/components/bucket/InProgressSection';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import {
@@ -325,9 +326,13 @@ export default function BucketListScreen() {
   ) : undefined;
   // 평가를 기다리는 칸: 목록 맨 위에 넣어 같이 스크롤된다 (고르는 중에는 숨긴다)
   const showAwaiting = !selection.selecting && awaiting.length > 0;
+  // '나만 보기'에 몇 개 쌓였으면 서버에 백업하라고 한 번 권한다
+  const showBackup = useBackupNudge() && !selection.selecting;
+  const dismissBackupNudge = useSettingsStore((s) => s.dismissBackupNudge);
   const awaitingHeader =
-    showAwaiting || inProgress.length > 0 ? (
+    showBackup || showAwaiting || inProgress.length > 0 ? (
       <View className="gap-3">
+        {showBackup ? <BackupCard onDismiss={dismissBackupNudge} /> : null}
         {showAwaiting ? (
           <AwaitingReviews items={awaiting} className="" />
         ) : null}
