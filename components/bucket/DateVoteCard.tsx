@@ -37,6 +37,8 @@ import type { MemberInfo } from '@/store/useMembersStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+/** 날짜 동그라미(h-9 = 36)의 반지름. 이어진 날은 이 높이의 띠로 묶는다 */
+const BAND_HALF = 18;
 /** 몇 달 뒤까지 고를 수 있는지 */
 const MAX_MONTHS_AHEAD = 6;
 /** 날을 정할 때 따로 정한 알림이 없으면 */
@@ -203,6 +205,17 @@ export function DateVoteCard({
       drag.from <= drag.to ? [drag.from, drag.to] : [drag.to, drag.from];
     return day >= a && day <= b;
   };
+  /** 그 날 칸을 어떻게 칠하는지: 내가 되는 날(진하게), 다른 사람만 되는 날(연하게) */
+  const fillOf = (n: number): 'mine' | 'others' | null => {
+    if (n < 1 || n > first.daysInMonth()) return null;
+    const day = first.date(n).format(DATE_FORMAT);
+    if (day < today) return null;
+    const users = byDay.get(day) ?? [];
+    // 끄는 중이면 그 기간은 넣을지/뺄지 미리 보여준다
+    const mine = inDrag(day) ? drag!.on : users.some((u) => member(u).isMe);
+    if (mine) return 'mine';
+    return users.length > 0 ? 'others' : null;
+  };
 
   const canPrev = month.isAfter(thisMonth, 'month');
   const canNext = month.isBefore(
@@ -303,11 +316,14 @@ export function DateVoteCard({
                         const day = first.date(n).format(DATE_FORMAT);
                         const users = byDay.get(day) ?? [];
                         const past = day < today;
-                        // 끄는 중이면 그 기간은 넣을지/뺄지 미리 보여준다
-                        const mine = inDrag(day)
-                          ? drag!.on
-                          : users.some((u) => member(u).isMe);
+                        const fill = fillOf(n);
+                        const mine = fill === 'mine';
                         const all = isAll(users.length);
+                        // 같은 주에서 옆날도 같은 색이면 띠로 이어서 하나처럼 보이게
+                        const joinLeft =
+                          fill !== null && col > 0 && fillOf(n - 1) === fill;
+                        const joinRight =
+                          fill !== null && col < 6 && fillOf(n + 1) === fill;
                         return (
                           <Pressable
                             key={col}
@@ -324,19 +340,39 @@ export function DateVoteCard({
                             }}
                             className="h-12 flex-1 items-center"
                           >
+                            {fill ? (
+                              <View
+                                pointerEvents="none"
+                                className={cn(
+                                  'absolute top-0 h-9',
+                                  mine && 'bg-primary'
+                                )}
+                                style={{
+                                  left: joinLeft ? 0 : '50%',
+                                  right: joinRight ? 0 : '50%',
+                                  marginLeft: joinLeft ? 0 : -BAND_HALF,
+                                  marginRight: joinRight ? 0 : -BAND_HALF,
+                                  borderTopLeftRadius: joinLeft ? 0 : BAND_HALF,
+                                  borderBottomLeftRadius: joinLeft
+                                    ? 0
+                                    : BAND_HALF,
+                                  borderTopRightRadius: joinRight
+                                    ? 0
+                                    : BAND_HALF,
+                                  borderBottomRightRadius: joinRight
+                                    ? 0
+                                    : BAND_HALF,
+                                  backgroundColor: mine ? undefined : tint,
+                                }}
+                              />
+                            ) : null}
                             <View
                               className={cn(
                                 'h-9 w-9 items-center justify-center rounded-full',
-                                mine && 'bg-primary',
                                 day === today &&
-                                  !mine &&
+                                  !fill &&
                                   'border border-primary'
                               )}
-                              style={
-                                !mine && users.length > 0
-                                  ? { backgroundColor: tint }
-                                  : undefined
-                              }
                             >
                               <Text
                                 size={14}
