@@ -85,8 +85,9 @@ export function DateVoteCard({
   const updateItem = useBucketStore((s) => s.updateItem);
   const primary = usePrimaryColor();
   const tint = `${primary}33`;
-  const [open, setOpen] = useState(false);
-  const [month, setMonth] = useState(() => dayjs().startOf('month'));
+  // 펼침·보는 달: 직접 바꾸기 전엔 null (아래에서 고른 날이 있으면 펼치고 그 달부터)
+  const [openPref, setOpen] = useState<boolean | null>(null);
+  const [monthPref, setMonth] = useState<dayjs.Dayjs | null>(null);
 
   const today = todayKey();
   const rows = votes.votesOf(item.id);
@@ -162,6 +163,10 @@ export function DateVoteCard({
   };
 
   // 달력: 이 달 1일이 있는 주부터 말일이 있는 주까지
+  // 고른 날이 있으면 늘 펼쳐서 블록이 보이게 (내 날이 있는 달, 없으면 누군가 고른 달부터)
+  const open = openPref ?? tally.length > 0;
+  const month =
+    monthPref ?? dayjs(myDays[0] ?? tally[0]?.day ?? today).startOf('month');
   const first = month.startOf('month');
   const lead = first.day();
   const weeks = Math.ceil((lead + first.daysInMonth()) / 7);
@@ -307,7 +312,7 @@ export function DateVoteCard({
   /** 접기. 저장 안 한 게 있으면 물어본다 */
   const toggleOpen = () => {
     if (!open || !dirty) {
-      setOpen((v) => !v);
+      setOpen(!open);
       return;
     }
     askUnsaved(() => setOpen(false));
@@ -362,7 +367,7 @@ export function DateVoteCard({
               accessibilityLabel="이전 달"
               disabled={!canPrev}
               hitSlop={8}
-              onPress={() => setMonth((m) => m.subtract(1, 'month'))}
+              onPress={() => setMonth(month.subtract(1, 'month'))}
               className={cn('p-1 active:opacity-60', !canPrev && 'opacity-30')}
             >
               <Icon as={ChevronLeft} size={20} className="text-foreground" />
@@ -375,7 +380,7 @@ export function DateVoteCard({
               accessibilityLabel="다음 달"
               disabled={!canNext}
               hitSlop={8}
-              onPress={() => setMonth((m) => m.add(1, 'month'))}
+              onPress={() => setMonth(month.add(1, 'month'))}
               className={cn('p-1 active:opacity-60', !canNext && 'opacity-30')}
             >
               <Icon as={ChevronRight} size={20} className="text-foreground" />
