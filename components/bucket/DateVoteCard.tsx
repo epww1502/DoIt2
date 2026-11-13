@@ -50,6 +50,7 @@ const DEFAULT_REMIND: GoalRemind[] = ['week', 'day'];
 /** 달력 한 주 줄 높이(h-12 = 48) + 줄 사이 간격(gap-1 = 4) */
 const ROW_PITCH = 52;
 const NO_STYLE = {};
+const NO_EDITS = { add: [], remove: [] };
 /** 꾹 누르고 있어야 끌어서 고르기가 시작된다 (그냥 끌면 화면 스크롤) */
 const DRAG_HOLD_MS = 250;
 
@@ -82,7 +83,8 @@ export function DateVoteCard({
   const myId = useSpaceStore((s) => s.userId);
   const isMe = (userId: string) => userId === myId;
   const updateItem = useBucketStore((s) => s.updateItem);
-  const tint = `${usePrimaryColor()}33`;
+  const primary = usePrimaryColor();
+  const tint = `${primary}33`;
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(() => dayjs().startOf('month'));
 
@@ -97,14 +99,21 @@ export function DateVoteCard({
   /** 내가 고른 날 (오늘부터) */
   const myDays = tally.filter((t) => t.users.some(isMe)).map((t) => t.day);
   const isAll = (n: number) => memberCount >= 2 && n >= memberCount;
-  // 고르는 중인 내 날 (확인을 눌러야 저장된다). null이면 저장된 그대로
-  const [draft, setDraft] = useState<string[] | null>(null);
+  // 고르는 중에 넣은 날·뺀 날 (확인을 눌러야 저장된다).
+  // 저장된 내 날을 통째로 들고 있지 않고 바꾼 것만 들고 있어서, 저장된 날이 늦게 와도 그대로 보인다
+  const [edits, setEdits] = useState<{ add: string[]; remove: string[] }>(
+    NO_EDITS
+  );
   const [saving, setSaving] = useState(false);
-  const shownMine = new Set(draft ?? myDays);
   const savedMine = new Set(myDays);
-  const toAdd = [...shownMine].filter((d) => !savedMine.has(d));
-  const toRemove = myDays.filter((d) => !shownMine.has(d));
+  const toAdd = edits.add.filter((d) => !savedMine.has(d));
+  const toRemove = edits.remove.filter((d) => savedMine.has(d));
+  const removing = new Set(toRemove);
+  const shownMine = new Set(
+    [...myDays, ...toAdd].filter((d) => !removing.has(d))
+  );
   const dirty = toAdd.length + toRemove.length > 0;
+  const resetEdits = () => setEdits(NO_EDITS);
 
   const subtitle = (() => {
     if (voters > 0) {
@@ -169,13 +178,19 @@ export function DateVoteCard({
   const isMineOn = (day: string) => shownMine.has(day);
   /** 고르는 중인 날에 넣거나 뺀다 (아직 저장하지 않는다) */
   const changeDays = (days: string[], on: boolean) =>
-    setDraft((prev) => {
-      const next = new Set(prev ?? myDays);
+    setEdits((prev) => {
+      const add = new Set(prev.add);
+      const remove = new Set(prev.remove);
       for (const d of days) {
-        if (on) next.add(d);
-        else next.delete(d);
+        if (on) {
+          add.add(d);
+          remove.delete(d);
+        } else {
+          add.delete(d);
+          remove.add(d);
+        }
       }
-      return [...next].sort();
+      return { add: [...add].sort(), remove: [...remove].sort() };
     });
   /** 달력 안 손가락 위치의 날 (빈칸·지난 날이면 null) */
   const dayAt = (x: number, y: number) => {
@@ -223,11 +238,13 @@ export function DateVoteCard({
     return day >= a && day <= b;
   };
   /** 그 날 칸을 어떻게 칠하는지: 내가 되는 날(진하게), 다른 사람만 되는 날(연하게) */
-  const fillOf = (n: number): 'mine' | 'others' | null => {
+  const fillOf = (n: number): 'mine' | 'leaving' | 'others' | null => {
     if (n < 1 || n > first.daysInMonth()) return null;
     const day = first.date(n).format(DATE_FORMAT);
     if (day < today) return null;
     if (isMineShown(day)) return 'mine';
+    // 저장된 내 날인데 이번에 빼는 중: 확인 전까지 테두리로 남겨 둔다
+    if (savedMine.has(day)) return 'leaving';
     return othersOn(day) > 0 ? 'others' : null;
   };
   /** 지금 보여줄 내 선택 (끄는 중이면 그 기간은 넣을지/뺄지 미리) */
@@ -256,7 +273,7 @@ export function DateVoteCard({
       added && (await votes.setDays(item.id, toRemove, false, memberCount));
     setSaving(false);
     if (added && removed) {
-      setDraft(null);
+      resetEdits();
       hapticSuccess();
       return true;
     }
@@ -272,7 +289,7 @@ export function DateVoteCard({
         text: '나가기',
         style: 'destructive',
         onPress: () => {
-          setDraft(null);
+          resetEdits();
           leave();
         },
       },
@@ -335,7 +352,7 @@ export function DateVoteCard({
         <View className="gap-3">
           <Text variant="muted" size={12}>
             {
-              '되는 날을 누르거나 꾹 누른 채 끌어 기간을 골라요. 고른 기간을 다시 누르면 통째로 빠져요. 다 고르면 확인을 눌러요. 진한 칸은 나, 연한 칸은 다른 사람이 되는 날이에요'
+              '되는 날을 누르거나 꾹 누른 채 끌어 기간을 골라요. 고른 기간을 다시 누르면 통째로 빠져요. 다 고르면 확인을 눌러요. 진한 칸은 나, 연한 칸은 다른 사람이 되는 날이에요. 테두리만 남은 칸은 확인을 누르면 빠질 내 날이에요'
             }
           </Text>
 
@@ -397,6 +414,7 @@ export function DateVoteCard({
                         const past = day < today;
                         const fill = fillOf(n);
                         const mine = fill === 'mine';
+                        const leaving = fill === 'leaving';
                         const count = othersOn(day) + (mine ? 1 : 0);
                         const all = isAll(count);
                         // 같은 주에서 옆날도 같은 색이면 띠로 이어서 하나처럼 보이게
@@ -439,7 +457,20 @@ export function DateVoteCard({
                                   borderBottomRightRadius: joinRight
                                     ? 0
                                     : BAND_HALF,
-                                  backgroundColor: mine ? undefined : tint,
+                                  backgroundColor: mine
+                                    ? undefined
+                                    : leaving
+                                      ? 'transparent'
+                                      : tint,
+                                  ...(leaving
+                                    ? {
+                                        borderColor: primary,
+                                        borderTopWidth: 1.5,
+                                        borderBottomWidth: 1.5,
+                                        borderLeftWidth: joinLeft ? 0 : 1.5,
+                                        borderRightWidth: joinRight ? 0 : 1.5,
+                                      }
+                                    : null),
                                 }}
                               />
                             ) : null}
@@ -493,6 +524,17 @@ export function DateVoteCard({
               내가 되는 날 · {rangeLabels([...shownMine]).join(', ')}
             </Text>
           ) : null}
+          {dirty ? (
+            <Text size={12} className="text-primary">
+              {[
+                toAdd.length ? `넣을 날 ${toAdd.length}일` : '',
+                toRemove.length ? `뺄 날 ${toRemove.length}일` : '',
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              {' · 확인을 눌러야 저장돼요'}
+            </Text>
+          ) : null}
 
           {dirty ? (
             <View className="flex-row gap-2">
@@ -502,7 +544,7 @@ export function DateVoteCard({
                 size="md"
                 className="flex-1"
                 disabled={saving}
-                onPress={() => setDraft(null)}
+                onPress={() => resetEdits()}
               />
               <Button
                 label={saving ? '저장 중…' : '확인'}
