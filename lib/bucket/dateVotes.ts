@@ -103,3 +103,22 @@ export function runLabel(from: string, to: string) {
   const sameMonth = dayjs(from).isSame(end, 'month');
   return `${voteDayLabel(from)} ~ ${end.format(sameMonth ? 'D일 (dd)' : 'M월 D일 (dd)')}`;
 }
+
+/** 고른 날들 중 day와 이어진 날 전부 (앞뒤로 하루씩 붙은 날). day가 없으면 빈 목록 */
+export function runAround(days: Iterable<string>, day: string): string[] {
+  const set = new Set(days);
+  if (!set.has(day)) return [];
+  let from = day;
+  let to = day;
+  for (let d = dayjs(day).subtract(1, 'day'); ; d = d.subtract(1, 'day')) {
+    const key = d.format('YYYY-MM-DD');
+    if (!set.has(key)) break;
+    from = key;
+  }
+  for (let d = dayjs(day).add(1, 'day'); ; d = d.add(1, 'day')) {
+    const key = d.format('YYYY-MM-DD');
+    if (!set.has(key)) break;
+    to = key;
+  }
+  return daysBetween(from, to, from);
+}

@@ -22,6 +22,7 @@ import {
   bestRuns,
   daysBetween,
   rangeLabels,
+  runAround,
   runLabel,
   tallyDays,
   voteDayLabel,
@@ -217,6 +218,20 @@ export function DateVoteCard({
     return users.length > 0 ? 'others' : null;
   };
 
+  /**
+   * 날 누르기: 안 고른 날이면 그 날을 넣고, 고른 날이면 이어서 고른 기간을 통째로 뺀다
+   * (하루만 빼려면 꾹 누른 채 그 날만 끌면 된다)
+   */
+  const pressDay = (day: string) => {
+    hapticSelect();
+    if (!isMineOn(day)) {
+      void votes.toggle(item.id, day, memberCount);
+      return;
+    }
+    const mineDays = [...byDay.keys()].filter(isMineOn);
+    void votes.setDays(item.id, runAround(mineDays, day), false, memberCount);
+  };
+
   const canPrev = month.isAfter(thisMonth, 'month');
   const canNext = month.isBefore(
     thisMonth.add(MAX_MONTHS_AHEAD, 'month'),
@@ -255,8 +270,9 @@ export function DateVoteCard({
       {open ? (
         <View className="gap-3">
           <Text variant="muted" size={12}>
-            내가 되는 날을 눌러요. 다시 누르면 빠져요. 꾹 누른 채 끌면 기간을 한
-            번에 골라요. 숫자는 되는 사람 수예요
+            {
+              '내가 되는 날을 눌러요. 꾹 누른 채 끌면 기간을 한 번에 골라요. 고른 날을 다시 누르면 이어진 기간이 통째로 빠져요. 숫자는 되는 사람 수예요'
+            }
           </Text>
 
           <View className="flex-row items-center justify-between">
@@ -334,10 +350,7 @@ export function DateVoteCard({
                               disabled: past,
                             }}
                             disabled={past}
-                            onPress={() => {
-                              hapticSelect();
-                              void votes.toggle(item.id, day, memberCount);
-                            }}
+                            onPress={() => pressDay(day)}
                             className="h-12 flex-1 items-center"
                           >
                             {fill ? (
