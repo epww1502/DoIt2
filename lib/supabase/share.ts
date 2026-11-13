@@ -72,7 +72,13 @@ export async function getSharedList(code: string): Promise<SharedList | null> {
   const { data, error } = await supabase.rpc('get_shared_list', {
     share_code: code,
   });
-  if (error) throw new Error('불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+  if (error) {
+    throw new Error(
+      error.message.includes('too_many_attempts')
+        ? '코드를 여러 번 틀렸어요. 1시간쯤 뒤에 다시 시도해주세요.'
+        : '불러오지 못했어요. 잠시 후 다시 시도해주세요.'
+    );
+  }
   const row = data?.[0];
   if (!row) return null;
   const items = (row.items as unknown as Partial<BucketInput>[])

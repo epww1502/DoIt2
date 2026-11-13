@@ -245,6 +245,76 @@ export async function upsertItems(
   }
 }
 
+/** 항목에서 따로 고칠 수 있는 칸 (앱의 칸 이름과 서버 열 이름이 같다). 할 것은 withTodos로 따로 정한다 */
+const PATCHABLE = new Set([
+  'kind',
+  'title',
+  'category',
+  'setting',
+  'location',
+  'place',
+  'memo',
+  'photos',
+  'links',
+  'done',
+  'goal',
+  'repeat',
+  'started',
+]);
+
+/** 올릴 행에서 바뀐 칸만 남긴다 (모르는 칸 이름은 무시). withTodos면 할 것도 넣는다 */
+export function pickRowFields(
+  row: Record<string, unknown>,
+  fields: string[],
+  withTodos: boolean
+) {
+  const patch: Record<string, unknown> = {};
+  for (const field of fields) {
+    if (PATCHABLE.has(field)) patch[field] = row[field];
+  }
+  if (withTodos) patch.todos = row.todos;
+  return patch;
+}
+
+/**
+ * 이미 서버에 있는 항목에서 바뀐 칸만 고친다. 통째로 덮어쓰지 않아서,
+ * 그 사이 다른 사람이 바꾼 칸(상대가 남긴 기록·사진)이 예전 값으로 돌아가지 않는다.
+ * 그 사이 서버에서 지워진 항목은 되살리지 않는다 (고칠 행이 없으면 아무 일도 없다).
+ */
+export async function updateItemFields(
+  item: BucketItem,
+  spaceId: string,
+  fields: string[],
+  withTodos: boolean
+) {
+  const patch = pickRowFields(
+    toRow(item, spaceId, true) as Record<string, unknown>,
+    fields,
+    withTodos
+  );
+  if (Object.keys(patch).length === 0) return;
+  const { error } = await supabase
+    .from('bucket_items')
+    .update(patch as Partial<ItemInsert>)
+    .eq('id', item.id)
+    .eq('space_id', spaceId);
+  if (error) throw error;
+}
+
+/** 서버에서 받은 항목 위에, 아직 안 올라간 내 변경(그 칸들)만 얹는다 */
+export function overlayFields(
+  server: BucketItem,
+  mine: BucketItem,
+  fields: string[]
+): BucketItem {
+  const next = { ...server } as Record<string, unknown>;
+  const local = mine as unknown as Record<string, unknown>;
+  for (const field of fields) {
+    if (PATCHABLE.has(field) || field === 'todos') next[field] = local[field];
+  }
+  return next as unknown as BucketItem;
+}
+
 /** 할 것 체크·추가를 서버의 지금 목록에 반영한다 */
 export async function applyTodoOps(itemId: string, ops: TodoOp[]) {
   if (ops.length === 0) return;

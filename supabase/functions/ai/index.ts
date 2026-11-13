@@ -17,7 +17,7 @@
 // - { action: 'usage' }                           오늘 쓴 횟수와 한도 (횟수에 들어가지 않는다)
 //                                                  → { ai: { used, limit }, auto: { used, limit } }
 //
-// 하루 한도(한국 날짜)를 넘으면 429 { error: 'limit' }.
+// 하루 한도(한국 날짜)를 넘으면 429 { error: 'limit' }. 한 사람 한도와 모든 사람 합계 한도가 있다.
 // 답의 모양은 앱(lib/bucket/aiDraft.ts)이 한 번 더 걸러서 쓴다.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Anthropic from 'npm:@anthropic-ai/sdk';
@@ -28,6 +28,11 @@ const MODEL = 'claude-haiku-5-5';
 const DAILY_LIMIT = 20;
 /** 담을 때 저절로 되는 분류의 하루 횟수 */
 const DAILY_AUTO_LIMIT = 60;
+/**
+ * 모든 사람이 합쳐서 하루에 쓸 수 있는 횟수. 한 사람 한도는 익명 계정을 새로 만들면 피할 수 있어서,
+ * 누가 그렇게 해도 하루 요금이 이 횟수만큼에서 멈추게 한다. 쓰는 사람이 늘면 올린다.
+ */
+const GLOBAL_DAILY_LIMIT = 2000;
 
 const MAX_TITLE = 40;
 const MAX_TEXT = 500;
@@ -296,6 +301,13 @@ Deno.serve(async (req: Request) => {
   const job = toJob(body ?? {});
   if (!job) return json({ error: 'invalid_request' }, 400);
 
+  const { data: usedToday, error: totalError } =
+    await admin.rpc('ai_used_today');
+  if (totalError) return json({ error: 'usage_failed' }, 500);
+  if ((usedToday ?? 0) >= GLOBAL_DAILY_LIMIT) {
+    return json({ error: 'limit' }, 429);
+  }
+
   // ponytail: Claude를 부르기 전에 센다 (실패한 요청도 횟수에 들어간다).
   // 한도가 넉넉해서 괜찮고, 실패를 되돌려 주려면 여기서 올린 횟수를 다시 내리면 된다.
   const { data: allowed, error: usageError } = await admin.rpc('use_ai', {
@@ -309,7 +321,8 @@ Deno.serve(async (req: Request) => {
   try {
     const response = await new Anthropic({ apiKey }).messages.create({
       model: MODEL,
-      max_tokens: 4000,
+      // 답은 짧다 (항목 몇 개). 길게 뽑아 쓰지 못하게 넉넉한 선에서 막는다
+      max_tokens: 2000,
       system: job.system,
       messages: [{ role: 'user', content: job.user }],
       output_config: {

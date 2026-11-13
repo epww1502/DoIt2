@@ -26,6 +26,12 @@ export type OutboxEntry = {
   rev: number;
   /** upsert: 할 것 목록도 통째로 올릴지 (새 항목이거나 수정 화면에서 바꿨을 때만) */
   withTodos?: boolean;
+  /**
+   * upsert: 바뀐 칸들 (title, memo, done ...). 올릴 때 이 칸만 고쳐서, 그 사이 다른 사람이 바꾼
+   * 다른 칸(예: 상대가 남긴 기록)을 예전 값으로 덮어쓰지 않는다.
+   * 없으면 항목을 통째로 올린다 (새로 담은 항목, 예전 앱이 적어 둔 변경).
+   */
+  fields?: string[];
   /** todo: 아직 안 올라간 할 것 변경들 (차례대로) */
   todoOps?: TodoOp[];
 };
@@ -36,11 +42,13 @@ type OutboxState = {
   /** 서버에서 지워야 할 사진 경로 */
   photoPaths: string[];
 
+  /** fields: 바뀐 칸들. 안 주면 통째로 올린다 (새 항목) */
   queueUpsert: (
     spaceId: string,
     itemIds: string[],
     notify?: 'added' | 'done',
-    withTodos?: boolean
+    withTodos?: boolean,
+    fields?: string[]
   ) => void;
   /** 할 것 체크·추가를 적어둔다 */
   queueTodoOps: (spaceId: string, itemId: string, ops: TodoOp[]) => void;
@@ -74,7 +82,7 @@ export const useOutboxStore = create<OutboxState>()(
       entries: {},
       photoPaths: [],
 
-      queueUpsert: (spaceId, itemIds, notify, withTodos) => {
+      queueUpsert: (spaceId, itemIds, notify, withTodos, fields) => {
         if (itemIds.length === 0) return;
         const entries = { ...get().entries };
         for (const itemId of itemIds) {
@@ -88,6 +96,13 @@ export const useOutboxStore = create<OutboxState>()(
             notify: prev?.notify ?? notify,
             // 앞서 할 것까지 올리기로 했으면 그대로 둔다
             withTodos: Boolean(prev?.withTodos || withTodos),
+            // 통째로 올리기로 한 변경(새 항목)이 아직 안 올라갔으면 계속 통째로, 아니면 바뀐 칸을 모은다
+            fields:
+              prev?.op === 'upsert'
+                ? prev.fields && fields
+                  ? [...new Set([...prev.fields, ...fields])]
+                  : undefined
+                : fields,
             rev: nextRev++,
           };
         }
@@ -196,6 +211,8 @@ export const useOutboxStore = create<OutboxState>()(
 /** 이 공간에서 아직 안 올라간 항목 id들 */
 export function pendingFor(spaceId: string) {
   const upserts = new Set<string>();
+  /** 바뀐 칸만 올릴 항목의 그 칸들 (여기 없는 upsert는 통째로 올린다) */
+  const upsertFields = new Map<string, string[]>();
   const deletes = new Set<string>();
   /** 내 평가가 아직 안 올라간 항목 */
   const reviews = new Set<string>();
@@ -203,12 +220,19 @@ export function pendingFor(spaceId: string) {
   const todoOps = new Map<string, TodoOp[]>();
   for (const e of Object.values(useOutboxStore.getState().entries)) {
     if (e.spaceId !== spaceId) continue;
-    if (e.op === 'upsert') upserts.add(e.itemId);
-    else if (e.op === 'delete') deletes.add(e.itemId);
+    if (e.op === 'upsert') {
+      upserts.add(e.itemId);
+      if (e.fields) {
+        upsertFields.set(
+          e.itemId,
+          e.withTodos ? [...e.fields, 'todos'] : e.fields
+        );
+      }
+    } else if (e.op === 'delete') deletes.add(e.itemId);
     else if (e.op === 'todo') todoOps.set(e.itemId, e.todoOps ?? []);
     else reviews.add(e.itemId);
   }
-  return { upserts, deletes, reviews, todoOps };
+  return { upserts, upsertFields, deletes, reviews, todoOps };
 }
 
 /** 아직 안 올라간 변경 개수 (안내 띠에 보여준다) */

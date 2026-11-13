@@ -55,6 +55,7 @@ type SpaceState = {
 
 const RPC_ERRORS: Record<string, string> = {
   invalid_code: '초대 코드가 맞지 않아요. 다시 확인해주세요.',
+  too_many_attempts: '코드를 여러 번 틀렸어요. 1시간쯤 뒤에 다시 시도해주세요.',
   space_full: `이미 ${MAX_SPACE_MEMBERS}명이 꽉 찬 공간이에요.`,
   too_many_spaces: '공간은 20개까지 들어갈 수 있어요.',
   personal_space: '개인 공간이라 들어갈 수 없어요.',
