@@ -242,13 +242,11 @@ export function DateVoteCard({
     return day >= a && day <= b;
   };
   /** 그 날 칸을 어떻게 칠하는지: 내가 되는 날(진하게), 다른 사람만 되는 날(연하게) */
-  const fillOf = (n: number): 'mine' | 'leaving' | 'others' | null => {
+  const fillOf = (n: number): 'mine' | 'others' | null => {
     if (n < 1 || n > first.daysInMonth()) return null;
     const day = first.date(n).format(DATE_FORMAT);
     if (day < today) return null;
     if (isMineShown(day)) return 'mine';
-    // 저장된 내 날인데 이번에 빼는 중: 확인 전까지 테두리로 남겨 둔다
-    if (savedMine.has(day)) return 'leaving';
     return othersOn(day) > 0 ? 'others' : null;
   };
   /** 지금 보여줄 내 선택 (끄는 중이면 그 기간은 넣을지/뺄지 미리) */
@@ -352,7 +350,7 @@ export function DateVoteCard({
         <View className="gap-3">
           <Text variant="muted" size={12}>
             {
-              '되는 날을 누르거나 꾹 누른 채 끌어 기간을 골라요. 고른 날을 다시 누르면 그 날만 빠져요. 다 고르면 확인을 눌러요. 진한 칸은 나, 연한 칸은 다른 사람이 되는 날이에요. 테두리만 남은 칸은 확인을 누르면 빠질 내 날이에요'
+              '되는 날을 누르거나 꾹 누른 채 끌어 기간을 골라요. 고른 날을 다시 누르면 그 날만 빠져요. 다 고르면 확인을 눌러요. 진한 칸은 나, 연한 칸은 다른 사람이 되는 날이에요.'
             }
           </Text>
 
@@ -414,7 +412,6 @@ export function DateVoteCard({
                         const past = day < today;
                         const fill = fillOf(n);
                         const mine = fill === 'mine';
-                        const leaving = fill === 'leaving';
                         const count = othersOn(day) + (mine ? 1 : 0);
                         const all = isAll(count);
                         // 같은 주에서 옆날도 같은 색이면 띠로 이어서 하나처럼 보이게
@@ -455,20 +452,7 @@ export function DateVoteCard({
                                     ? 0
                                     : BAND_HALF,
                                   // 색은 style로만 준다 (className의 bg와 같이 쓰면 style의 undefined가 덮어써서 안 칠해진다)
-                                  backgroundColor: mine
-                                    ? primary
-                                    : leaving
-                                      ? 'transparent'
-                                      : tint,
-                                  ...(leaving
-                                    ? {
-                                        borderColor: primary,
-                                        borderTopWidth: 1.5,
-                                        borderBottomWidth: 1.5,
-                                        borderLeftWidth: joinLeft ? 0 : 1.5,
-                                        borderRightWidth: joinRight ? 0 : 1.5,
-                                      }
-                                    : null),
+                                  backgroundColor: mine ? primary : tint,
                                 }}
                               />
                             ) : null}
