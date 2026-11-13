@@ -366,7 +366,7 @@ function DayGrid({ month, selected, end, max, onSelect }: DayGridProps) {
         const band = bandOfRow(row);
         return (
           <View key={row} className="flex-row">
-            {/* 기간은 줄마다 연한 띠 한 조각으로 (칸마다 그리면 사이에 실선이 보인다) */}
+            {/* 기간은 '같이 갈 날'처럼 줄마다 진한 띠 한 조각으로 (칸마다 그리면 사이에 실선이 보인다) */}
             {band ? (
               <View
                 pointerEvents="none"
@@ -379,15 +379,18 @@ function DayGrid({ month, selected, end, max, onSelect }: DayGridProps) {
                   marginLeft: -BAND_HALF,
                   marginRight: -BAND_HALF,
                   borderRadius: BAND_HALF,
-                  backgroundColor: `${primary}33`,
+                  backgroundColor: primary,
                 }}
               />
             ) : null}
             {days.slice(row * 7, row * 7 + 7).map((d) => {
               const inMonth = d.month() === month.month();
               const disabled = d.isAfter(max);
-              const isSelected =
-                d.isSame(selected, 'day') || (!!end && d.isSame(end, 'day'));
+              const key = d.format(DATE_FORMAT);
+              // 기간이면 그 사이 날도 모두 고른 날
+              const isSelected = endKey
+                ? key >= startKey && key <= endKey
+                : key === startKey;
               const isToday = d.isSame(today, 'day');
               return (
                 <Pressable
@@ -402,7 +405,8 @@ function DayGrid({ month, selected, end, max, onSelect }: DayGridProps) {
                   <View
                     className={cn(
                       'h-10 w-10 items-center justify-center rounded-full',
-                      isSelected && 'bg-primary',
+                      // 기간은 뒤의 띠가 칠한다
+                      isSelected && !endKey && 'bg-primary',
                       !isSelected && isToday && 'border border-primary'
                     )}
                   >
