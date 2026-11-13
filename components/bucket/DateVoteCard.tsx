@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { usePreventRemove } from 'expo-router';
 import {
   CalendarDays,
   ChevronDown,
@@ -244,8 +245,9 @@ export function DateVoteCard({
   };
 
   /** 확인: 고른 날을 저장한다 (넣은 날·뺀 날만 서버에) */
-  const save = async () => {
-    if (!dirty || saving) return;
+  const save = async (): Promise<boolean> => {
+    if (!dirty) return true;
+    if (saving) return false;
     setSaving(true);
     const added = await votes.setDays(item.id, toAdd, true, memberCount);
     const removed =
@@ -254,10 +256,34 @@ export function DateVoteCard({
     if (added && removed) {
       setDraft(null);
       hapticSuccess();
-    } else {
-      showErrorAlert('저장하지 못했어요', null, () => void save());
+      return true;
     }
+    showErrorAlert('저장하지 못했어요', null, () => void save());
+    return false;
   };
+
+  /** 저장 안 한 날이 있을 때 묻는다: 그대로 있기 / 저장 안 하고 나가기 / 저장하고 나가기 */
+  const askUnsaved = (leave: () => void) =>
+    showAlert('바꾼 날을 저장할까요?', '저장해야 다른 사람에게 보여요.', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '나가기',
+        style: 'destructive',
+        onPress: () => {
+          setDraft(null);
+          leave();
+        },
+      },
+      {
+        text: '저장하기',
+        onPress: async () => {
+          if (await save()) leave();
+        },
+      },
+    ]);
+
+  // 저장 안 하고 항목 화면을 나가려 하면(뒤로·밀어서 닫기) 물어본다
+  usePreventRemove(dirty, ({ repeat }) => askUnsaved(repeat));
 
   /** 접기. 저장 안 한 게 있으면 물어본다 */
   const toggleOpen = () => {
@@ -265,23 +291,7 @@ export function DateVoteCard({
       setOpen((v) => !v);
       return;
     }
-    showAlert('고른 날을 저장할까요?', '확인을 눌러야 다른 사람에게 보여요.', [
-      {
-        text: '버리기',
-        style: 'destructive',
-        onPress: () => {
-          setDraft(null);
-          setOpen(false);
-        },
-      },
-      {
-        text: '저장',
-        onPress: async () => {
-          await save();
-          setOpen(false);
-        },
-      },
-    ]);
+    askUnsaved(() => setOpen(false));
   };
 
   const canPrev = month.isAfter(thisMonth, 'month');
