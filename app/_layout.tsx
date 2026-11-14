@@ -154,6 +154,7 @@ function RootLayoutInner() {
           <Stack.Screen name="done/map" />
           <Stack.Screen name="done/stats" />
           <Stack.Screen name="done/year" />
+          <Stack.Screen name="done/share-web" />
           <Stack.Screen name="done/photos" />
           <Stack.Screen
             name="share/[id]"

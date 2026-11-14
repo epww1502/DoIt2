@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>돌아보기 · DoIt2</title>
+    <meta name="robots" content="noindex" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="description" content="DoIt2로 함께 해낸 한 해를 돌아봐요" />
+    <meta property="og:title" content="한 해 돌아보기 · DoIt2" />
+    <meta
+      property="og:description"
+      content="같이 하고 싶은 걸 담고, 함께한 걸 기록해요"
+    />
+    <meta property="og:image" content="https://doit2app.github.io/icon.png" />
+    <meta name="theme-color" content="#5ab0ff" />
+    <link rel="icon" href="icon.png" />
+    <link rel="stylesheet" href="landing.css" />
+  </head>
+  <body>
+    <!--
+      추억 공유 링크: memories.html?t=공유 id
+      앱의 '웹 링크로 공유하기'로 만든 한 해 돌아보기를 보여준다 (supabase get_shared_memory).
+      내용은 만든 사람이 올린 글자라 모두 글자로만 넣는다 (textContent).
+    -->
+    <main class="mem">
+      <div class="mem-top">
+        <a class="logo" href="./"><img src="icon.png" alt="" />DoIt2</a>
+      </div>
+
+      <p id="loading" class="muted" style="text-align: center; padding: 60px 0">
+        불러오는 중…
+      </p>
+
+      <div id="bad" class="join" hidden>
+        <div class="invite">
+          <div class="emoji">🤔</div>
+          <p class="name" id="bad-title">링크가 꺼졌거나 올바르지 않아요</p>
+          <p class="muted" id="bad-text" style="margin-top: 8px">
+            링크를 보낸 분께 다시 물어봐 주세요.
+          </p>
+        </div>
+        <a class="btn block" href="./">DoIt2 알아보기</a>
+      </div>
+
+      <div id="ok" hidden>
+        <div class="mem-hero">
+          <p class="owner" id="owner"></p>
+          <h1 id="headline"></h1>
+          <p class="days" id="days"></p>
+        </div>
+
+        <div class="mem-sec">
+          <div class="stats">
+            <div class="stat"><b id="places"></b><span>가본 곳</span></div>
+            <div class="stat"><b id="activities"></b><span>해본 것</span></div>
+            <div class="stat"><b id="rating"></b><span>평균 별점</span></div>
+          </div>
+        </div>
+
+        <section class="mem-sec" id="photos-sec" hidden>
+          <h2>올해의 순간들</h2>
+          <div class="photos" id="photos"></div>
+        </section>
+
+        <section class="mem-sec" id="best-sec" hidden>
+          <h2>별점이 높았던 기록</h2>
+          <div id="best"></div>
+        </section>
+
+        <section class="mem-sec">
+          <h2>달마다 이만큼</h2>
+          <div class="chart">
+            <div class="bars" id="bars"></div>
+            <div class="axis" id="axis"></div>
+            <div class="facts" id="facts"></div>
+          </div>
+        </section>
+
+        <div class="mem-sec">
+          <div class="mem-cta">
+            <b>우리도 이런 기록 남겨볼까요?</b>
+            <p class="muted" style="font-size: 13px; margin-top: 4px">
+              같이 하고 싶은 걸 담고, 함께한 걸 기록해요
+            </p>
+            <a class="btn block" href="./">DoIt2 알아보기</a>
+          </div>
+        </div>
+
+        <p class="mem-foot">
+          이 페이지는 DoIt2를 쓰는 분이 직접 만들어 공유한 것이에요.<br />
+          문의·신고:
+          <a href="mailto:doit2team@gmail.com">doit2team@gmail.com</a>
+        </p>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        // 공개용 값이다 (앱에도 들어 있다). 데이터 보호는 서버의 RLS·함수가 한다
+        var API = 'https://obnxkudefzexhooxllkn.supabase.co';
+        var KEY = 'sb_publishable_zGb8zul9HEABFYBGSd6XvA_5aLlOQCg';
+        var UUID =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+        var FILE = /^([0-9]|1[01])\.jpg$/;
+
+        var $ = function (id) {
+          return document.getElementById(id);
+        };
+        var el = function (tag, className, text) {
+          var node = document.createElement(tag);
+          if (className) node.className = className;
+          if (text !== undefined) node.textContent = text;
+          return node;
+        };
+        var text = function (value, max) {
+          return typeof value === 'string' ? value.trim().slice(0, max) : '';
+        };
+        var count = function (value) {
+          var n = Math.floor(Number(value));
+          return n > 0 && n < 100000 ? n : 0;
+        };
+        /** '2026-10-18' → '10월 18일' */
+        var day = function (value) {
+          var m = /^\d{4}-(\d{2})-(\d{2})$/.exec(text(value, 10));
+          return m ? Number(m[1]) + '월 ' + Number(m[2]) + '일' : '';
+        };
+        var fail = function (title, message) {
+          $('loading').hidden = true;
+          if (title) $('bad-title').textContent = title;
+          if (message) $('bad-text').textContent = message;
+          $('bad').hidden = false;
+        };
+
+        var id = (new URLSearchParams(location.search).get('t') || '')
+          .trim()
+          .toLowerCase();
+        if (!UUID.test(id)) return fail();
+
+        fetch(API + '/rest/v1/rpc/get_shared_memory', {
+          method: 'POST',
+          headers: { apikey: KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ share_id: id }),
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error('http ' + res.status);
+            return res.json();
+          })
+          .then(function (row) {
+            if (!row || typeof row.payload !== 'object' || !row.payload) {
+              return fail();
+            }
+            render(row);
+          })
+          .catch(function () {
+            fail(
+              '불러오지 못했어요',
+              '인터넷 연결을 확인하고 다시 열어주세요.'
+            );
+          });
+
+        function render(row) {
+          var p = row.payload;
+          var year = count(row.year);
+          var total = count(p.total);
+          var space = text(p.space, 40);
+          var emoji = Array.from(text(p.emoji, 16)).slice(0, 8).join('');
+
+          $('owner').textContent = space
+            ? (emoji ? emoji + ' ' : '') + space
+            : '나의 한 해';
+          $('headline').textContent =
+            year +
+            '년,\n' +
+            total +
+            '개를 ' +
+            (p.together ? '함께 ' : '') +
+            '해냈어요';
+          $('headline').style.whiteSpace = 'pre-line';
+          var days = count(p.days);
+          $('days').textContent = days ? days + '번의 날을 기록했어요' : '';
+          document.title =
+            (space ? space + '의 ' : '') + year + '년 돌아보기 · DoIt2';
+
+          $('places').textContent = count(p.places);
+          $('activities').textContent = count(p.activities);
+          var rating = Number(p.rating);
+          $('rating').textContent =
+            rating > 0 && rating <= 5 ? rating.toFixed(1) : '-';
+
+          // 사진
+          var photos = Array.isArray(p.photos) ? p.photos.slice(0, 12) : [];
+          photos.forEach(function (photo) {
+            var file = text(photo && photo.file, 8);
+            if (!FILE.test(file)) return;
+            var url =
+              API + '/storage/v1/object/public/shared/' + id + '/' + file;
+            var title = text(photo.title, 40);
+            var a = el('a');
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            var img = el('img');
+            img.src = url;
+            img.alt = title ? title + ' 사진' : '사진';
+            img.loading = 'lazy';
+            // 지워진 사진은 칸째로 뺀다
+            img.onerror = function () {
+              a.remove();
+              if (!$('photos').children.length) $('photos-sec').hidden = true;
+            };
+            a.appendChild(img);
+            if (title) a.appendChild(el('span', '', title));
+            $('photos').appendChild(a);
+          });
+          $('photos-sec').hidden = !$('photos').children.length;
+
+          // 별점 높은 기록
+          var best = Array.isArray(p.best) ? p.best.slice(0, 5) : [];
+          best.forEach(function (record) {
+            var title = text(record && record.title, 40);
+            if (!title) return;
+            var stars = Math.min(
+              5,
+              Math.max(0, Math.round(Number(record.rating)))
+            );
+            var rec = el('div', 'rec');
+            rec.appendChild(
+              el(
+                'div',
+                'emo',
+                Array.from(text(record.emoji, 16)).slice(0, 2).join('') || '✨'
+              )
+            );
+            var what = el('div', 'what');
+            what.appendChild(el('b', '', title));
+            what.appendChild(el('span', '', day(record.date)));
+            rec.appendChild(what);
+            var starBox = el('div', 'stars', '★★★★★'.slice(0, stars));
+            starBox.setAttribute('aria-label', '별점 ' + stars + '점');
+            rec.appendChild(starBox);
+            $('best').appendChild(rec);
+            var review = text(record.review, 200);
+            if (review)
+              $('best').appendChild(el('div', 'quote', '“' + review + '”'));
+          });
+          $('best-sec').hidden = !$('best').children.length;
+
+          // 달마다
+          var months = [];
+          for (var i = 0; i < 12; i++) {
+            months.push(Array.isArray(p.months) ? count(p.months[i]) : 0);
+          }
+          var max = Math.max.apply(null, months);
+          var topMonth = months.indexOf(max);
+          months.forEach(function (n, i) {
+            var bar = el(
+              'div',
+              n === 0 ? 'none' : max && i === topMonth ? 'top' : ''
+            );
+            bar.style.height = max ? Math.max(4, (n / max) * 100) + '%' : '4%';
+            bar.title = i + 1 + '월 ' + n + '개';
+            $('bars').appendChild(bar);
+            $('axis').appendChild(el('span', '', String(i + 1)));
+          });
+          var facts = [];
+          if (max > 0) {
+            facts.push(
+              '가장 바빴던 달은 ' +
+                (topMonth + 1) +
+                '월, ' +
+                max +
+                '개를 해냈어요 🎉'
+            );
+          }
+          var area = p.topArea && text(p.topArea.name, 30);
+          if (area)
+            facts.push(
+              '가장 많이 간 곳은 ' +
+                area +
+                ' (' +
+                count(p.topArea.count) +
+                '번)'
+            );
+          var category = p.topCategory && text(p.topCategory.label, 20);
+          if (category) {
+            facts.push(
+              '가장 많이 한 건 ' +
+                category +
+                ' (' +
+                count(p.topCategory.count) +
+                '번)'
+            );
+          }
+          facts.forEach(function (line) {
+            $('facts').appendChild(el('p', '', line));
+          });
+
+          $('loading').hidden = true;
+          $('ok').hidden = false;
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -4,12 +4,14 @@
 // - 혼자 있는 공간: 공간·항목·사진을 모두 지운다
 // - 함께 쓰는 공간: 나가기만 한다 (공간장이면 가장 먼저 들어온 멤버에게 넘긴다).
 //   내가 담은 항목은 공간에 남고 '담은 사람'만 비워진다
-// - 프로필 사진, 프로필, 알림 토큰, 계정 코드, 공유 목록을 지운다
+// - 프로필 사진, 프로필, 알림 토큰, 계정 코드, 공유 목록, 웹으로 공유한 돌아보기(사진 포함)를 지운다
 // - 마지막으로 로그인 계정을 지운다
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const BUCKET = 'photos';
+/** 웹으로 공유한 돌아보기 사진 (공개 버킷). 경로는 {공유 id}/{파일 이름} */
+const SHARED_BUCKET = 'shared';
 
 const admin = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -25,15 +27,15 @@ function json(body: unknown, status = 200) {
 }
 
 /** 저장소 폴더 안의 파일을 모두 지운다 (하위 폴더 없음) */
-async function removeFolder(folder: string) {
+async function removeFolder(folder: string, bucket = BUCKET) {
   for (;;) {
     const { data, error } = await admin.storage
-      .from(BUCKET)
+      .from(bucket)
       .list(folder, { limit: 100 });
     if (error || !data || data.length === 0) return;
     const paths = data.filter((f) => f.id).map((f) => `${folder}/${f.name}`);
     if (paths.length === 0) return;
-    await admin.storage.from(BUCKET).remove(paths);
+    await admin.storage.from(bucket).remove(paths);
     if (data.length < 100) return;
   }
 }
@@ -91,6 +93,14 @@ Deno.serve(async (req) => {
 
   // 프로필 사진
   await removeFolder(`avatars/${uid}`);
+
+  // 웹으로 공유한 돌아보기의 사진 (공개 버킷이라 꼭 지운다. 링크 자체는 계정과 함께 지워진다)
+  const { data: memories, error: memoriesError } = await admin
+    .from('shared_memories')
+    .select('id')
+    .eq('created_by', uid);
+  if (memoriesError) return json({ error: 'delete_failed' }, 500);
+  for (const { id } of memories ?? []) await removeFolder(id, SHARED_BUCKET);
 
   // 로그인 계정 (프로필·알림 토큰·계정 코드·공유 목록은 함께 지워진다)
   const { error } = await admin.auth.admin.deleteUser(uid);
