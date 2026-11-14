@@ -1,10 +1,17 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Check } from 'lucide-react-native';
+import { Check, SendHorizontal } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, ErrorState, Icon, NavBar, Text } from '@/components/atoms';
+import {
+  Button,
+  ErrorState,
+  Icon,
+  NavBar,
+  Text,
+  TextField,
+} from '@/components/atoms';
 import { TextArea } from '@/components/atoms/TextArea';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
@@ -13,26 +20,36 @@ import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { useTogether } from '@/hooks/useTogether';
 import { parseItems, suggestItems } from '@/lib/ai';
 import { ensureAiConsent } from '@/lib/aiConsent';
-import { draftToInput, type AiDraft } from '@/lib/bucket/aiDraft';
-import { getCategory, KIND_META } from '@/lib/bucket/types';
+import {
+  draftToSuggestion,
+  pickAiPlace,
+  suggestionToInput,
+  type AiSuggestion,
+} from '@/lib/bucket/aiDraft';
+import { getCategory, KIND_META, newTodoId } from '@/lib/bucket/types';
 import { showAlert } from '@/lib/dialog';
 import { errorMessage } from '@/lib/errors';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
+import { searchKakaoPlaces } from '@/lib/kakao';
 import { cn } from '@/lib/utils';
 import { useBucketStore } from '@/store/useBucketStore';
 
 const MAX_TEXT = 500;
 /** 추천할 때 AI에게 보여줄 담아 둔 항목 수 (최근 것부터) */
 const MAX_KNOWN = 60;
+/** 원하는 것을 말하는 글의 길이, 그리고 AI에게 같이 보내는 최근 글 수 (서버와 같다) */
+const MAX_ASK = 200;
+const MAX_ASKS = 3;
 
 type State =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; drafts: AiDraft[] };
+  | { status: 'ready'; drafts: AiSuggestion[] };
 
 /**
- * AI로 담기. ?mode=suggest 면 담아 둔 것과 어울리는 새 항목을 추천받고,
+ * AI로 담기. ?mode=suggest 면 담아 둔 것과 어울리는 새 항목을 장소·할 것까지 추천받고
+ * (아래 입력칸에 원하는 걸 말하면 그 말에 맞춰 다시 추천한다),
  * 아니면 말하듯 쓴 글을 항목 여러 개로 나눈다. 둘 다 결과에서 담을 것을 골라 한 번에 담는다.
  */
 export default function AiAddScreen() {
@@ -49,19 +66,22 @@ export default function AiAddScreen() {
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   /** 이번 화면에서 이미 보여준 추천 (다시 추천받을 때 겹치지 않게) */
   const [shown, setShown] = useState<string[]>([]);
+  /** 추천받으면서 원하는 걸 말한 글들 (말한 순서대로, 최근 것만) */
+  const [asks, setAsks] = useState<string[]>([]);
+  const [ask, setAsk] = useState('');
+  const [adding, setAdding] = useState(false);
 
   /** 동의하지 않았으면 null */
-  const fetchDrafts = async () => {
+  const fetchDrafts = async (requests: string[]) => {
     if (!(await ensureAiConsent())) return null;
     const known = useBucketStore
       .getState()
       .items.map((it) => it.title)
       .slice(0, MAX_KNOWN);
-    return suggest
-      ? suggestItems([...shown, ...known], together)
-      : parseItems(text.trim(), known);
+    if (suggest) return suggestItems([...shown, ...known], together, requests);
+    return (await parseItems(text.trim(), known)).map(draftToSuggestion);
   };
-  const showDrafts = (drafts: AiDraft[] | null) => {
+  const showDrafts = (drafts: AiSuggestion[] | null) => {
     if (!drafts) {
       // 동의하지 않았으면: 추천은 화면을 닫고, 글로 담기는 쓰던 글로 돌아간다
       if (suggest) router.back();
@@ -75,16 +95,26 @@ export default function AiAddScreen() {
   const showError = (e: unknown) =>
     setState({ status: 'error', message: errorMessage(e) });
 
-  const load = () => {
+  const load = (requests: string[] = asks) => {
     setState({ status: 'loading' });
-    fetchDrafts().then(showDrafts).catch(showError);
+    fetchDrafts(requests).then(showDrafts).catch(showError);
   };
 
   // 추천은 화면을 열자마자 받는다 (처음 상태가 이미 '받는 중'이다)
   useEffect(() => {
-    if (suggest) fetchDrafts().then(showDrafts).catch(showError);
+    if (suggest) fetchDrafts([]).then(showDrafts).catch(showError);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** 원하는 걸 말해서 다시 추천받기 */
+  const sendAsk = () => {
+    const said = ask.trim();
+    if (!said || state.status === 'loading') return;
+    const next = [...asks, said].slice(-MAX_ASKS);
+    setAsks(next);
+    setAsk('');
+    load(next);
+  };
 
   const toggle = (title: string) => {
     hapticSelect();
@@ -100,22 +130,82 @@ export default function AiAddScreen() {
 
   // 빠르게 두 번 눌러도 한 번만 담는다
   const added = useRef(false);
-  const addSelected = () => {
+  const addSelected = async () => {
     if (added.current) return;
     added.current = true;
+    setAdding(true);
     const picked = drafts.filter((d) => selected.has(d.title));
-    addItems(picked.map(draftToInput));
+    // AI가 적은 장소 이름을 카카오에서 찾아, 이름이 맞는 곳만 핀으로 붙인다. 못 찾으면 지역 글자만 남는다
+    const places = await Promise.all(
+      picked.map((d) =>
+        d.placeQuery
+          ? searchKakaoPlaces(d.placeQuery)
+              .then((found) => pickAiPlace(found, d.placeQuery))
+              .catch(() => null)
+          : null
+      )
+    );
+    addItems(picked.map((d, i) => suggestionToInput(d, places[i], newTodoId)));
     hapticSuccess();
     router.back();
     showAlert(`${picked.length}개를 담았어요`);
   };
+
+  /** 추천 아래에 두는, 원하는 걸 말하는 칸 */
+  const askBar = suggest ? (
+    <View className="flex-row items-center gap-2 px-5 pb-1 pt-2">
+      <TextField
+        value={ask}
+        onChangeText={setAsk}
+        placeholder="원하는 걸 말해 보세요 (예: 비 오는 날 실내에서)"
+        maxLength={MAX_ASK}
+        returnKeyType="send"
+        onSubmitEditing={sendAsk}
+        editable={!adding}
+        className="flex-1"
+      />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="이 말에 맞춰 추천받기"
+        disabled={ask.trim().length === 0 || adding}
+        onPress={sendAsk}
+        className={cn(
+          'h-12 w-12 items-center justify-center rounded-full bg-primary active:opacity-70',
+          ask.trim().length === 0 && 'opacity-40'
+        )}
+      >
+        <Icon
+          as={SendHorizontal}
+          size={20}
+          className="text-primary-foreground"
+        />
+      </Pressable>
+    </View>
+  ) : null;
+
+  /** 지금까지 말한 것 (말풍선) */
+  const askBubbles =
+    asks.length > 0 ? (
+      <View className="items-end gap-1.5 pb-1">
+        {asks.map((said, i) => (
+          <View
+            key={`${i}-${said}`}
+            className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3.5 py-2"
+          >
+            <Text size={14} className="text-primary-foreground">
+              {said}
+            </Text>
+          </View>
+        ))}
+      </View>
+    ) : null;
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <NavBar
         title={suggest ? 'AI 추천 받기' : '말하듯 써서 여러 개 담기'}
         right={
-          state.status === 'ready' ? (
+          state.status === 'ready' && !adding ? (
             <Pressable
               accessibilityRole="button"
               hitSlop={8}
@@ -156,42 +246,68 @@ export default function AiAddScreen() {
             </BottomBar>
           </>
         ) : state.status === 'loading' ? (
-          <View className="items-center gap-3 py-10">
-            <ActivityIndicator />
-            <Text variant="muted">
-              {suggest ? '어울리는 걸 찾고 있어요' : '하나씩 나누고 있어요'}
-            </Text>
+          <View className="flex-1 px-5 pt-1">
+            {askBubbles}
+            <View className="items-center gap-3 py-10">
+              <ActivityIndicator />
+              <Text variant="muted">
+                {suggest
+                  ? asks.length > 0
+                    ? '말한 것에 맞는 걸 찾고 있어요'
+                    : '어울리는 걸 찾고 있어요'
+                  : '하나씩 나누고 있어요'}
+              </Text>
+            </View>
           </View>
         ) : state.status === 'error' ? (
-          <ErrorState
-            title={suggest ? '추천을 받지 못했어요' : '나누지 못했어요'}
-            description={state.message}
-            onRetry={() => load()}
-          />
+          <>
+            <View className="flex-1">
+              <ErrorState
+                title={suggest ? '추천을 받지 못했어요' : '나누지 못했어요'}
+                description={state.message}
+                onRetry={() => load()}
+              />
+            </View>
+            {askBar}
+            {suggest ? <BottomBar>{null}</BottomBar> : null}
+          </>
         ) : drafts.length === 0 ? (
-          <EmptyState
-            title={
-              suggest ? '추천할 걸 찾지 못했어요' : '담을 걸 찾지 못했어요'
-            }
-            description={
-              suggest
-                ? '잠시 후 다시 받아 보세요.'
-                : '이미 담아 둔 것만 있거나, 하고 싶은 걸 찾지 못했어요.'
-            }
-          />
+          <>
+            <View className="flex-1">
+              <View className="px-5 pt-1">{askBubbles}</View>
+              <EmptyState
+                title={
+                  suggest ? '추천할 걸 찾지 못했어요' : '담을 걸 찾지 못했어요'
+                }
+                description={
+                  suggest
+                    ? '다르게 말해 보거나 잠시 후 다시 받아 보세요.'
+                    : '이미 담아 둔 것만 있거나, 하고 싶은 걸 찾지 못했어요.'
+                }
+              />
+            </View>
+            {askBar}
+            {suggest ? <BottomBar>{null}</BottomBar> : null}
+          </>
         ) : (
           <>
-            <ScrollView contentContainerClassName="gap-2 px-5 pb-8 pt-1">
+            <ScrollView
+              contentContainerClassName="gap-2 px-5 pb-4 pt-1"
+              keyboardShouldPersistTaps="handled"
+            >
+              {askBubbles}
               {drafts.map((draft) => {
                 const isSelected = selected.has(draft.title);
+                const where = draft.placeQuery || draft.location;
                 return (
                   <Pressable
                     key={draft.title}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: isSelected }}
+                    disabled={adding}
                     onPress={() => toggle(draft.title)}
                     className={cn(
-                      'flex-row items-center gap-3 rounded-2xl border bg-card p-4',
+                      'flex-row items-start gap-3 rounded-2xl border bg-card p-4',
                       isSelected ? 'border-2 border-primary' : 'border-border'
                     )}
                   >
@@ -203,7 +319,22 @@ export default function AiAddScreen() {
                       <Text variant="muted" size={12} numberOfLines={1}>
                         {KIND_META[draft.kind].label} ·{' '}
                         {getCategory(draft.category).label}
+                        {where ? ` · ${where}` : ''}
                       </Text>
+                      {draft.todos.length > 0 ? (
+                        <View className="gap-0.5 pt-1.5">
+                          {draft.todos.map((todo) => (
+                            <Text
+                              key={todo}
+                              variant="muted"
+                              size={13}
+                              numberOfLines={1}
+                            >
+                              {`· ${todo}`}
+                            </Text>
+                          ))}
+                        </View>
+                      ) : null}
                     </View>
                     <View
                       className={cn(
@@ -225,15 +356,18 @@ export default function AiAddScreen() {
                 );
               })}
             </ScrollView>
+            {askBar}
             <BottomBar>
               <Button
                 label={
-                  selected.size > 0
-                    ? `${selected.size}개 담기`
-                    : '담을 걸 골라주세요'
+                  adding
+                    ? '담는 중…'
+                    : selected.size > 0
+                      ? `${selected.size}개 담기`
+                      : '담을 걸 골라주세요'
                 }
-                disabled={selected.size === 0}
-                onPress={addSelected}
+                disabled={selected.size === 0 || adding}
+                onPress={() => void addSelected()}
               />
             </BottomBar>
           </>

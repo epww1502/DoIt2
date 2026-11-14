@@ -8,9 +8,11 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import {
   toAiDrafts,
   toAiFill,
+  toAiSuggestions,
   toAiUsage,
   type AiDraft,
   type AiFill,
+  type AiSuggestion,
   type AiUsage,
 } from '@/lib/bucket/aiDraft';
 import { supabase } from '@/lib/supabase/client';
@@ -56,13 +58,22 @@ export async function parseItems(
   return toAiDrafts(await callAi({ action: 'parse', text }), existing);
 }
 
-/** 담아 둔 것(existing)과 어울리는 새 항목 추천 */
+/**
+ * 담아 둔 것(existing)과 어울리는 새 항목 추천 (장소와 할 것까지).
+ * requests: 원하는 것을 말한 글들 (말한 순서대로). 없으면 취향만 보고 고른다
+ */
 export async function suggestItems(
   existing: string[],
-  together: boolean
-): Promise<AiDraft[]> {
-  const data = await callAi({ action: 'suggest', titles: existing, together });
-  return toAiDrafts(data, existing);
+  together: boolean,
+  requests: string[] = []
+): Promise<AiSuggestion[]> {
+  const data = await callAi({
+    action: 'suggest',
+    titles: existing,
+    together,
+    requests,
+  });
+  return toAiSuggestions(data, existing);
 }
 
 /** 오늘 쓴 AI 횟수와 하루 한도 (이걸 불러도 횟수는 늘지 않는다) */

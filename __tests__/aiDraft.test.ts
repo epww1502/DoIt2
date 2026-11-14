@@ -1,8 +1,10 @@
 import {
   pickAiPlace,
+  suggestionToInput,
   toAiClass,
   toAiDrafts,
   toAiFill,
+  toAiSuggestions,
   toAiTodoTexts,
   toAiUsage,
 } from '@/lib/bucket/aiDraft';
@@ -127,5 +129,103 @@ describe('AI가 준 답 거르기', () => {
     expect(pickAiPlace(places, '경복궁')).toBeNull();
     expect(pickAiPlace([], '경복궁')).toBeNull();
     expect(pickAiPlace(places, '  ')).toBeNull();
+  });
+});
+
+describe('AI 추천 (장소와 할 것까지)', () => {
+  const raw = {
+    items: [
+      {
+        title: '경복궁 야간 개장 가기',
+        kind: 'place',
+        category: 'culture',
+        setting: 'outdoor',
+        place: '경복궁',
+        location: '서울 종로구',
+        todos: [
+          '예매 일정 확인하기',
+          '한복 대여 알아보기',
+          '예매 일정 확인하기',
+          '',
+        ],
+      },
+      {
+        title: '을지로 노포 투어',
+        kind: 'place',
+        category: 'food',
+        setting: 'indoor',
+        place: '',
+        location: '서울 을지로',
+        todos: ['가고 싶은 집 세 곳 고르기'],
+      },
+      // 이미 담아 둔 것
+      {
+        title: '제주도 여행',
+        kind: 'place',
+        category: 'trip',
+        setting: 'outdoor',
+      },
+    ],
+  };
+
+  it('장소 이름·지역·할 것을 같이 받고, 겹치는 할 것과 담아 둔 항목은 뺀다', () => {
+    const list = toAiSuggestions(raw, ['제주도 여행']);
+    expect(list.map((s) => s.title)).toEqual([
+      '경복궁 야간 개장 가기',
+      '을지로 노포 투어',
+    ]);
+    expect(list[0]).toMatchObject({
+      placeQuery: '경복궁',
+      location: '서울 종로구',
+      todos: ['예매 일정 확인하기', '한복 대여 알아보기'],
+    });
+    expect(list[1].placeQuery).toBe('');
+  });
+
+  it('예전 서버 답(이름과 분류만)도 받는다', () => {
+    const [only] = toAiSuggestions({
+      items: [{ title: '한강 피크닉', kind: 'place', category: 'trip' }],
+    });
+    expect(only).toMatchObject({ placeQuery: '', location: '', todos: [] });
+  });
+
+  it('할 것은 일곱 개까지', () => {
+    const [only] = toAiSuggestions({
+      items: [
+        {
+          title: '부산 여행',
+          kind: 'place',
+          category: 'trip',
+          todos: Array.from({ length: 12 }, (_, i) => `할 것 ${i}`),
+        },
+      ],
+    });
+    expect(only.todos).toHaveLength(7);
+  });
+
+  it('담을 모양: 장소를 찾았으면 그 주소를, 아니면 AI가 적은 지역을 쓴다', () => {
+    const [palace, alley] = toAiSuggestions(raw, ['제주도 여행']);
+    let n = 0;
+    const id = () => `t${++n}`;
+    const place = {
+      kakaoId: '1',
+      name: '경복궁',
+      category: '궁',
+      address: '서울 종로구 사직로 161',
+      latitude: 37.57,
+      longitude: 126.97,
+    };
+    const withPlace = suggestionToInput(palace, place, id);
+    expect(withPlace.place).toBe(place);
+    expect(withPlace.location).toBe('서울 종로구 사직로 161');
+    expect(withPlace.todos).toEqual([
+      { id: 't1', text: '예매 일정 확인하기', done: false },
+      { id: 't2', text: '한복 대여 알아보기', done: false },
+    ]);
+    expect(withPlace).not.toHaveProperty('placeQuery');
+
+    const withoutPlace = suggestionToInput(alley, null, id);
+    expect(withoutPlace.place).toBeNull();
+    expect(withoutPlace.location).toBe('서울 을지로');
   });
 });

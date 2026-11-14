@@ -8,6 +8,7 @@ import {
   type BucketKind,
   type BucketSetting,
   type CategoryKey,
+  type PlaceInfo,
 } from '@/lib/bucket/types';
 
 const MAX_TITLE = 40;
@@ -27,6 +28,9 @@ const record = (v: unknown) =>
   v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
 
 const sameText = (s: string) => s.replace(/\s+/g, '').toLowerCase();
+
+const shortText = (v: unknown, max: number) =>
+  typeof v === 'string' ? v.trim().slice(0, max) : '';
 
 /** 그 카테고리가 속한 종류. '기타'(두 종류 공통)나 모르는 카테고리면 null */
 function kindOfCategory(category: unknown): BucketKind | null {
@@ -74,6 +78,54 @@ export function toAiDrafts(raw: unknown, existing: string[] = []): AiDraft[] {
   return drafts;
 }
 
+/** 추천 하나에 붙는 할 것 수 */
+const MAX_SUGGESTED_TODOS = 7;
+
+/**
+ * AI가 추천한 항목: 담으면 바로 쓸 수 있게 장소와 할 것까지.
+ * placeQuery는 카카오에서 찾아볼 장소 이름일 뿐이고, 핀은 검색해서 이름이 맞을 때만 붙인다 (pickAiPlace)
+ */
+export type AiSuggestion = AiDraft & {
+  /** 카카오 장소 검색에 넣을 이름. 한 곳을 가리키지 않으면 빈 글자 */
+  placeQuery: string;
+  /** 하게 될 지역. 없으면 빈 글자 */
+  location: string;
+  todos: string[];
+};
+
+/** 이름과 분류만 있는 항목을 추천 모양으로 (장소·할 것 없음) */
+export function draftToSuggestion(draft: AiDraft): AiSuggestion {
+  return { ...draft, placeQuery: '', location: '', todos: [] };
+}
+
+/** 추천 항목들. 이미 담아 둔 이름(existing)이나 서로 겹치는 것은 뺀다. 예전 서버 답(이름·분류만)도 받는다 */
+export function toAiSuggestions(
+  raw: unknown,
+  existing: string[] = []
+): AiSuggestion[] {
+  const items = record(raw).items;
+  const byTitle = new Map<string, unknown>();
+  if (Array.isArray(items)) {
+    for (const item of items) {
+      const title = record(item).title;
+      if (typeof title === 'string') {
+        const key = sameText(title.trim().slice(0, MAX_TITLE));
+        if (!byTitle.has(key)) byTitle.set(key, item);
+      }
+    }
+  }
+  return toAiDrafts(raw, existing).map((draft) => {
+    const item = byTitle.get(sameText(draft.title));
+    const { place, location } = record(item);
+    return {
+      ...draft,
+      placeQuery: shortText(place, 50),
+      location: shortText(location, 40),
+      todos: toAiTodoTexts(item, [], MAX_SUGGESTED_TODOS),
+    };
+  });
+}
+
 /** 새로 넣을 할 것 글자들. 이미 있는 것과 겹치면 빼고, 남은 자리(room)만큼만 */
 export function toAiTodoTexts(
   raw: unknown,
@@ -105,9 +157,6 @@ export type AiFill = {
   location: string;
   todos: string[];
 };
-
-const shortText = (v: unknown, max: number) =>
-  typeof v === 'string' ? v.trim().slice(0, max) : '';
 
 export function toAiFill(
   raw: unknown,
@@ -171,4 +220,25 @@ export function pickAiPlace<T extends { name: string }>(
 /** 담을 항목을 addItems에 넣을 모양으로 */
 export function draftToInput(draft: AiDraft): BucketInput {
   return { ...draft, location: '', place: null, memo: '' };
+}
+
+/**
+ * 추천 항목을 addItems에 넣을 모양으로. place는 카카오에서 찾은 장소 (못 찾았으면 null).
+ * 장소를 찾았으면 그 주소를, 아니면 AI가 적은 지역을 위치로 쓴다
+ */
+export function suggestionToInput(
+  suggestion: AiSuggestion,
+  place: PlaceInfo | null,
+  newId: () => string
+): BucketInput {
+  return {
+    title: suggestion.title,
+    kind: suggestion.kind,
+    category: suggestion.category,
+    setting: suggestion.setting,
+    location: place?.address || suggestion.location,
+    place,
+    memo: '',
+    todos: suggestion.todos.map((text) => ({ id: newId(), text, done: false })),
+  };
 }
