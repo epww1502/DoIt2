@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 아무거나"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"고창 선운사 단풍 구경 가기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"선운사\",\n    \"location\": \"전북 고창\",\n    \"todos\": [\n      \"단풍 절정 시기 확인하기\",\n      \"고창 숙소 미리 잡기\",\n      \"선운사 도보 코스 정하기\",\n      \"고창 복분자 맛집 찾아 두기\"\n    ]\n  },\n  {\n    \"title\": \"방탈출 카페에서 한 판 하기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 홍대\",\n    \"todos\": [\n      \"인원과 테마 정하기\",\n      \"홍대 방탈출 카페 후보 고르기\",\n      \"주말 시간대 예약하기\",\n      \"끝나고 갈 근처 식당 정하기\"\n    ]\n  },\n  {\n    \"title\": \"같이 수제 쿠키 굽기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"레시피와 재료 목록 정하기\",\n      \"오븐 또는 에어프라이어 확인하기\",\n      \"버터와 박력분 미리 사기\",\n      \"포장용 상자 준비하기\"\n    ]\n  },\n  {\n    \"title\": \"창덕궁 야간관람 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"outdoor\",\n    \"place\": \"창덕궁\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"야간관람 회차와 예매 일정 확인하기\",\n      \"예매 오픈일에 맞춰 예약하기\",\n      \"겉옷과 따뜻한 음료 챙기기\",\n      \"관람 후 종로 식당 정하기\"\n    ]\n  },\n  {\n    \"title\": \"을지로 노포 투어 하기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 을지로\",\n    \"todos\": [\n      \"가고 싶은 노포 3곳 골라 두기\",\n      \"영업시간과 휴무일 확인하기\",\n      \"웨이팅 많은 곳은 이른 시간 방문하기\",\n      \"2차로 갈 조용한 술집 찾아 두기\"\n    ]\n  }\n]\n```"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 실내 데이트 → 더 저렴하게"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"국립중앙박물관 무료 관람 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립중앙박물관\",\n    \"location\": \"서울 용산구\",\n    \"todos\": [\n      \"무료 관람 가능한 날짜 확인하기\",\n      \"관람 동선과 보고 싶은 전시 정하기\",\n      \"근처 저렴한 점심 식당 찾아 두기\"\n    ]\n  },\n  {\n    \"title\": \"보드게임 카페에서 한나절 놀기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 홍대\",\n    \"todos\": [\n      \"주말 자리 미리 예약하기\",\n      \"같이 할 게임 두세 개 고르기\",\n      \"시간당 요금과 음료 정책 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"같이 떡볶이 만들기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"떡볶이 떡과 재료 장보기\",\n      \"레시피 하나 정해 두기\",\n      \"조리 역할 나누기\"\n    ]\n  },\n  {\n    \"title\": \"볼링장에서 내기 한 판 하기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울\",\n    \"todos\": [\n      \"가까운 볼링장 가격 비교하기\",\n      \"저녁 시간대 예약 여부 확인하기\",\n      \"진 사람이 음료 사기 같은 내기 정하기\"\n    ]\n  },\n  {\n    \"title\": \"광장시장에서 빈대떡과 마약김밥 먹기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"광장시장\",\n    \"location\": \"서울 종로구\",\n    \"todos\": [\n      \"먹고 싶은 메뉴 세 가지 정하기\",\n      \"혼잡한 저녁 피해 방문 시간 정하기\",\n      \"현금 챙기기\"\n    ]\n  }\n]\n```"
+  }
+]

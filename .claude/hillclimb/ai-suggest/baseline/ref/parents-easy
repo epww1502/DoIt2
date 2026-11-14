@@ -1,0 +1,68 @@
+[
+  {
+    "title": "국립중앙박물관 천천히 관람하기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "국립중앙박물관",
+    "location": "서울 용산구",
+    "todos": [
+      "부모님 편한 시간대 정하기",
+      "엘리베이터와 휴식 공간 위치 확인하기",
+      "무료 해설 프로그램 시간 찾기",
+      "관람 후 식사할 곳 정해 두기"
+    ]
+  },
+  {
+    "title": "세종문화회관에서 뮤지컬 보기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "세종문화회관",
+    "location": "서울 종로구",
+    "todos": [
+      "공연 일정과 좌석 고르기",
+      "부모님 좌석은 통로 쪽으로 잡기",
+      "공연 전후로 먹을 곳 정하기"
+    ]
+  },
+  {
+    "title": "온양온천에서 온천 여행하기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "indoor",
+    "place": "온양온천",
+    "location": "충남 아산시",
+    "todos": [
+      "온천 호텔이나 숙소 예약하기",
+      "부모님께 맞는 온천탕 고르기",
+      "서울에서 가는 교통편 확인하기"
+    ]
+  },
+  {
+    "title": "인사동 한정식집 가기",
+    "kind": "place",
+    "category": "food",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 종로구 인사동",
+    "todos": [
+      "부모님 좋아하시는 메뉴 여쭤보기",
+      "좌식이나 룸 가능한 식당 찾기",
+      "예약하고 식사 시간 맞추기"
+    ]
+  },
+  {
+    "title": "남산 케이블카 타고 서울 야경 보기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "남산서울타워",
+    "location": "서울 용산구",
+    "todos": [
+      "케이블카 운행 시간 확인하기",
+      "해질녘에 맞춰 출발 시간 정하기",
+      "쌀쌀하니 겉옷 챙기기"
+    ]
+  }
+]

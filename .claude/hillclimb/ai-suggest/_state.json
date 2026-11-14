@@ -1,0 +1,75 @@
+{
+  "metrics": [
+    {
+      "id": "fits",
+      "label": "요청에 맞음",
+      "kind": "judge",
+      "scale": 1
+    },
+    {
+      "id": "todos_useful",
+      "label": "할 것 쓸모",
+      "kind": "judge",
+      "scale": 1
+    },
+    {
+      "id": "rule_ok",
+      "label": "규칙 지킴",
+      "kind": "float",
+      "scale": 1
+    },
+    {
+      "id": "place_found",
+      "label": "장소 실재",
+      "kind": "float",
+      "scale": 1
+    },
+    {
+      "id": "format_ok",
+      "label": "모양",
+      "kind": "binary"
+    },
+    {
+      "id": "kind_ok",
+      "label": "종류 일치",
+      "kind": "float",
+      "scale": 1
+    },
+    {
+      "id": "no_dup",
+      "label": "겹침 없음",
+      "kind": "binary"
+    }
+  ],
+  "perf_fields": [
+    {
+      "id": "first_item_s",
+      "label": "첫 추천",
+      "unit": "s"
+    },
+    {
+      "id": "latency_s",
+      "label": "전체",
+      "unit": "s"
+    },
+    {
+      "id": "in_tokens",
+      "label": "입력 토큰"
+    },
+    {
+      "id": "out_tokens",
+      "label": "출력 토큰"
+    },
+    {
+      "id": "cost_usd",
+      "label": "추천 비용",
+      "unit": "$"
+    },
+    {
+      "id": "judge_cost_usd",
+      "label": "심사 비용",
+      "unit": "$"
+    }
+  ],
+  "harness_sha": "8d05ad1d9453bc878a4e1b1167e13435e08a82aad19d52af5ddc996e8bf20a75"
+}

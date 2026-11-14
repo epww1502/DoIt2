@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 제주도 여행 가서 할 것들"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"성산일출봉에서 일출 보기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"성산일출봉\",\n    \"location\": \"제주 서귀포시 성산읍\",\n    \"todos\": [\n      \"일출 시간 미리 확인하기\",\n      \"성산 근처 숙소 잡기\",\n      \"방한복과 손전등 챙기기\",\n      \"전날 날씨와 구름 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"제주 흑돼지 골목에서 저녁 먹기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"제주시 연동\",\n    \"todos\": [\n      \"연동 흑돼지 골목 식당 골라 두기\",\n      \"저녁 식사 시간 예약하기\",\n      \"기본 메뉴 두께와 가격 알아보기\"\n    ]\n  },\n  {\n    \"title\": \"애월 카페거리 돌며 카페 투어하기\",\n    \"kind\": \"place\",\n    \"category\": \"cafe\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"제주 제주시 애월읍\",\n    \"todos\": [\n      \"가고 싶은 카페 3곳 고르기\",\n      \"카페 영업시간과 휴무일 확인하기\",\n      \"이동 순서 짜고 차량이나 버스 정하기\"\n    ]\n  },\n  {\n    \"title\": \"감귤 따기 체험 가기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"outdoor\",\n    \"place\": \"\",\n    \"location\": \"제주 서귀포시\",\n    \"todos\": [\n      \"감귤 체험 가능한 농장 찾아 예약하기\",\n      \"따서 가져갈 봉투나 상자 준비하기\",\n      \"편한 신발과 여벌 옷 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"국립제주박물관 관람하기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립제주박물관\",\n    \"location\": \"제주 제주시\",\n    \"todos\": [\n      \"관람 시간과 휴관일 확인하기\",\n      \"전시 해설 프로그램 일정 보기\",\n      \"비 오는 날 대체 일정으로 넣기\"\n    ]\n  }\n]\n```"
+  }
+]

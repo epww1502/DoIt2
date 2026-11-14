@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 비 오는 날 실내에서"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"을지로 노포 투어 가기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 을지로\",\n    \"todos\": [\n      \"노포 지도 미리 저장하기\",\n      \"웨이팅 적은 시간대 정하기\",\n      \"가게 두세 곳 순서 정하기\",\n      \"영업 요일과 휴무일 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"방탈출 카페 도전하기\",\n    \"kind\": \"activity\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 홍대\",\n    \"todos\": [\n      \"인원과 난이도 정하기\",\n      \"평점 좋은 테마 고르기\",\n      \"주말 예약 잡기\",\n      \"끝나고 갈 식당 정하기\"\n    ]\n  },\n  {\n    \"title\": \"같이 캘리그라피 배우기\",\n    \"kind\": \"activity\",\n    \"category\": \"hobby\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"원데이 클래스 개설 여부 찾기\",\n      \"붓펜과 종이 준비하기\",\n      \"수업 날짜와 시간 맞추기\"\n    ]\n  },\n  {\n    \"title\": \"같이 수제 쿠키 굽기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"레시피 하나 고르기\",\n      \"버터와 박력분 등 재료 사기\",\n      \"오븐 예열 시간 확인하기\",\n      \"포장할 용기 준비하기\"\n    ]\n  },\n  {\n    \"title\": \"실내 클라이밍 같이 가기\",\n    \"kind\": \"activity\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 성수동\",\n    \"todos\": [\n      \"근처 클라이밍장 두 곳 비교하기\",\n      \"초보자 강습 시간 확인하기\",\n      \"클라이밍화 대여 여부 알아보기\",\n      \"끝나고 갈 카페 정하기\"\n    ]\n  }\n]\n```"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 집에서 할 수 있는 것만"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"단호박 수프 같이 끓이기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"재료와 레시피 정하기\",\n      \"장보기 목록 만들기\",\n      \"단호박 손질 역할 나누기\",\n      \"완성 후 사진 남기기\"\n    ]\n  },\n  {\n    \"title\": \"군고구마 맛 쿠키 굽기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"고구마 준비하기\",\n      \"베이킹 도구 확인하기\",\n      \"반죽 레시피 고르기\",\n      \"식힌 뒤 포장해 나누기\"\n    ]\n  },\n  {\n    \"title\": \"실내 요가 30분 같이 하기\",\n    \"kind\": \"activity\",\n    \"category\": \"exercise\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"요가 매트 준비하기\",\n      \"30분 영상 골라 두기\",\n      \"매일 같은 시간 정하기\",\n      \"끝나고 스트레칭 하기\"\n    ]\n  },\n  {\n    \"title\": \"손뜨개 목도리 같이 뜨기\",\n    \"kind\": \"activity\",\n    \"category\": \"hobby\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"뜨개 실과 바늘 사기\",\n      \"초보용 패턴 고르기\",\n      \"한 줄씩 나눠 뜨기 정하기\",\n      \"완성 날짜 정하기\"\n    ]\n  },\n  {\n    \"title\": \"올해 사진 모아 연말 앨범 만들기\",\n    \"kind\": \"activity\",\n    \"category\": \"memory\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"각자 사진 한 장씩 모으기\",\n      \"앨범 앱이나 인화 방식 정하기\",\n      \"페이지별 주제 나누기\",\n      \"완성본 공유 날짜 정하기\"\n    ]\n  }\n]\n```"
+  }
+]

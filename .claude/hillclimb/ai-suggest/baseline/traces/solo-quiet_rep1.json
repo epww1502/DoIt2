@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(solo): 혼자 영화 보기, 수영 배우기, 책 한 달에 두 권 읽기, 베이킹 클래스 듣기, 필름 카메라 사기\n요청: 혼자서 조용히, 사람 적은 곳"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"국립현대미술관 서울관 혼자 관람하기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립현대미술관 서울관\",\n    \"location\": \"서울 종로구\",\n    \"todos\": [\n      \"전시 일정 확인하기\",\n      \"평일 오전 방문 날짜 정하기\",\n      \"무료 관람일 여부 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"창덕궁 후원 조용히 걷기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"outdoor\",\n    \"place\": \"창덕궁\",\n    \"location\": \"서울 종로구\",\n    \"todos\": [\n      \"후원 관람 예약하기\",\n      \"이른 오전 회차 고르기\",\n      \"얇은 겉옷 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"서촌 독립책방 카페 순례\",\n    \"kind\": \"place\",\n    \"category\": \"cafe\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 종로구 서촌\",\n    \"todos\": [\n      \"책방별 영업시간 확인하기\",\n      \"두세 곳 동선 짜기\",\n      \"조용한 좌석 있는 곳 찾아 두기\"\n    ]\n  },\n  {\n    \"title\": \"좋아하는 시로 필사 노트 만들기\",\n    \"kind\": \"activity\",\n    \"category\": \"hobby\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"좋아하는 시집 한 권 고르기\",\n      \"노트와 펜 사기\",\n      \"매일 한 쪽씩 쓸 시간 정하기\"\n    ]\n  },\n  {\n    \"title\": \"서울숲 평일 낮 산책\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"서울숲\",\n    \"location\": \"서울 성동구\",\n    \"todos\": [\n      \"평일 낮 방문 날짜 정하기\",\n      \"산책 코스 미리 정하기\",\n      \"따뜻한 음료 챙기기\"\n    ]\n  }\n]\n```"
+  }
+]

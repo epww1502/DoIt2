@@ -1,0 +1,67 @@
+[
+  {
+    "title": "경복궁 야간 관람 즐기기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "outdoor",
+    "place": "경복궁",
+    "location": "서울 종로구",
+    "todos": [
+      "야간 관람 일정과 예매 확인하기",
+      "관람 시간대와 날짜 정하기",
+      "관람 후 갈 근처 식당 찾아 두기"
+    ]
+  },
+  {
+    "title": "남산서울타워 야경 보러 가기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "남산서울타워",
+    "location": "서울 용산구",
+    "todos": [
+      "케이블카 이용 시간 확인하기",
+      "해 지는 시각에 맞춰 방문 시간 정하기",
+      "따뜻한 겉옷 챙기기"
+    ]
+  },
+  {
+    "title": "이태원 분위기 좋은 식당에서 기념일 디너",
+    "kind": "place",
+    "category": "food",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 이태원",
+    "todos": [
+      "기념일 날짜 기준으로 예약하기",
+      "예산 10만원 안쪽 메뉴 비교하기",
+      "기념 케이크나 디저트 주문 가능한지 문의하기"
+    ]
+  },
+  {
+    "title": "둘만의 향수 만들기 클래스 듣기",
+    "kind": "activity",
+    "category": "hobby",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울",
+    "todos": [
+      "원데이 향수 클래스 찾아 비교하기",
+      "2인 예약 가능한 날짜 확인하기",
+      "원하는 향 계열 미리 정해 두기"
+    ]
+  },
+  {
+    "title": "기념일 손편지와 꽃다발 깜짝 선물하기",
+    "kind": "activity",
+    "category": "event",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "기념일 날짜와 시간 정하기",
+      "꽃집에서 소형 꽃다발 주문하기",
+      "편지에 쓸 내용 미리 적어 두기"
+    ]
+  }
+]

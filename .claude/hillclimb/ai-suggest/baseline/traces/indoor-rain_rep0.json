@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 비 오는 날 실내에서"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"방탈출 게임 같이 도전하기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 강남\",\n    \"todos\": [\n      \"인원과 난이도 정하기\",\n      \"방탈출 카페 예약 사이트 비교하기\",\n      \"주말 저녁 시간대 예약하기\",\n      \"당일 준비물과 힌트 규칙 정하기\"\n    ]\n  },\n  {\n    \"title\": \"국립중앙박물관 같이 관람하기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립중앙박물관\",\n    \"location\": \"서울 용산\",\n    \"todos\": [\n      \"현재 전시 목록 확인하기\",\n      \"무료 관람일이나 예약 여부 보기\",\n      \"관람 순서와 꼭 볼 전시 정하기\",\n      \"근처 식당에서 점심 약속 잡기\"\n    ]\n  },\n  {\n    \"title\": \"대학로 뮤지컬 함께 보기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 종로 대학로\",\n    \"todos\": [\n      \"공연 목록과 일정 비교하기\",\n      \"좌석 등급과 예산 정하기\",\n      \"예매 사이트에서 좌석 잡기\",\n      \"공연 전후 저녁 식당 정하기\"\n    ]\n  },\n  {\n    \"title\": \"같이 베이킹 클래스 하기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"만들 디저트 메뉴 고르기\",\n      \"재료와 도구 목록 만들기\",\n      \"재료 구매 담당 나누기\",\n      \"오븐과 주방 공간 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"실내 클라이밍 같이 도전하기\",\n    \"kind\": \"activity\",\n    \"category\": \"exercise\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"근처 클라이밍장 찾아보기\",\n      \"초보자 강습 가능한지 확인하기\",\n      \"운동복과 신발 준비하기\",\n      \"1일권 또는 월회원권 가격 비교하기\"\n    ]\n  }\n]\n```"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 아무거나"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"경주 불국사 단풍 구경 가기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"불국사\",\n    \"location\": \"경북 경주\",\n    \"todos\": [\n      \"기차표나 고속버스 예매하기\",\n      \"숙소 잡기\",\n      \"불국사 관람 시간 확인하기\",\n      \"황리단길 식당 골라 두기\"\n    ]\n  },\n  {\n    \"title\": \"대학로 뮤지컬 보러 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 대학로\",\n    \"todos\": [\n      \"이번 달 공연 목록 확인하기\",\n      \"날짜와 좌석 예매하기\",\n      \"공연 전후로 갈 식당 정하기\"\n    ]\n  },\n  {\n    \"title\": \"같이 김장 담그기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"배추와 양념 재료 주문하기\",\n      \"담글 날짜와 장소 정하기\",\n      \"레시피 한 가지로 맞추기\"\n    ]\n  },\n  {\n    \"title\": \"남산서울타워 야경 산책하기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"남산서울타워\",\n    \"location\": \"서울 용산\",\n    \"todos\": [\n      \"케이블카 운영 시간 확인하기\",\n      \"일몰 시각에 맞춰 출발 정하기\",\n      \"끝나고 갈 저녁 식당 찾기\"\n    ]\n  },\n  {\n    \"title\": \"실내 클라이밍 처음 도전하기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"근처 클라이밍장 체험권 알아보기\",\n      \"편한 운동복과 양말 챙기기\",\n      \"초보자 클래스 예약하기\"\n    ]\n  }\n]\n```"
+  }
+]

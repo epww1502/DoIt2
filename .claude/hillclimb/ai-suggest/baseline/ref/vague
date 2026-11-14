@@ -1,0 +1,72 @@
+[
+  {
+    "title": "고창 선운사 단풍 구경 가기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "선운사",
+    "location": "전북 고창",
+    "todos": [
+      "단풍 절정 시기 확인하기",
+      "고창 숙소 미리 잡기",
+      "선운사 도보 코스 정하기",
+      "고창 복분자 맛집 찾아 두기"
+    ]
+  },
+  {
+    "title": "방탈출 카페에서 한 판 하기",
+    "kind": "place",
+    "category": "activity",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 홍대",
+    "todos": [
+      "인원과 테마 정하기",
+      "홍대 방탈출 카페 후보 고르기",
+      "주말 시간대 예약하기",
+      "끝나고 갈 근처 식당 정하기"
+    ]
+  },
+  {
+    "title": "같이 수제 쿠키 굽기",
+    "kind": "activity",
+    "category": "cook",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "레시피와 재료 목록 정하기",
+      "오븐 또는 에어프라이어 확인하기",
+      "버터와 박력분 미리 사기",
+      "포장용 상자 준비하기"
+    ]
+  },
+  {
+    "title": "창덕궁 야간관람 가기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "outdoor",
+    "place": "창덕궁",
+    "location": "서울 종로",
+    "todos": [
+      "야간관람 회차와 예매 일정 확인하기",
+      "예매 오픈일에 맞춰 예약하기",
+      "겉옷과 따뜻한 음료 챙기기",
+      "관람 후 종로 식당 정하기"
+    ]
+  },
+  {
+    "title": "을지로 노포 투어 하기",
+    "kind": "place",
+    "category": "food",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 을지로",
+    "todos": [
+      "가고 싶은 노포 3곳 골라 두기",
+      "영업시간과 휴무일 확인하기",
+      "웨이팅 많은 곳은 이른 시간 방문하기",
+      "2차로 갈 조용한 술집 찾아 두기"
+    ]
+  }
+]

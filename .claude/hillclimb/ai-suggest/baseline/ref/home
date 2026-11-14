@@ -1,0 +1,71 @@
+[
+  {
+    "title": "제철 귤로 귤청 만들기",
+    "kind": "activity",
+    "category": "cook",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "귤 2kg 사기",
+      "귤과 설탕을 1:1 비율로 준비하기",
+      "유리병 끓는 물에 소독하기",
+      "일주일 숙성 기다리기"
+    ]
+  },
+  {
+    "title": "목도리 뜨개질 도전하기",
+    "kind": "activity",
+    "category": "hobby",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "뜨개바늘과 굵은 실 고르기",
+      "초보용 기초 영상 찾아 두기",
+      "한 줄씩 연습 뜨기",
+      "목도리 완성 목표일 정하기"
+    ]
+  },
+  {
+    "title": "집에서 같이 요가하기",
+    "kind": "activity",
+    "category": "exercise",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "요가매트 두 개 준비하기",
+      "초보용 요가 영상 고르기",
+      "주 3회 시간 정하기"
+    ]
+  },
+  {
+    "title": "올해 사진으로 앨범 만들기",
+    "kind": "activity",
+    "category": "memory",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "폰 사진 연도별로 정리하기",
+      "함께 찍은 사진 30장 고르기",
+      "인화 업체 비교해 고르기",
+      "표지 문구 같이 정하기"
+    ]
+  },
+  {
+    "title": "홈 무비나잇 열기",
+    "kind": "activity",
+    "category": "event",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "같이 볼 영화 투표하기",
+      "간식 메뉴 정하기",
+      "담요와 조명 세팅하기",
+      "영화 시작 시간 정하기"
+    ]
+  }
+]

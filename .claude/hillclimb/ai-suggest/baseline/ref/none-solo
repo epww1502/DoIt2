@@ -1,0 +1,67 @@
+[
+  {
+    "title": "창덕궁 후원 가을 산책하기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "창덕궁",
+    "location": "서울 종로구",
+    "todos": [
+      "후원 관람 예약 확인하기",
+      "늦가을 단풍 시기 알아보기",
+      "따뜻한 외투와 편한 신발 챙기기"
+    ]
+  },
+  {
+    "title": "성수동 카페 투어 하기",
+    "kind": "place",
+    "category": "cafe",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 성수동",
+    "todos": [
+      "가고 싶은 카페 3곳 골라두기",
+      "각 카페 영업시간과 휴무일 확인하기",
+      "카페별 대표 메뉴 적어두기"
+    ]
+  },
+  {
+    "title": "향초 만들기 클래스 듣기",
+    "kind": "activity",
+    "category": "hobby",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "원데이 클래스 일정 찾기",
+      "왁스와 향 종류 고르기",
+      "완성한 향초를 담을 용기 준비하기"
+    ]
+  },
+  {
+    "title": "한강에서 러닝 시작하기",
+    "kind": "activity",
+    "category": "exercise",
+    "setting": "outdoor",
+    "place": "한강공원",
+    "location": "서울 여의도",
+    "todos": [
+      "처음 목표 거리 정하기",
+      "방한 레이어드 옷 준비하기",
+      "러닝 앱 설치하고 코스 고르기"
+    ]
+  },
+  {
+    "title": "국립중앙박물관 관람하기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "국립중앙박물관",
+    "location": "서울 용산구",
+    "todos": [
+      "진행 중인 특별전 확인하기",
+      "무료 관람 요일 알아보기",
+      "관람할 전시실 순서 정해두기"
+    ]
+  }
+]

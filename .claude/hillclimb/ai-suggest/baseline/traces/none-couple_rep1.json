@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: (없음. 취향만 보고)"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"을지로 노포 골목 투어\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 을지로\",\n    \"todos\": [\n      \"노포 지도 미리 저장하기\",\n      \"웨이팅 많은 곳 시간대 확인하기\",\n      \"2차 갈 술집 한두 곳 정하기\"\n    ]\n  },\n  {\n    \"title\": \"경주 대릉원 단풍 산책\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"대릉원\",\n    \"location\": \"경북 경주\",\n    \"todos\": [\n      \"단풍 절정 시기 확인하기\",\n      \"KTX나 고속버스 예매하기\",\n      \"천마총 관람 시간 알아보기\",\n      \"근처 황리단길 맛집 골라두기\"\n    ]\n  },\n  {\n    \"title\": \"같이 김장하기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"배추와 양념 재료 장보기\",\n      \"김장 레시피 한 가지 정하기\",\n      \"절임 시간 맞춰 날짜 잡기\",\n      \"나눠 가져갈 용기 준비하기\"\n    ]\n  },\n  {\n    \"title\": \"방탈출 게임 한판\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 홍대\",\n    \"todos\": [\n      \"인원과 난이도 정하기\",\n      \"예약 가능한 테마 비교하기\",\n      \"주말 저녁 시간대 예약하기\"\n    ]\n  },\n  {\n    \"title\": \"경복궁 가을 필름 사진 출사\",\n    \"kind\": \"activity\",\n    \"category\": \"memory\",\n    \"setting\": \"outdoor\",\n    \"place\": \"경복궁\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"필름 카메라와 필름 챙기기\",\n      \"촬영 시간은 해 질 녘으로 정하기\",\n      \"현상소 맡길 곳 찾아 두기\"\n    ]\n  }\n]\n```"
+  }
+]

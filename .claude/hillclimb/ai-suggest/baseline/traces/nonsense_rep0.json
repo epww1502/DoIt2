@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: ㅋㅋㅋㅋ"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"익선동 한옥 골목에서 전골 먹기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 익선동\",\n    \"todos\": [\n      \"한옥 식당 2~3곳 후보 정하기\",\n      \"평일 저녁이나 이른 시간 예약하기\",\n      \"식후 익선동 골목 산책 코스 정하기\"\n    ]\n  },\n  {\n    \"title\": \"방탈출 카페에서 같이 도전하기\",\n    \"kind\": \"activity\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 홍대\",\n    \"todos\": [\n      \"인원과 난이도 맞는 테마 고르기\",\n      \"주말 시간대 예약하기\",\n      \"끝나고 갈 근처 식당 정하기\"\n    ]\n  },\n  {\n    \"title\": \"같이 김치 담가 보기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"배추와 고춧가루 등 재료 사기\",\n      \"김장 레시피 하나 정하기\",\n      \"절이는 시간 고려해 날짜 잡기\"\n    ]\n  },\n  {\n    \"title\": \"경복궁 야간 관람 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"outdoor\",\n    \"place\": \"경복궁\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"야간 관람 운영 기간과 시간 확인하기\",\n      \"온라인으로 관람권 예매하기\",\n      \"추위 대비 따뜻한 겉옷 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"온양온천에서 느긋하게 쉬기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"indoor\",\n    \"place\": \"온양온천\",\n    \"location\": \"충남 아산\",\n    \"todos\": [\n      \"온천 시설과 숙소 한 곳 고르기\",\n      \"주말 숙박 예약하기\",\n      \"근처 맛집 한두 곳 찾아 두기\"\n    ]\n  }\n]\n```"
+  }
+]

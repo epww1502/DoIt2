@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 제주도 여행 가서 할 것들"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"제주 새별오름 억새 보러 가기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"새별오름\",\n    \"location\": \"제주도 제주시 애월읍\",\n    \"todos\": [\n      \"억새 절정 시기 확인하기\",\n      \"주차 가능한 시간대 알아보기\",\n      \"일몰 시간에 맞춰 도착 계획 세우기\"\n    ]\n  },\n  {\n    \"title\": \"우도 자전거 일주하기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"outdoor\",\n    \"place\": \"우도\",\n    \"location\": \"제주도 제주시 우도면\",\n    \"todos\": [\n      \"성산포항 우도행 배편 예매하기\",\n      \"자전거 대여소 위치 찾아 두기\",\n      \"바람 세기와 날씨 미리 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"감귤 따기 체험하기\",\n    \"kind\": \"activity\",\n    \"category\": \"activity\",\n    \"setting\": \"outdoor\",\n    \"place\": \"\",\n    \"location\": \"제주도 서귀포시\",\n    \"todos\": [\n      \"체험 가능한 감귤 농장 찾아보기\",\n      \"예약 가능 여부와 요금 확인하기\",\n      \"장갑과 여벌 옷 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"제주 흑돼지 노포에서 식사하기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"제주도 제주시 연동\",\n    \"todos\": [\n      \"연동 흑돼지 노포 후보 골라 두기\",\n      \"웨이팅 여부 미리 확인하기\",\n      \"2차 갈 식당이나 카페 정해 두기\"\n    ]\n  },\n  {\n    \"title\": \"한라산 성판악 코스 등반하기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"한라산\",\n    \"location\": \"제주도 제주시 조천읍\",\n    \"todos\": [\n      \"탐방 예약 날짜와 시간 잡기\",\n      \"방한 옷과 간식, 물 챙기기\",\n      \"하산 마감 시간 확인하기\"\n    ]\n  }\n]\n```"
+  }
+]

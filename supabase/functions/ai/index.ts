@@ -17,7 +17,8 @@
 //   Draft = { title, kind, category, setting }
 //   Suggestion = Draft + { place, location, todos } (fill과 같은 뜻. 예전 앱은 Draft 칸만 읽는다)
 //   stream: true 를 같이 보내면 답을 한 번에 주지 않고, 쓰이는 대로 한 줄씩(JSON 한 줄 = 한 조각) 보낸다:
-//   { stage: 'thinking' } → { stage: 'writing' } → { text: '답의 글자 조각' }... → { done: true } 또는 { error }
+//   { stage: 'thinking' } → { stage: 'writing' } → { text: '답의 글자 조각' }... → { done: true, model, usage } 또는 { error }
+//   (model과 usage는 평가 스크립트(scripts/ai-eval)가 비용을 재려고 읽는다. 한 번에 주는 답에는 x-ai-model, x-ai-usage 헤더로 싣는다)
 //   조각을 이으면 위와 같은 JSON이 된다. 앱은 이걸로 몇 개까지 완성됐는지 보여준다 (lib/bucket/aiStream.ts)
 // - { action: 'usage' }                           오늘 쓴 횟수와 한도 (횟수에 들어가지 않는다)
 //                                                  → { ai: { used, limit }, auto: { used, limit } }
@@ -365,7 +366,7 @@ function streamAnswer(apiKey: string, params: Anthropic.MessageStreamParams) {
         // 거절했거나 중간에 끊겼으면 JSON이 온전하지 않다
         send(
           message.stop_reason === 'end_turn'
-            ? { done: true }
+            ? { done: true, model: message.model, usage: message.usage }
             : { error: 'ai_failed', reason: message.stop_reason }
         );
       } catch (e) {
@@ -446,7 +447,10 @@ Deno.serve(async (req: Request) => {
     if (!block || block.type !== 'text') {
       return json({ error: 'ai_failed' }, 502);
     }
-    return json(alignKind(JSON.parse(block.text)));
+    const answer = json(alignKind(JSON.parse(block.text)));
+    answer.headers.set('x-ai-model', response.model);
+    answer.headers.set('x-ai-usage', JSON.stringify(response.usage));
+    return answer;
   } catch (e) {
     console.error('[ai]', e);
     return json({ error: 'ai_failed' }, 502);

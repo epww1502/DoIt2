@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(family): 에버랜드 가기, 아이와 캠핑, 갯벌 체험, 가족사진 찍기\n요청: 부모님 모시고 가기 좋은 곳, 많이 안 걷는"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"국립중앙박물관 천천히 관람하기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립중앙박물관\",\n    \"location\": \"서울 용산구\",\n    \"todos\": [\n      \"부모님 편한 시간대 정하기\",\n      \"엘리베이터와 휴식 공간 위치 확인하기\",\n      \"무료 해설 프로그램 시간 찾기\",\n      \"관람 후 식사할 곳 정해 두기\"\n    ]\n  },\n  {\n    \"title\": \"세종문화회관에서 뮤지컬 보기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"세종문화회관\",\n    \"location\": \"서울 종로구\",\n    \"todos\": [\n      \"공연 일정과 좌석 고르기\",\n      \"부모님 좌석은 통로 쪽으로 잡기\",\n      \"공연 전후로 먹을 곳 정하기\"\n    ]\n  },\n  {\n    \"title\": \"온양온천에서 온천 여행하기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"indoor\",\n    \"place\": \"온양온천\",\n    \"location\": \"충남 아산시\",\n    \"todos\": [\n      \"온천 호텔이나 숙소 예약하기\",\n      \"부모님께 맞는 온천탕 고르기\",\n      \"서울에서 가는 교통편 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"인사동 한정식집 가기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 종로구 인사동\",\n    \"todos\": [\n      \"부모님 좋아하시는 메뉴 여쭤보기\",\n      \"좌식이나 룸 가능한 식당 찾기\",\n      \"예약하고 식사 시간 맞추기\"\n    ]\n  },\n  {\n    \"title\": \"남산 케이블카 타고 서울 야경 보기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"남산서울타워\",\n    \"location\": \"서울 용산구\",\n    \"todos\": [\n      \"케이블카 운행 시간 확인하기\",\n      \"해질녘에 맞춰 출발 시간 정하기\",\n      \"쌀쌀하니 겉옷 챙기기\"\n    ]\n  }\n]\n```"
+  }
+]

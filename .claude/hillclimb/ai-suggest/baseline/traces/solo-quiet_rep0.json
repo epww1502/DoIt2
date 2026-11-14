@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(solo): 혼자 영화 보기, 수영 배우기, 책 한 달에 두 권 읽기, 베이킹 클래스 듣기, 필름 카메라 사기\n요청: 혼자서 조용히, 사람 적은 곳"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"국립현대미술관 서울관 조용히 전시 보기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립현대미술관 서울관\",\n    \"location\": \"서울 삼청동\",\n    \"todos\": [\n      \"평일 오전 방문 정하기\",\n      \"현재 전시 일정 확인하기\",\n      \"관람 전 전시 소개 읽어 두기\"\n    ]\n  },\n  {\n    \"title\": \"남한산성 단풍길 혼자 걷기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"남한산성\",\n    \"location\": \"경기 광주\",\n    \"todos\": [\n      \"단풍 절정 시기 확인하기\",\n      \"평일 아침 출발 정하기\",\n      \"편한 운동화와 물 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"서촌 골목 조용한 카페 돌기\",\n    \"kind\": \"place\",\n    \"category\": \"cafe\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 서촌\",\n    \"todos\": [\n      \"가고 싶은 카페 3곳 찾아 두기\",\n      \"영업 시간과 휴무일 확인하기\",\n      \"평일 오후 동선 짜기\"\n    ]\n  },\n  {\n    \"title\": \"혼자 캘리그라피 배우기\",\n    \"kind\": \"activity\",\n    \"category\": \"hobby\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"초급 원데이 클래스 찾기\",\n      \"붓과 먹물 준비하기\",\n      \"수업 날짜 예약하기\"\n    ]\n  },\n  {\n    \"title\": \"경복궁 이른 아침 사진 남기기\",\n    \"kind\": \"activity\",\n    \"category\": \"memory\",\n    \"setting\": \"outdoor\",\n    \"place\": \"경복궁\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"개방 시간 확인하기\",\n      \"사람 적은 이른 시간 방문 정하기\",\n      \"카메라 배터리 충전하기\"\n    ]\n  }\n]\n```"
+  }
+]

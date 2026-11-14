@@ -1,0 +1,68 @@
+[
+  {
+    "title": "국립중앙박물관 가기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "국립중앙박물관",
+    "location": "서울 용산",
+    "todos": [
+      "어린이박물관 운영 시간 확인하기",
+      "아이 관심 전시 미리 고르기",
+      "주차 대신 지하철 이용 정하기",
+      "관람 후 근처 식당 정해 두기"
+    ]
+  },
+  {
+    "title": "국립과천과학관 체험 가기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "국립과천과학관",
+    "location": "경기 과천",
+    "todos": [
+      "상설 전시와 체험 프로그램 확인하기",
+      "체험 예약 시간 미리 잡기",
+      "점심 먹을 곳 정하기"
+    ]
+  },
+  {
+    "title": "코엑스 아쿠아리움 구경 가기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "코엑스 아쿠아리움",
+    "location": "서울 삼성동",
+    "todos": [
+      "주말 입장 시간대 예약하기",
+      "아이 동선 맞춰 관람 순서 정하기",
+      "근처 식사 장소 찾아 두기"
+    ]
+  },
+  {
+    "title": "아이와 같이 쿠키 굽기",
+    "kind": "activity",
+    "category": "cook",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "쿠키 재료 목록 적어 두기",
+      "오븐 사용 가능한지 확인하기",
+      "아이가 할 역할 나누기"
+    ]
+  },
+  {
+    "title": "보드게임 카페 가기",
+    "kind": "place",
+    "category": "cafe",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "아이 나이에 맞는 게임 고르기",
+      "보드게임 카페 예약 가능한지 찾기",
+      "아이 연령 제한 확인하기"
+    ]
+  }
+]

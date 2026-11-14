@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 이번 주말 서울에서 반나절 안에 끝나는 실내 데이트"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"을지로 노포 투어 가기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 을지로\",\n    \"todos\": [\n      \"을지로3가역 근처 노포 두세 곳 골라 두기\",\n      \"주말 웨이팅 확인하고 방문 순서 정하기\",\n      \"2차로 갈 조용한 바 한 곳 찾아 두기\"\n    ]\n  },\n  {\n    \"title\": \"국립중앙박물관 함께 관람하기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립중앙박물관\",\n    \"location\": \"서울 용산\",\n    \"todos\": [\n      \"관람 시간과 휴관일 미리 확인하기\",\n      \"관람 코스와 보고 싶은 전시실 정하기\",\n      \"박물관 근처 점심 식당 골라 두기\"\n    ]\n  },\n  {\n    \"title\": \"홍대 방탈출 카페 도전하기\",\n    \"kind\": \"activity\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 홍대\",\n    \"todos\": [\n      \"테마와 난이도 골라 예약하기\",\n      \"인원과 시간대 맞춰 두기\",\n      \"끝나고 갈 근처 식당 정하기\"\n    ]\n  },\n  {\n    \"title\": \"보드게임 카페에서 반나절 보내기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 신촌\",\n    \"todos\": [\n      \"인원에 맞는 보드게임 카페 찾아 예약하기\",\n      \"플레이할 게임 두세 개 골라 두기\",\n      \"간단한 식사 메뉴 미리 정하기\"\n    ]\n  },\n  {\n    \"title\": \"영화 한 편 보고 저녁 먹기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 용산\",\n    \"todos\": [\n      \"상영 시간표 보고 좌석 예매하기\",\n      \"영화 끝나고 갈 근처 식당 정하기\",\n      \"영화 장르 서로 골라 보기\"\n    ]\n  }\n]\n```"
+  }
+]

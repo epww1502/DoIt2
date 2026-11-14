@@ -1,0 +1,71 @@
+[
+  {
+    "title": "을지로 노포 투어 가기",
+    "kind": "place",
+    "category": "food",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 을지로",
+    "todos": [
+      "노포 지도 미리 저장하기",
+      "웨이팅 적은 시간대 정하기",
+      "가게 두세 곳 순서 정하기",
+      "영업 요일과 휴무일 확인하기"
+    ]
+  },
+  {
+    "title": "방탈출 카페 도전하기",
+    "kind": "activity",
+    "category": "activity",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 홍대",
+    "todos": [
+      "인원과 난이도 정하기",
+      "평점 좋은 테마 고르기",
+      "주말 예약 잡기",
+      "끝나고 갈 식당 정하기"
+    ]
+  },
+  {
+    "title": "같이 캘리그라피 배우기",
+    "kind": "activity",
+    "category": "hobby",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "원데이 클래스 개설 여부 찾기",
+      "붓펜과 종이 준비하기",
+      "수업 날짜와 시간 맞추기"
+    ]
+  },
+  {
+    "title": "같이 수제 쿠키 굽기",
+    "kind": "activity",
+    "category": "cook",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "레시피 하나 고르기",
+      "버터와 박력분 등 재료 사기",
+      "오븐 예열 시간 확인하기",
+      "포장할 용기 준비하기"
+    ]
+  },
+  {
+    "title": "실내 클라이밍 같이 가기",
+    "kind": "activity",
+    "category": "activity",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 성수동",
+    "todos": [
+      "근처 클라이밍장 두 곳 비교하기",
+      "초보자 강습 시간 확인하기",
+      "클라이밍화 대여 여부 알아보기",
+      "끝나고 갈 카페 정하기"
+    ]
+  }
+]

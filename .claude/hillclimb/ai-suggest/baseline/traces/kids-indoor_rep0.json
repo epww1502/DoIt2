@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(family): 에버랜드 가기, 아이와 캠핑, 갯벌 체험, 가족사진 찍기\n요청: 아이랑 같이 갈 수 있는 실내"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"국립중앙박물관 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립중앙박물관\",\n    \"location\": \"서울 용산\",\n    \"todos\": [\n      \"어린이박물관 운영 시간 확인하기\",\n      \"아이 관심 전시 미리 고르기\",\n      \"주차 대신 지하철 이용 정하기\",\n      \"관람 후 근처 식당 정해 두기\"\n    ]\n  },\n  {\n    \"title\": \"국립과천과학관 체험 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립과천과학관\",\n    \"location\": \"경기 과천\",\n    \"todos\": [\n      \"상설 전시와 체험 프로그램 확인하기\",\n      \"체험 예약 시간 미리 잡기\",\n      \"점심 먹을 곳 정하기\"\n    ]\n  },\n  {\n    \"title\": \"코엑스 아쿠아리움 구경 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"코엑스 아쿠아리움\",\n    \"location\": \"서울 삼성동\",\n    \"todos\": [\n      \"주말 입장 시간대 예약하기\",\n      \"아이 동선 맞춰 관람 순서 정하기\",\n      \"근처 식사 장소 찾아 두기\"\n    ]\n  },\n  {\n    \"title\": \"아이와 같이 쿠키 굽기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"쿠키 재료 목록 적어 두기\",\n      \"오븐 사용 가능한지 확인하기\",\n      \"아이가 할 역할 나누기\"\n    ]\n  },\n  {\n    \"title\": \"보드게임 카페 가기\",\n    \"kind\": \"place\",\n    \"category\": \"cafe\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"아이 나이에 맞는 게임 고르기\",\n      \"보드게임 카페 예약 가능한지 찾기\",\n      \"아이 연령 제한 확인하기\"\n    ]\n  }\n]\n```"
+  }
+]
