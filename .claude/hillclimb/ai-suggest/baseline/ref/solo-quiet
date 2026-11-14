@@ -1,0 +1,67 @@
+[
+  {
+    "title": "국립현대미술관 서울관 조용히 전시 보기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "국립현대미술관 서울관",
+    "location": "서울 삼청동",
+    "todos": [
+      "평일 오전 방문 정하기",
+      "현재 전시 일정 확인하기",
+      "관람 전 전시 소개 읽어 두기"
+    ]
+  },
+  {
+    "title": "남한산성 단풍길 혼자 걷기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "남한산성",
+    "location": "경기 광주",
+    "todos": [
+      "단풍 절정 시기 확인하기",
+      "평일 아침 출발 정하기",
+      "편한 운동화와 물 챙기기"
+    ]
+  },
+  {
+    "title": "서촌 골목 조용한 카페 돌기",
+    "kind": "place",
+    "category": "cafe",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 서촌",
+    "todos": [
+      "가고 싶은 카페 3곳 찾아 두기",
+      "영업 시간과 휴무일 확인하기",
+      "평일 오후 동선 짜기"
+    ]
+  },
+  {
+    "title": "혼자 캘리그라피 배우기",
+    "kind": "activity",
+    "category": "hobby",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "초급 원데이 클래스 찾기",
+      "붓과 먹물 준비하기",
+      "수업 날짜 예약하기"
+    ]
+  },
+  {
+    "title": "경복궁 이른 아침 사진 남기기",
+    "kind": "activity",
+    "category": "memory",
+    "setting": "outdoor",
+    "place": "경복궁",
+    "location": "서울 종로",
+    "todos": [
+      "개방 시간 확인하기",
+      "사람 적은 이른 시간 방문 정하기",
+      "카메라 배터리 충전하기"
+    ]
+  }
+]

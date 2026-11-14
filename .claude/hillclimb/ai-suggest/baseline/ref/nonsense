@@ -1,0 +1,67 @@
+[
+  {
+    "title": "익선동 한옥 골목에서 전골 먹기",
+    "kind": "place",
+    "category": "food",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 익선동",
+    "todos": [
+      "한옥 식당 2~3곳 후보 정하기",
+      "평일 저녁이나 이른 시간 예약하기",
+      "식후 익선동 골목 산책 코스 정하기"
+    ]
+  },
+  {
+    "title": "방탈출 카페에서 같이 도전하기",
+    "kind": "activity",
+    "category": "activity",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 홍대",
+    "todos": [
+      "인원과 난이도 맞는 테마 고르기",
+      "주말 시간대 예약하기",
+      "끝나고 갈 근처 식당 정하기"
+    ]
+  },
+  {
+    "title": "같이 김치 담가 보기",
+    "kind": "activity",
+    "category": "cook",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "배추와 고춧가루 등 재료 사기",
+      "김장 레시피 하나 정하기",
+      "절이는 시간 고려해 날짜 잡기"
+    ]
+  },
+  {
+    "title": "경복궁 야간 관람 가기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "outdoor",
+    "place": "경복궁",
+    "location": "서울 종로",
+    "todos": [
+      "야간 관람 운영 기간과 시간 확인하기",
+      "온라인으로 관람권 예매하기",
+      "추위 대비 따뜻한 겉옷 챙기기"
+    ]
+  },
+  {
+    "title": "온양온천에서 느긋하게 쉬기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "indoor",
+    "place": "온양온천",
+    "location": "충남 아산",
+    "todos": [
+      "온천 시설과 숙소 한 곳 고르기",
+      "주말 숙박 예약하기",
+      "근처 맛집 한두 곳 찾아 두기"
+    ]
+  }
+]

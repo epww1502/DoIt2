@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(solo): 혼자 영화 보기, 수영 배우기, 책 한 달에 두 권 읽기, 베이킹 클래스 듣기, 필름 카메라 사기\n요청: (없음. 취향만 보고)"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"정읍 내장산 단풍 산책 가기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"내장산국립공원\",\n    \"location\": \"전북 정읍\",\n    \"todos\": [\n      \"단풍 절정 시기 확인하기\",\n      \"주말 숙소 예약하기\",\n      \"편한 등산화 챙기기\",\n      \"출발 전날 날씨 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"광장시장 빈대떡 먹으러 가기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"광장시장\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"빈대떡 파는 집 미리 찾아 두기\",\n      \"평일 저녁 방문 날짜 정하기\",\n      \"현금이나 간편결제 준비하기\"\n    ]\n  },\n  {\n    \"title\": \"여의도 한강공원에서 러닝 시작하기\",\n    \"kind\": \"activity\",\n    \"category\": \"exercise\",\n    \"setting\": \"outdoor\",\n    \"place\": \"여의도한강공원\",\n    \"location\": \"서울 여의도\",\n    \"todos\": [\n      \"집에서 가까운 러닝 코스 고르기\",\n      \"따뜻한 러닝 복장 챙기기\",\n      \"주 3회 러닝 요일 정하기\",\n      \"처음 2주는 짧게 달리기 목표 세우기\"\n    ]\n  },\n  {\n    \"title\": \"핸드드립 원데이 클래스 듣기\",\n    \"kind\": \"activity\",\n    \"category\": \"hobby\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 성수동\",\n    \"todos\": [\n      \"원데이 클래스 후기 비교하기\",\n      \"수강 날짜 정해서 예약하기\",\n      \"좋아하는 원두 맛 메모해 두기\"\n    ]\n  },\n  {\n    \"title\": \"국립중앙박물관 전시 관람하기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립중앙박물관\",\n    \"location\": \"서울 용산\",\n    \"todos\": [\n      \"이번 달 전시 일정 확인하기\",\n      \"관람 가는 날과 시간대 정하기\",\n      \"무료 해설 프로그램 시간 확인하기\"\n    ]\n  }\n]\n```"
+  }
+]

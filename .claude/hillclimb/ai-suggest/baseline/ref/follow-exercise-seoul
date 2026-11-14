@@ -1,0 +1,69 @@
+[
+  {
+    "title": "한강에서 초보 러닝 시작하기",
+    "kind": "activity",
+    "category": "exercise",
+    "setting": "outdoor",
+    "place": "한강공원",
+    "location": "서울 여의도",
+    "todos": [
+      "편한 운동화와 바람막이 준비하기",
+      "걷기와 달리기를 1분씩 번갈아 하기",
+      "주 3회 러닝 요일 정해 두기",
+      "쌀쌀하니 장갑과 모자 챙기기"
+    ]
+  },
+  {
+    "title": "따릉이로 한강 자전거 타기",
+    "kind": "activity",
+    "category": "exercise",
+    "setting": "outdoor",
+    "place": "한강공원",
+    "location": "서울 뚝섬",
+    "todos": [
+      "따릉이 대여 앱 가입해 두기",
+      "평지 위주의 짧은 코스 정하기",
+      "안전모와 장갑 챙기기",
+      "날씨 확인하고 바람 약한 날 고르기"
+    ]
+  },
+  {
+    "title": "실내 볼더링 체험해 보기",
+    "kind": "activity",
+    "category": "activity",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울",
+    "todos": [
+      "집 근처 초보 체험 가능한 클라이밍장 찾기",
+      "초보자 강습이나 체험권 예약하기",
+      "신축성 좋은 운동복과 양말 준비하기"
+    ]
+  },
+  {
+    "title": "초급 요가 원데이 클래스 듣기",
+    "kind": "activity",
+    "category": "exercise",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울",
+    "todos": [
+      "초보 대상 원데이 클래스 찾기",
+      "매트 대여 가능한지 미리 확인하기",
+      "수업 전날 일정 비워 두기"
+    ]
+  },
+  {
+    "title": "남산 둘레길 가볍게 걷기",
+    "kind": "activity",
+    "category": "exercise",
+    "setting": "outdoor",
+    "place": "남산공원",
+    "location": "서울 중구",
+    "todos": [
+      "완만한 둘레길 코스 정하기",
+      "따뜻한 겉옷과 편한 신발 챙기기",
+      "하산 후 들를 식당 찾아 두기"
+    ]
+  }
+]

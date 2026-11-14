@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 야외에서 할 수 있는 걸로"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"내장산 단풍 트레킹 가기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"내장산국립공원\",\n    \"location\": \"전북 정읍\",\n    \"todos\": [\n      \"단풍 절정 시기 확인하기\",\n      \"숙소 예약하기\",\n      \"등산화와 방한복 챙기기\",\n      \"탐방로 코스 정해 두기\"\n    ]\n  },\n  {\n    \"title\": \"경주 동궁과 월지 야경 보기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"동궁과 월지\",\n    \"location\": \"경북 경주\",\n    \"todos\": [\n      \"야간 개장 날짜 확인하기\",\n      \"숙소 잡기\",\n      \"저녁 식당 예약하기\",\n      \"따뜻한 겉옷 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"강화도 해안도로 자전거 타기\",\n    \"kind\": \"activity\",\n    \"category\": \"exercise\",\n    \"setting\": \"outdoor\",\n    \"place\": \"\",\n    \"location\": \"인천 강화도\",\n    \"todos\": [\n      \"자전거 대여처 알아보기\",\n      \"바람막이와 장갑 챙기기\",\n      \"해안도로 코스 정하기\",\n      \"간식과 물 준비하기\"\n    ]\n  },\n  {\n    \"title\": \"여의도 한강공원 피크닉 파티\",\n    \"kind\": \"activity\",\n    \"category\": \"event\",\n    \"setting\": \"outdoor\",\n    \"place\": \"여의도한강공원\",\n    \"location\": \"서울 여영등포구 여의도동\",\n    \"todos\": [\n      \"참여 인원과 날짜 정하기\",\n      \"돗자리와 담요 준비하기\",\n      \"도시락이나 간식 고르기\",\n      \"바람 강한 날 피하기\"\n    ]\n  },\n  {\n    \"title\": \"경복궁 야간 관람 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"outdoor\",\n    \"place\": \"경복궁\",\n    \"location\": \"서울 종로구\",\n    \"todos\": [\n      \"야간 관람 예매하기\",\n      \"관람 시간과 동선 확인하기\",\n      \"근처 저녁 식당 찾아 두기\",\n      \"따뜻한 옷 챙기기\"\n    ]\n  }\n]\n```"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 돈 거의 안 드는 걸로"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"남산 둘레길 단풍 산책하기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"남산공원\",\n    \"location\": \"서울 용산\",\n    \"todos\": [\n      \"단풍 절정 시기 확인하기\",\n      \"편한 운동화 신고 가기\",\n      \"하산 후 먹을 간식 정하기\"\n    ]\n  },\n  {\n    \"title\": \"국립중앙박물관 무료 관람하기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립중앙박물관\",\n    \"location\": \"서울 용산\",\n    \"todos\": [\n      \"무료 관람 날짜와 시간 확인하기\",\n      \"둘러볼 전시관 미리 고르기\",\n      \"관람 후 갈 식당 정하기\"\n    ]\n  },\n  {\n    \"title\": \"청계천 야경 걷기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"청계천\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"해 지는 시간 확인하기\",\n      \"두툼한 겉옷 챙기기\",\n      \"걷고 난 뒤 붕어빵 먹으러 가기\"\n    ]\n  },\n  {\n    \"title\": \"같이 집에서 유자차 담그기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"유자 한 봉지 장보기\",\n      \"깨끗한 유리병 준비하기\",\n      \"설탕 비율 정해 두기\",\n      \"일주일 뒤 맛보기 약속하기\"\n    ]\n  },\n  {\n    \"title\": \"집에서 홈 영화 상영회 열기\",\n    \"kind\": \"activity\",\n    \"category\": \"event\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"같이 볼 영화 투표로 고르기\",\n      \"담요와 간식 준비하기\",\n      \"상영 시간과 자리 정하기\"\n    ]\n  }\n]\n```"
+  }
+]

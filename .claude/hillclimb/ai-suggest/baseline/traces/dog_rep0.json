@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 강아지랑 같이 갈 수 있는 곳"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"서울숲에서 강아지랑 산책하기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"서울숲\",\n    \"location\": \"서울 성동구\",\n    \"todos\": [\n      \"목줄과 배변봉투 챙기기\",\n      \"주말 오전이 한산한지 확인하기\",\n      \"단풍길 산책 코스 미리 보기\"\n    ]\n  },\n  {\n    \"title\": \"양평 두물머리 강아지 산책\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"두물머리\",\n    \"location\": \"경기 양평\",\n    \"todos\": [\n      \"반려견 출입 가능 구역 확인하기\",\n      \"주차 자리 미리 찾아 두기\",\n      \"산책 후 갈 근처 카페 정하기\"\n    ]\n  },\n  {\n    \"title\": \"애견 동반 카페 투어\",\n    \"kind\": \"place\",\n    \"category\": \"cafe\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 서촌\",\n    \"todos\": [\n      \"반려견 동반 가능한 카페 찾기\",\n      \"방문 전에 전화로 동반 가능 확인하기\",\n      \"좌석 규정과 간식 허용 여부 보기\"\n    ]\n  },\n  {\n    \"title\": \"반려견 동반 가능한 식당 가기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"동반 가능한 식당 검색하기\",\n      \"예약할 때 반려견 동행 미리 말하기\",\n      \"이동장이나 매트 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"반려견과 가을 사진 찍기\",\n    \"kind\": \"activity\",\n    \"category\": \"memory\",\n    \"setting\": \"outdoor\",\n    \"place\": \"남산공원\",\n    \"location\": \"서울 용산구\",\n    \"todos\": [\n      \"촬영 시간대 정하기 (해질녘 추천)\",\n      \"강아지 간식과 장난감 챙기기\",\n      \"사진 찍을 단풍 장소 골라 두기\"\n    ]\n  }\n]\n```"
+  }
+]

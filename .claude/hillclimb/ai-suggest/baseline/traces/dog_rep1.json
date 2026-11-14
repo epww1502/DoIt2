@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 강아지랑 같이 갈 수 있는 곳"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"서울숲 반려견과 가을 산책\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"서울숲\",\n    \"location\": \"서울 성수동\",\n    \"todos\": [\n      \"목줄과 배변봉투 챙기기\",\n      \"단풍 절정 시기 확인하기\",\n      \"산책 후 갈 근처 식당 찾아두기\"\n    ]\n  },\n  {\n    \"title\": \"반려견 동반 가능한 식당 투어\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 이태원\",\n    \"todos\": [\n      \"반려견 동반 가능한 식당 목록 찾기\",\n      \"방문 전 전화로 동반 가능 여부 확인하기\",\n      \"예약할 때 좌석 위치 요청하기\"\n    ]\n  },\n  {\n    \"title\": \"경주 보문호수 반려견 산책 여행\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"보문호수\",\n    \"location\": \"경북 경주\",\n    \"todos\": [\n      \"반려견 동반 가능한 숙소 찾기\",\n      \"호수 둘레 산책 코스 정하기\",\n      \"주변 반려견 동반 가능 식당 알아보기\"\n    ]\n  },\n  {\n    \"title\": \"반려견과 함께 수제 간식 만들기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"강아지 간식 레시피 고르기\",\n      \"사람이 먹는 양념 빼고 재료 사기\",\n      \"간식 만들 도구와 오븐 준비하기\",\n      \"완성한 간식 나눠 주며 기록하기\"\n    ]\n  },\n  {\n    \"title\": \"반려견 가을 야외 사진 촬영\",\n    \"kind\": \"activity\",\n    \"category\": \"memory\",\n    \"setting\": \"outdoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"촬영할 단풍 명소 고르기\",\n      \"반려견이 좋아하는 간식 준비하기\",\n      \"촬영 시간을 해 질 무렵으로 잡기\"\n    ]\n  }\n]\n```"
+  }
+]

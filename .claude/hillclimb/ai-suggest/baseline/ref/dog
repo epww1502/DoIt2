@@ -1,0 +1,67 @@
+[
+  {
+    "title": "서울숲에서 강아지랑 산책하기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "서울숲",
+    "location": "서울 성동구",
+    "todos": [
+      "목줄과 배변봉투 챙기기",
+      "주말 오전이 한산한지 확인하기",
+      "단풍길 산책 코스 미리 보기"
+    ]
+  },
+  {
+    "title": "양평 두물머리 강아지 산책",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "두물머리",
+    "location": "경기 양평",
+    "todos": [
+      "반려견 출입 가능 구역 확인하기",
+      "주차 자리 미리 찾아 두기",
+      "산책 후 갈 근처 카페 정하기"
+    ]
+  },
+  {
+    "title": "애견 동반 카페 투어",
+    "kind": "place",
+    "category": "cafe",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 서촌",
+    "todos": [
+      "반려견 동반 가능한 카페 찾기",
+      "방문 전에 전화로 동반 가능 확인하기",
+      "좌석 규정과 간식 허용 여부 보기"
+    ]
+  },
+  {
+    "title": "반려견 동반 가능한 식당 가기",
+    "kind": "place",
+    "category": "food",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "동반 가능한 식당 검색하기",
+      "예약할 때 반려견 동행 미리 말하기",
+      "이동장이나 매트 챙기기"
+    ]
+  },
+  {
+    "title": "반려견과 가을 사진 찍기",
+    "kind": "activity",
+    "category": "memory",
+    "setting": "outdoor",
+    "place": "남산공원",
+    "location": "서울 용산구",
+    "todos": [
+      "촬영 시간대 정하기 (해질녘 추천)",
+      "강아지 간식과 장난감 챙기기",
+      "사진 찍을 단풍 장소 골라 두기"
+    ]
+  }
+]

@@ -1,0 +1,72 @@
+[
+  {
+    "title": "감천문화마을 골목 걷기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "감천문화마을",
+    "location": "부산 사하구",
+    "todos": [
+      "날씨와 주말 혼잡도 확인하기",
+      "편한 운동화 신고 가기",
+      "대중교통 경로 미리 찾아 두기",
+      "마을 안 카페와 포토 스팟 정하기"
+    ]
+  },
+  {
+    "title": "자갈치시장에서 회 먹기",
+    "kind": "place",
+    "category": "food",
+    "setting": "indoor",
+    "place": "자갈치시장",
+    "location": "부산 중구",
+    "todos": [
+      "먹고 싶은 회 종류 정하기",
+      "시장 안 횟집 후기 비교하기",
+      "현금 챙기기",
+      "식사 후 용두산공원 들르기"
+    ]
+  },
+  {
+    "title": "부산현대미술관 전시 관람",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "부산현대미술관",
+    "location": "부산 해운대구",
+    "todos": [
+      "현재 진행 중인 전시 확인하기",
+      "관람 날짜와 시간 정하기",
+      "온라인으로 관람권 예매하기",
+      "근처 점심 장소 찾아 두기"
+    ]
+  },
+  {
+    "title": "태종대 해안 산책",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "태종대",
+    "location": "부산 영도구",
+    "todos": [
+      "순환 열차 탑승 여부 정하기",
+      "해안 산책로 코스 확인하기",
+      "바람에 대비해 겉옷 챙기기",
+      "영도 해산물 식당 찾아 두기"
+    ]
+  },
+  {
+    "title": "해동용궁사 절 구경",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "해동용궁사",
+    "location": "부산 기장군",
+    "todos": [
+      "방문 시간대 정하기",
+      "주차 또는 버스 노선 확인하기",
+      "계단이 많으니 편한 신발 신기",
+      "기장 시장에서 먹을 것 정하기"
+    ]
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 야외에서 할 수 있는 걸로"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"내장산 단풍 구경 가기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"내장산국립공원\",\n    \"location\": \"전북 정읍\",\n    \"todos\": [\n      \"단풍 절정 시기 확인하기\",\n      \"주말 숙소 예약하기\",\n      \"등산로 코스 골라 두기\",\n      \"따뜻한 겉옷과 편한 신발 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"북한산 둘레길 걷기\",\n    \"kind\": \"activity\",\n    \"category\": \"exercise\",\n    \"setting\": \"outdoor\",\n    \"place\": \"북한산국립공원\",\n    \"location\": \"서울 강북구\",\n    \"todos\": [\n      \"코스 정하기 (1코스 또는 2코스)\",\n      \"날씨 확인하기\",\n      \"물과 간식 챙기기\",\n      \"하산 후 먹을 곳 정해 두기\"\n    ]\n  },\n  {\n    \"title\": \"경주 야경 산책하기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"동궁과 월지\",\n    \"location\": \"경북 경주\",\n    \"todos\": [\n      \"야간 개장 시간 확인하기\",\n      \"경주 숙소 예약하기\",\n      \"대릉원과 함께 돌 코스 짜기\",\n      \"따뜻한 옷 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"남산 산책하고 야경 보기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"남산서울타워\",\n    \"location\": \"서울 용산구\",\n    \"todos\": [\n      \"케이블카 운행 시간 확인하기\",\n      \"해 지는 시각에 맞춰 출발하기\",\n      \"전망대 입장권 예매하기\",\n      \"산책 후 근처 식당 찾아 두기\"\n    ]\n  },\n  {\n    \"title\": \"서울숲에서 야외 스케치하기\",\n    \"kind\": \"activity\",\n    \"category\": \"hobby\",\n    \"setting\": \"outdoor\",\n    \"place\": \"서울숲\",\n    \"location\": \"서울 성동구\",\n    \"todos\": [\n      \"스케치북과 연필 챙기기\",\n      \"그릴 장소 두세 곳 정해 두기\",\n      \"돗자리나 방석 준비하기\",\n      \"완성 후 사진으로 기록하기\"\n    ]\n  }\n]\n```"
+  }
+]

@@ -1,0 +1,67 @@
+[
+  {
+    "title": "경복궁 단풍 산책하기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "outdoor",
+    "place": "경복궁",
+    "location": "서울 종로구",
+    "todos": [
+      "개장 시간과 관람료 확인하기",
+      "단풍 절정 시기 찾아보기",
+      "경회루 주변 산책 코스 정하기"
+    ]
+  },
+  {
+    "title": "남산 단풍길 걷기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "남산공원",
+    "location": "서울 중구",
+    "todos": [
+      "남산 순환길 코스 정하기",
+      "편한 운동화 챙기기",
+      "해질녘 도착 시간 맞추기"
+    ]
+  },
+  {
+    "title": "국립중앙박물관 무료 관람",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "국립중앙박물관",
+    "location": "서울 용산구",
+    "todos": [
+      "상설전시 무료 여부 확인하기",
+      "관람 동선과 볼 전시 정하기",
+      "근처 식당 미리 찾아 두기"
+    ]
+  },
+  {
+    "title": "집에서 군고구마 구워 먹기",
+    "kind": "activity",
+    "category": "cook",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "고구마 종류와 양 고르기",
+      "오븐이나 에어프라이어 준비하기",
+      "호일로 싸서 굽는 시간 정하기"
+    ]
+  },
+  {
+    "title": "가을 산책 사진 함께 남기기",
+    "kind": "activity",
+    "category": "memory",
+    "setting": "outdoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "사진 찍을 장소 두세 곳 정하기",
+      "함께 찍을 사진 주제 정하기",
+      "찍은 사진 모아 공유 앨범 만들기"
+    ]
+  }
+]

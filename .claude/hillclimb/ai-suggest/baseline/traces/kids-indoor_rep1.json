@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(family): 에버랜드 가기, 아이와 캠핑, 갯벌 체험, 가족사진 찍기\n요청: 아이랑 같이 갈 수 있는 실내"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"국립과천과학관 체험 관람 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립과천과학관\",\n    \"location\": \"경기 과천시\",\n    \"todos\": [\n      \"아이 나이에 맞는 전시관 순서 정하기\",\n      \"체험 프로그램 시간 확인하고 예약하기\",\n      \"관내 점심 먹을 곳 미리 찾아두기\"\n    ]\n  },\n  {\n    \"title\": \"국립중앙박물관 어린이 관람하기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립중앙박물관\",\n    \"location\": \"서울 용산구\",\n    \"todos\": [\n      \"관람 시간과 휴관일 확인하기\",\n      \"아이가 좋아할 전시실 두세 곳 고르기\",\n      \"주변 식당이나 카페 위치 찾아두기\"\n    ]\n  },\n  {\n    \"title\": \"아이랑 같이 쿠키 구워 보기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"아이 손에 맞는 쉬운 쿠키 레시피 고르기\",\n      \"재료와 오븐, 계량도구 있는지 확인하기\",\n      \"완성한 쿠키 담을 용기 준비하기\"\n    ]\n  },\n  {\n    \"title\": \"아이랑 종이 공예 만들기\",\n    \"kind\": \"activity\",\n    \"category\": \"hobby\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"만들 작품 하나 정하기\",\n      \"색종이, 가위, 풀 같은 재료 사두기\",\n      \"완성작을 둘 자리 정해 두기\"\n    ]\n  },\n  {\n    \"title\": \"어린이 뮤지컬 함께 관람하기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 대학로\",\n    \"todos\": [\n      \"아이 관람 연령과 공연 시간 확인하기\",\n      \"주말 회차 중 좌석 예매하기\",\n      \"공연 전후로 갈 식당 찾아두기\"\n    ]\n  }\n]\n```"
+  }
+]

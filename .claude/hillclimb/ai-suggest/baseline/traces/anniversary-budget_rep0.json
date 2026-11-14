@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 기념일에 특별하게, 예산 10만원 안쪽"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"경복궁 야간 관람 즐기기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"outdoor\",\n    \"place\": \"경복궁\",\n    \"location\": \"서울 종로구\",\n    \"todos\": [\n      \"야간 관람 일정과 예매 확인하기\",\n      \"관람 시간대와 날짜 정하기\",\n      \"관람 후 갈 근처 식당 찾아 두기\"\n    ]\n  },\n  {\n    \"title\": \"남산서울타워 야경 보러 가기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"남산서울타워\",\n    \"location\": \"서울 용산구\",\n    \"todos\": [\n      \"케이블카 이용 시간 확인하기\",\n      \"해 지는 시각에 맞춰 방문 시간 정하기\",\n      \"따뜻한 겉옷 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"이태원 분위기 좋은 식당에서 기념일 디너\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 이태원\",\n    \"todos\": [\n      \"기념일 날짜 기준으로 예약하기\",\n      \"예산 10만원 안쪽 메뉴 비교하기\",\n      \"기념 케이크나 디저트 주문 가능한지 문의하기\"\n    ]\n  },\n  {\n    \"title\": \"둘만의 향수 만들기 클래스 듣기\",\n    \"kind\": \"activity\",\n    \"category\": \"hobby\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울\",\n    \"todos\": [\n      \"원데이 향수 클래스 찾아 비교하기\",\n      \"2인 예약 가능한 날짜 확인하기\",\n      \"원하는 향 계열 미리 정해 두기\"\n    ]\n  },\n  {\n    \"title\": \"기념일 손편지와 꽃다발 깜짝 선물하기\",\n    \"kind\": \"activity\",\n    \"category\": \"event\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"기념일 날짜와 시간 정하기\",\n      \"꽃집에서 소형 꽃다발 주문하기\",\n      \"편지에 쓸 내용 미리 적어 두기\"\n    ]\n  }\n]\n```"
+  }
+]

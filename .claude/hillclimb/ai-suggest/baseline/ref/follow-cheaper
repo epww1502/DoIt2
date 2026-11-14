@@ -1,0 +1,67 @@
+[
+  {
+    "title": "조조 할인으로 영화 보기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 신촌",
+    "todos": [
+      "조조 상영 시간표 확인하기",
+      "할인 요일과 혜택 비교하기",
+      "예매 후 근처 분식집 정하기"
+    ]
+  },
+  {
+    "title": "방탈출 카페에서 방탈출 하기",
+    "kind": "place",
+    "category": "activity",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 건대입구",
+    "todos": [
+      "인원 맞춰 테마 고르기",
+      "할인 시간대 예약하기",
+      "힌트 사용 규칙 정해 두기"
+    ]
+  },
+  {
+    "title": "보드게임 카페 시간제로 놀기",
+    "kind": "place",
+    "category": "activity",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 홍대",
+    "todos": [
+      "시간제 요금표 비교하기",
+      "같이 할 게임 두세 개 고르기",
+      "주말 피하고 평일 저녁 예약하기"
+    ]
+  },
+  {
+    "title": "종로 노포 칼국수 투어",
+    "kind": "place",
+    "category": "food",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 종로",
+    "todos": [
+      "가격 착한 노포 두세 곳 찾기",
+      "방문 순서와 동선 정하기",
+      "영업시간과 브레이크타임 확인하기"
+    ]
+  },
+  {
+    "title": "교보문고에서 책 고르고 구경하기",
+    "kind": "place",
+    "category": "etc",
+    "setting": "indoor",
+    "place": "교보문고 광화문점",
+    "location": "서울 광화문",
+    "todos": [
+      "서로 추천할 책 한 권씩 정하기",
+      "독서 공간에서 쉬기 시간 정하기",
+      "서점 근처 저렴한 카페 찾아 두기"
+    ]
+  }
+]

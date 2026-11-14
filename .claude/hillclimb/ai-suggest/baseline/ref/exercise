@@ -1,0 +1,70 @@
+[
+  {
+    "title": "한강공원에서 러닝 시작하기",
+    "kind": "activity",
+    "category": "exercise",
+    "setting": "outdoor",
+    "place": "여의도한강공원",
+    "location": "서울 여의도",
+    "todos": [
+      "러닝화 상태 확인하기",
+      "주 3회 3km 목표 정하기",
+      "러닝 앱으로 기록 시작하기",
+      "추위 대비 바람막이 챙기기"
+    ]
+  },
+  {
+    "title": "실내 클라이밍 입문 체험하기",
+    "kind": "place",
+    "category": "activity",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울",
+    "todos": [
+      "근처 클라이밍짐 체험권 찾기",
+      "편한 운동복과 운동화 준비하기",
+      "초보 강습 시간 예약하기",
+      "암장 이용 규칙과 장비 대여 확인하기"
+    ]
+  },
+  {
+    "title": "요가 원데이 클래스 듣기",
+    "kind": "activity",
+    "category": "exercise",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "집 근처 요가원 후기 비교하기",
+      "원데이 클래스 일정 예약하기",
+      "요가매트 필요 여부 확인하기"
+    ]
+  },
+  {
+    "title": "북한산 둘레길 걷기",
+    "kind": "activity",
+    "category": "exercise",
+    "setting": "outdoor",
+    "place": "북한산국립공원",
+    "location": "서울 북한산",
+    "todos": [
+      "날씨와 일몰 시간 확인하기",
+      "1~3시간 코스 정하기",
+      "등산화와 물 챙기기",
+      "하산 후 먹을 식당 찾아두기"
+    ]
+  },
+  {
+    "title": "실내 스피닝 수업 체험하기",
+    "kind": "activity",
+    "category": "exercise",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "체험 가능한 스피닝 클래스 찾기",
+      "수업 전 자전거 세팅 방법 익히기",
+      "물과 수건 챙기기"
+    ]
+  }
+]

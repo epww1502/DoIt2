@@ -1,0 +1,70 @@
+[
+  {
+    "title": "경주 대릉원 야경 산책",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "대릉원",
+    "location": "경북 경주",
+    "todos": [
+      "야간 개장 날짜 확인하기",
+      "경주 숙소 예약하기",
+      "따뜻한 겉옷과 핫팩 챙기기",
+      "야경 뒤 황리단길 식당 정하기"
+    ]
+  },
+  {
+    "title": "국립중앙박물관 관람하기",
+    "kind": "place",
+    "category": "culture",
+    "setting": "indoor",
+    "place": "국립중앙박물관",
+    "location": "서울 용산",
+    "todos": [
+      "관람 날짜와 시간 정하기",
+      "무료 관람 여부 확인하기",
+      "전시 관람 순서 미리 정하기",
+      "근처 식당 예약하기"
+    ]
+  },
+  {
+    "title": "을지로 노포 투어",
+    "kind": "place",
+    "category": "food",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 을지로",
+    "todos": [
+      "가고 싶은 노포 3곳 고르기",
+      "웨이팅 많은 곳 방문 시간 정하기",
+      "2차로 갈 바 정해 두기"
+    ]
+  },
+  {
+    "title": "같이 김장 담그기",
+    "kind": "activity",
+    "category": "cook",
+    "setting": "indoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "김장 날짜와 인원 정하기",
+      "배추와 양념 재료 주문하기",
+      "절임 시간 맞춰 준비하기",
+      "나눠 가져갈 용기 챙기기"
+    ]
+  },
+  {
+    "title": "방탈출 카페 도전하기",
+    "kind": "activity",
+    "category": "activity",
+    "setting": "indoor",
+    "place": "",
+    "location": "서울 홍대",
+    "todos": [
+      "테마와 난이도 고르기",
+      "인원에 맞는 방 예약하기",
+      "끝나고 갈 카페 찾아 두기"
+    ]
+  }
+]

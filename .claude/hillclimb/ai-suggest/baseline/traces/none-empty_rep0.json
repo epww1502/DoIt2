@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(empty): 없음\n요청: (없음. 취향만 보고)"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"경복궁 야간관람 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"outdoor\",\n    \"place\": \"경복궁\",\n    \"location\": \"서울 종로구\",\n    \"todos\": [\n      \"야간관람 날짜와 시간 정하기\",\n      \"온라인으로 관람 예약하기\",\n      \"방한용 따뜻한 옷 챙기기\",\n      \"단풍 명소 함께 둘러보기\"\n    ]\n  },\n  {\n    \"title\": \"같이 김장김치 담가 보기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"배추와 재료 장보기\",\n      \"김치 레시피 하나 정하기\",\n      \"함께 담글 날과 시간 정하기\",\n      \"완성된 김치 나눠 먹기\"\n    ]\n  },\n  {\n    \"title\": \"가을 단풍 등산 가기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"북한산국립공원\",\n    \"location\": \"서울 강북구\",\n    \"todos\": [\n      \"날씨 좋은 주말 고르기\",\n      \"등산 코스와 난이도 정하기\",\n      \"따뜻한 겉옷과 물 챙기기\",\n      \"하산 후 근처 식당 찾아 두기\"\n    ]\n  },\n  {\n    \"title\": \"따뜻한 온천 여행 떠나기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"indoor\",\n    \"place\": \"온양온천\",\n    \"location\": \"충청남도 아산시\",\n    \"todos\": [\n      \"1박 2일 일정과 숙소 정하기\",\n      \"숙소 예약하기\",\n      \"교통편 정하기\",\n      \"근처 맛집 목록 정리하기\"\n    ]\n  },\n  {\n    \"title\": \"연말 함께 사진 남기기\",\n    \"kind\": \"activity\",\n    \"category\": \"memory\",\n    \"setting\": \"outdoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"함께 갈 장소 고르기\",\n      \"촬영 날짜와 시간 맞추기\",\n      \"의상이나 소품 정하기\",\n      \"찍은 사진 공유 앨범 만들기\"\n    ]\n  }\n]\n```"
+  }
+]

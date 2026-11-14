@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: (없음. 취향만 보고)"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"경주 불국사 단풍 여행\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"불국사\",\n    \"location\": \"경북 경주\",\n    \"todos\": [\n      \"주말 기차표 미리 예약하기\",\n      \"단풍 절정 시기 확인하기\",\n      \"황리단길 식당 두세 곳 골라 두기\",\n      \"숙소는 경주역 근처로 잡기\"\n    ]\n  },\n  {\n    \"title\": \"을지로 노포 투어 가기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 을지로\",\n    \"todos\": [\n      \"가고 싶은 노포 3곳 정하기\",\n      \"웨이팅과 휴무일 확인하기\",\n      \"2차로 갈 호프집 정해 두기\"\n    ]\n  },\n  {\n    \"title\": \"롯데월드 어드벤처 같이 가기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"롯데월드\",\n    \"location\": \"서울 잠실\",\n    \"todos\": [\n      \"평일이나 오픈 시간 맞춰 가기\",\n      \"자유이용권 할인 여부 확인하기\",\n      \"타고 싶은 놀이기구 순서 정하기\"\n    ]\n  },\n  {\n    \"title\": \"같이 김장 담그기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"김장 레시피와 재료 목록 정하기\",\n      \"배추와 양념 재료 주문하기\",\n      \"담근 김치 나눠 가질 방법 정하기\"\n    ]\n  },\n  {\n    \"title\": \"창덕궁 가을 관람 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"outdoor\",\n    \"place\": \"창덕궁\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"관람 예약 사이트에서 날짜 잡기\",\n      \"후원 관람 가능 시간 확인하기\",\n      \"돌담길 산책 코스 정해 두기\"\n    ]\n  }\n]\n```"
+  }
+]

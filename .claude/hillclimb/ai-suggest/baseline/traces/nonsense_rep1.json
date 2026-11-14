@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: ㅋㅋㅋㅋ"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"을지로 노포 투어 가기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 을지로\",\n    \"todos\": [\n      \"노포 코스 두세 곳 골라 두기\",\n      \"웨이팅 많은 곳은 오픈 시간에 맞춰 가기\",\n      \"가게별 대표 메뉴 미리 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"북한산 단풍 산책 가기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"북한산국립공원\",\n    \"location\": \"서울 강북구\",\n    \"todos\": [\n      \"단풍 절정 시기 확인하기\",\n      \"등산화와 따뜻한 겉옷 챙기기\",\n      \"하산 후 먹을 곳 정해 두기\"\n    ]\n  },\n  {\n    \"title\": \"온양온천에서 쉬어 가기\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"indoor\",\n    \"place\": \"온양온천\",\n    \"location\": \"충남 아산\",\n    \"todos\": [\n      \"온천 호텔이나 숙소 예약하기\",\n      \"KTX 또는 고속버스 시간 정하기\",\n      \"온천 이용 시간과 준비물 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"방탈출 같이 도전하기\",\n    \"kind\": \"activity\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 홍대\",\n    \"todos\": [\n      \"인원에 맞는 테마 고르기\",\n      \"방 예약 날짜와 시간 정하기\",\n      \"힌트 사용 규칙 미리 정하기\"\n    ]\n  },\n  {\n    \"title\": \"가을 궁궐에서 필름 사진 찍기\",\n    \"kind\": \"activity\",\n    \"category\": \"memory\",\n    \"setting\": \"outdoor\",\n    \"place\": \"창덕궁\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"필름 카메라나 일회용 카메라 준비하기\",\n      \"창덕궁 관람 시간과 예매 확인하기\",\n      \"사진 현상 맡길 가게 찾아 두기\"\n    ]\n  }\n]\n```"
+  }
+]

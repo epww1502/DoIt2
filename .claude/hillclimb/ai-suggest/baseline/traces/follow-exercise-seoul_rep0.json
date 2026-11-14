@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(solo): 혼자 영화 보기, 수영 배우기, 책 한 달에 두 권 읽기, 베이킹 클래스 듣기, 필름 카메라 사기\n요청: 운동 → 초보도 할 수 있게 → 서울 안에서"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"한강에서 초보 러닝 시작하기\",\n    \"kind\": \"activity\",\n    \"category\": \"exercise\",\n    \"setting\": \"outdoor\",\n    \"place\": \"한강공원\",\n    \"location\": \"서울 여의도\",\n    \"todos\": [\n      \"편한 운동화와 바람막이 준비하기\",\n      \"걷기와 달리기를 1분씩 번갈아 하기\",\n      \"주 3회 러닝 요일 정해 두기\",\n      \"쌀쌀하니 장갑과 모자 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"따릉이로 한강 자전거 타기\",\n    \"kind\": \"activity\",\n    \"category\": \"exercise\",\n    \"setting\": \"outdoor\",\n    \"place\": \"한강공원\",\n    \"location\": \"서울 뚝섬\",\n    \"todos\": [\n      \"따릉이 대여 앱 가입해 두기\",\n      \"평지 위주의 짧은 코스 정하기\",\n      \"안전모와 장갑 챙기기\",\n      \"날씨 확인하고 바람 약한 날 고르기\"\n    ]\n  },\n  {\n    \"title\": \"실내 볼더링 체험해 보기\",\n    \"kind\": \"activity\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울\",\n    \"todos\": [\n      \"집 근처 초보 체험 가능한 클라이밍장 찾기\",\n      \"초보자 강습이나 체험권 예약하기\",\n      \"신축성 좋은 운동복과 양말 준비하기\"\n    ]\n  },\n  {\n    \"title\": \"초급 요가 원데이 클래스 듣기\",\n    \"kind\": \"activity\",\n    \"category\": \"exercise\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울\",\n    \"todos\": [\n      \"초보 대상 원데이 클래스 찾기\",\n      \"매트 대여 가능한지 미리 확인하기\",\n      \"수업 전날 일정 비워 두기\"\n    ]\n  },\n  {\n    \"title\": \"남산 둘레길 가볍게 걷기\",\n    \"kind\": \"activity\",\n    \"category\": \"exercise\",\n    \"setting\": \"outdoor\",\n    \"place\": \"남산공원\",\n    \"location\": \"서울 중구\",\n    \"todos\": [\n      \"완만한 둘레길 코스 정하기\",\n      \"따뜻한 겉옷과 편한 신발 챙기기\",\n      \"하산 후 들를 식당 찾아 두기\"\n    ]\n  }\n]\n```"
+  }
+]

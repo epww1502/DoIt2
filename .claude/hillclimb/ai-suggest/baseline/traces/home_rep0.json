@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 집에서 할 수 있는 것만"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"제철 귤로 귤청 만들기\",\n    \"kind\": \"activity\",\n    \"category\": \"cook\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"귤 2kg 사기\",\n      \"귤과 설탕을 1:1 비율로 준비하기\",\n      \"유리병 끓는 물에 소독하기\",\n      \"일주일 숙성 기다리기\"\n    ]\n  },\n  {\n    \"title\": \"목도리 뜨개질 도전하기\",\n    \"kind\": \"activity\",\n    \"category\": \"hobby\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"뜨개바늘과 굵은 실 고르기\",\n      \"초보용 기초 영상 찾아 두기\",\n      \"한 줄씩 연습 뜨기\",\n      \"목도리 완성 목표일 정하기\"\n    ]\n  },\n  {\n    \"title\": \"집에서 같이 요가하기\",\n    \"kind\": \"activity\",\n    \"category\": \"exercise\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"요가매트 두 개 준비하기\",\n      \"초보용 요가 영상 고르기\",\n      \"주 3회 시간 정하기\"\n    ]\n  },\n  {\n    \"title\": \"올해 사진으로 앨범 만들기\",\n    \"kind\": \"activity\",\n    \"category\": \"memory\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"폰 사진 연도별로 정리하기\",\n      \"함께 찍은 사진 30장 고르기\",\n      \"인화 업체 비교해 고르기\",\n      \"표지 문구 같이 정하기\"\n    ]\n  },\n  {\n    \"title\": \"홈 무비나잇 열기\",\n    \"kind\": \"activity\",\n    \"category\": \"event\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"같이 볼 영화 투표하기\",\n      \"간식 메뉴 정하기\",\n      \"담요와 조명 세팅하기\",\n      \"영화 시작 시간 정하기\"\n    ]\n  }\n]\n```"
+  }
+]

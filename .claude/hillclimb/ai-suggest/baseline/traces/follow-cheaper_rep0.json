@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 실내 데이트 → 더 저렴하게"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"조조 할인으로 영화 보기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 신촌\",\n    \"todos\": [\n      \"조조 상영 시간표 확인하기\",\n      \"할인 요일과 혜택 비교하기\",\n      \"예매 후 근처 분식집 정하기\"\n    ]\n  },\n  {\n    \"title\": \"방탈출 카페에서 방탈출 하기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 건대입구\",\n    \"todos\": [\n      \"인원 맞춰 테마 고르기\",\n      \"할인 시간대 예약하기\",\n      \"힌트 사용 규칙 정해 두기\"\n    ]\n  },\n  {\n    \"title\": \"보드게임 카페 시간제로 놀기\",\n    \"kind\": \"place\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 홍대\",\n    \"todos\": [\n      \"시간제 요금표 비교하기\",\n      \"같이 할 게임 두세 개 고르기\",\n      \"주말 피하고 평일 저녁 예약하기\"\n    ]\n  },\n  {\n    \"title\": \"종로 노포 칼국수 투어\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"가격 착한 노포 두세 곳 찾기\",\n      \"방문 순서와 동선 정하기\",\n      \"영업시간과 브레이크타임 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"교보문고에서 책 고르고 구경하기\",\n    \"kind\": \"place\",\n    \"category\": \"etc\",\n    \"setting\": \"indoor\",\n    \"place\": \"교보문고 광화문점\",\n    \"location\": \"서울 광화문\",\n    \"todos\": [\n      \"서로 추천할 책 한 권씩 정하기\",\n      \"독서 공간에서 쉬기 시간 정하기\",\n      \"서점 근처 저렴한 카페 찾아 두기\"\n    ]\n  }\n]\n```"
+  }
+]

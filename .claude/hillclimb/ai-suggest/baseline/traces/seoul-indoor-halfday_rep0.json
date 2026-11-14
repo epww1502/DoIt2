@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(couple): 성수동 생면 파스타 집, 연남동 루프탑 카페, 제주도 한 달 살기, 전시회 같이 보러 가기, 부산 해운대 일출, 도자기 공방 원데이 클래스, 한강 10km 같이 달리기, 가평 글램핑\n요청: 이번 주말 서울에서 반나절 안에 끝나는 실내 데이트"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"국립중앙박물관 같이 관람하기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립중앙박물관\",\n    \"location\": \"서울 용산\",\n    \"todos\": [\n      \"주말 관람 시간 확인하기\",\n      \"사전 예약 필요 여부 확인하기\",\n      \"박물관 근처 점심 식당 정하기\",\n      \"관람 후 갈 카페 찾아 두기\"\n    ]\n  },\n  {\n    \"title\": \"을지로 노포에서 점심 먹기\",\n    \"kind\": \"place\",\n    \"category\": \"food\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 을지로\",\n    \"todos\": [\n      \"가고 싶은 노포 두세 곳 고르기\",\n      \"웨이팅 가능 시간 확인하기\",\n      \"영업시간과 휴무일 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"실내 클라이밍 같이 하기\",\n    \"kind\": \"activity\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 마포구\",\n    \"todos\": [\n      \"클라이밍장 예약하기\",\n      \"초보 체험 가능한지 확인하기\",\n      \"편한 옷과 운동화 챙기기\"\n    ]\n  },\n  {\n    \"title\": \"보드게임카페에서 반나절 놀기\",\n    \"kind\": \"place\",\n    \"category\": \"cafe\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 신촌\",\n    \"todos\": [\n      \"주말 예약 가능 여부 확인하기\",\n      \"하고 싶은 게임 종류 정하기\",\n      \"간식 메뉴 미리 보기\"\n    ]\n  },\n  {\n    \"title\": \"강남 방탈출 카페 도전하기\",\n    \"kind\": \"activity\",\n    \"category\": \"activity\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"서울 강남\",\n    \"todos\": [\n      \"테마와 난이도 고르기\",\n      \"예약 가능한 시간대 확인하기\",\n      \"참가 인원 정하기\",\n      \"방탈출 후 근처 식당 찾아 두기\"\n    ]\n  }\n]\n```"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "담아 둔 것(empty): 없음\n요청: (없음. 취향만 보고)"
+  },
+  {
+    "role": "assistant",
+    "content": "```json\n[\n  {\n    \"title\": \"경주 황리단길 가을 여행\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"황리단길\",\n    \"location\": \"경북 경주\",\n    \"todos\": [\n      \"교통편과 숙소 예약하기\",\n      \"단풍 명소 동선 정하기\",\n      \"황리단길 근처 카페 찾아 두기\",\n      \"주말 날씨 확인하기\"\n    ]\n  },\n  {\n    \"title\": \"서울 궁궐 단풍 산책\",\n    \"kind\": \"place\",\n    \"category\": \"trip\",\n    \"setting\": \"outdoor\",\n    \"place\": \"창덕궁\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"관람 시간과 예약 여부 확인하기\",\n      \"후원 관람 일정 정하기\",\n      \"함께 걸을 인원 정하기\",\n      \"근처 점심 식당 찾아 두기\"\n    ]\n  },\n  {\n    \"title\": \"여럿이 같이 김장 체험하기\",\n    \"kind\": \"activity\",\n    \"category\": \"hobby\",\n    \"setting\": \"indoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"김장 재료 역할 나누기\",\n      \"절임배추 주문하기\",\n      \"양념 레시피 정하기\",\n      \"김치 보관 용기 준비하기\"\n    ]\n  },\n  {\n    \"title\": \"겨울 전시 함께 보러 가기\",\n    \"kind\": \"place\",\n    \"category\": \"culture\",\n    \"setting\": \"indoor\",\n    \"place\": \"국립현대미술관\",\n    \"location\": \"서울 종로\",\n    \"todos\": [\n      \"현재 전시 일정 확인하기\",\n      \"관람 날짜와 시간 정하기\",\n      \"전시 후 갈 식당 정하기\"\n    ]\n  },\n  {\n    \"title\": \"송년 단체 사진 촬영하기\",\n    \"kind\": \"activity\",\n    \"category\": \"memory\",\n    \"setting\": \"outdoor\",\n    \"place\": \"\",\n    \"location\": \"\",\n    \"todos\": [\n      \"촬영 날짜와 장소 정하기\",\n      \"사진사나 타이머 준비하기\",\n      \"의상 컨셉 맞추기\",\n      \"인화나 공유 방법 정하기\"\n    ]\n  }\n]\n```"
+  }
+]

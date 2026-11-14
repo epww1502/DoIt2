@@ -1,0 +1,69 @@
+[
+  {
+    "title": "웰리힐리파크에서 눈썰매 타기",
+    "kind": "place",
+    "category": "activity",
+    "setting": "outdoor",
+    "place": "웰리힐리파크",
+    "location": "강원 횡성",
+    "todos": [
+      "주말 리프트권 예매하기",
+      "방한복과 장갑 챙기기",
+      "슬로프 개장일 확인하기",
+      "타고 난 뒤 온천 들를지 정하기"
+    ]
+  },
+  {
+    "title": "덕유산 상고대 설경 보러 가기",
+    "kind": "place",
+    "category": "trip",
+    "setting": "outdoor",
+    "place": "덕유산 국립공원",
+    "location": "전북 무주",
+    "todos": [
+      "상고대 피는 시기 확인하기",
+      "등산 코스와 난이도 고르기",
+      "아이젠과 방수 등산화 준비하기",
+      "일출 시간 맞춰 출발 정하기"
+    ]
+  },
+  {
+    "title": "온양온천에서 겨울 온천 여행",
+    "kind": "place",
+    "category": "trip",
+    "setting": "indoor",
+    "place": "온양온천",
+    "location": "충남 아산",
+    "todos": [
+      "온천 호텔이나 숙소 예약하기",
+      "탕 종류와 운영 시간 찾아 두기",
+      "근처 맛집 한두 곳 골라 두기"
+    ]
+  },
+  {
+    "title": "서울 종로 붕어빵 골목 먹투어",
+    "kind": "place",
+    "category": "food",
+    "setting": "outdoor",
+    "place": "",
+    "location": "서울 종로",
+    "todos": [
+      "붕어빵 파는 노점 위치 찾아 두기",
+      "팥과 슈크림 중 먹을 종류 정하기",
+      "걷는 코스와 이동 순서 짜기"
+    ]
+  },
+  {
+    "title": "겨울 밤 야경 산책 코스 짜기",
+    "kind": "activity",
+    "category": "hobby",
+    "setting": "outdoor",
+    "place": "",
+    "location": "",
+    "todos": [
+      "산책할 야경 명소 두세 곳 고르기",
+      "따뜻한 음료 파는 곳 찾아 두기",
+      "해 지는 시간 확인하기"
+    ]
+  }
+]
