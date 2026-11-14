@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>초대 · DoIt2</title>
+    <meta name="robots" content="noindex" />
+    <meta name="description" content="DoIt2 버킷리스트에 초대받았어요" />
+    <meta property="og:title" content="DoIt2 버킷리스트에 초대받았어요" />
+    <meta
+      property="og:description"
+      content="같이 하고 싶은 걸 담고, 함께한 걸 기록해요"
+    />
+    <meta property="og:image" content="https://doit2app.github.io/icon.png" />
+    <meta name="theme-color" content="#5ab0ff" />
+    <link rel="icon" href="icon.png" />
+    <link rel="stylesheet" href="landing.css" />
+  </head>
+  <body>
+    <!--
+      초대 링크: join.html?c=초대코드&s=공간 이름&e=이모지
+      공간 이름과 이모지는 링크에 적힌 글자를 그대로 보여줄 뿐, 서버에서 읽지 않는다.
+      (코드만으로 남의 공간 정보를 볼 수 없게 하려고. 실제 확인은 앱에서 들어갈 때 한다)
+    -->
+    <main class="join">
+      <a class="logo" href="./"><img src="icon.png" alt="" />DoIt2</a>
+
+      <div id="ok" hidden>
+        <div class="invite">
+          <div class="emoji" id="emoji">🎟️</div>
+          <p class="muted" id="lead">버킷리스트에 초대받았어요</p>
+          <p class="name" id="name" hidden></p>
+          <div class="code" id="code"></div>
+          <p class="muted" style="font-size: 13px; margin-top: 8px">
+            초대 코드
+          </p>
+        </div>
+
+        <button class="btn block" id="open" type="button">
+          앱에서 열고 함께하기
+        </button>
+        <a class="btn ghost block" id="install" href="./#get"
+          >앱이 없어요 · 설치하기</a
+        >
+        <button class="btn ghost block" id="copy" type="button">
+          초대 코드 복사하기
+        </button>
+
+        <p
+          id="hint"
+          class="muted"
+          style="font-size: 14px; margin-top: 16px"
+          hidden
+        >
+          앱이 열리지 않나요? 앱을 설치한 뒤
+          <b>공간 → 초대 코드로 들어가기</b>에 위 코드를 넣어주세요.
+        </p>
+
+        <ol class="how">
+          <li>DoIt2 앱을 설치해요. 가입 없이 바로 시작해요.</li>
+          <li>이 페이지로 돌아와 <b>앱에서 열고 함께하기</b>를 눌러요.</li>
+          <li>코드가 채워진 화면에서 <b>들어가기</b>를 누르면 끝이에요.</li>
+        </ol>
+      </div>
+
+      <div id="bad" hidden>
+        <div class="invite">
+          <div class="emoji">🤔</div>
+          <p class="name">초대 링크가 올바르지 않아요</p>
+          <p class="muted" style="margin-top: 8px">
+            링크를 보낸 분께 초대 코드를 다시 받아주세요.
+          </p>
+        </div>
+        <a class="btn block" href="./">DoIt2 알아보기</a>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        var PLAY =
+          'https://play.google.com/store/apps/details?id=com.doit2.app';
+        var q = new URLSearchParams(location.search);
+        var code = (q.get('c') || '').trim().toUpperCase();
+        var $ = function (id) {
+          return document.getElementById(id);
+        };
+
+        if (!/^[A-Z0-9]{6}$/.test(code)) {
+          $('bad').hidden = false;
+          return;
+        }
+
+        // 링크에 적힌 글자는 누구나 바꿀 수 있으니 글자로만 넣는다 (textContent)
+        var name = (q.get('s') || '').trim().slice(0, 40);
+        var emoji = Array.from((q.get('e') || '').trim())
+          .slice(0, 8)
+          .join('');
+        if (name) {
+          $('name').textContent = name;
+          $('name').hidden = false;
+          $('lead').textContent = '이 버킷리스트에 초대받았어요';
+          document.title = name + ' 초대 · DoIt2';
+        }
+        if (emoji) $('emoji').textContent = emoji;
+        $('code').textContent = code;
+        $('ok').hidden = false;
+
+        if (/Android/i.test(navigator.userAgent)) $('install').href = PLAY;
+
+        $('open').addEventListener('click', function () {
+          var left = false;
+          var onHide = function () {
+            if (document.hidden) left = true;
+          };
+          document.addEventListener('visibilitychange', onHide);
+          location.href = 'doit2://space/join?code=' + code;
+          // 앱이 없으면 페이지가 그대로 남는다. 그때 손으로 넣는 방법을 알려준다
+          setTimeout(function () {
+            document.removeEventListener('visibilitychange', onHide);
+            if (!left) $('hint').hidden = false;
+          }, 1800);
+        });
+
+        $('copy').addEventListener('click', function () {
+          var done = function () {
+            $('copy').textContent = '복사했어요 ✓';
+            setTimeout(function () {
+              $('copy').textContent = '초대 코드 복사하기';
+            }, 1800);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(code).then(done, function () {});
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
