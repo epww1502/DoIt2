@@ -81,6 +81,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      shared_memories: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          id: string;
+          payload: Json;
+          title: string;
+          year: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          payload: Json;
+          title: string;
+          year: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          payload?: Json;
+          title?: string;
+          year?: number;
+        };
+        Relationships: [];
+      };
       bucket_items: {
         Row: {
           category: string;
@@ -629,6 +656,18 @@ export type Database = {
       claim_push_token: {
         Args: { push_platform: string; push_token: string };
         Returns: undefined;
+      };
+      create_shared_memory: {
+        Args: {
+          memory_title: string;
+          memory_year: number;
+          memory_payload: Json;
+        };
+        Returns: string;
+      };
+      get_shared_memory: {
+        Args: { share_id: string };
+        Returns: Json;
       };
       create_shared_list: {
         Args: { list_title: string; list_items: Json };

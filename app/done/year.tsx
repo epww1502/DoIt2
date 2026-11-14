@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { Star } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import {
   FlatList,
@@ -20,15 +21,10 @@ import { shortWon } from '@/lib/bucket/cost';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { SyncEmpty, useListSync } from '@/components/bucket/SyncNotice';
 import { FONT_WEIGHTS } from '@/constants/fonts';
-import { useReviewCtx } from '@/hooks/useReviewCtx';
 import { useTogether } from '@/hooks/useTogether';
-import { itemStatus, viewForMe } from '@/lib/bucket/reviews';
+import { useYearRecap } from '@/hooks/useYearRecap';
 import { KIND_META, recordPhotos, type BucketItem } from '@/lib/bucket/types';
-import {
-  buildYearRecap,
-  recapYear,
-  type YearRecap,
-} from '@/lib/bucket/yearRecap';
+import type { YearRecap } from '@/lib/bucket/yearRecap';
 import { showAlert } from '@/lib/dialog';
 import { useBucketStore } from '@/store/useBucketStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
@@ -48,27 +44,12 @@ type CardKey = 'intro' | 'firstLast' | 'best' | 'most' | 'photos' | 'summary';
  */
 export default function YearRecapScreen() {
   const together = useTogether();
-  const items = useBucketStore((s) => s.items);
   const spaceId = useBucketStore((s) => s.spaceId);
   const space = useSpace(spaceId);
   const sync = useListSync();
-  const reviewCtx = useReviewCtx();
   const primary = usePrimaryColor();
   const { width, height } = useWindowDimensions();
-
-  const done = useMemo(
-    () =>
-      items
-        .filter((it) => itemStatus(it, reviewCtx) === 'done')
-        .map((it) => viewForMe(it, reviewCtx)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [items, reviewCtx.userId, reviewCtx.inSpace]
-  );
-  const year = recapYear(done, new Date());
-  const recap = useMemo(
-    () => (year ? buildYearRecap(done, year) : null),
-    [done, year]
-  );
+  const { year, recap } = useYearRecap();
 
   const cards = useMemo<CardKey[]>(() => {
     if (!recap) return [];
@@ -216,6 +197,16 @@ export default function YearRecapScreen() {
         <Text variant="muted" size={12} className="pt-3 text-center">
           옆으로 넘겨 보고, 마음에 드는 카드를 저장하거나 공유해요
         </Text>
+        <Pressable
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={() => router.push('/done/share-web')}
+          className="self-center pt-3 active:opacity-60"
+        >
+          <Text size={13} weight="600" className="text-primary">
+            웹 링크로 공유하기 ›
+          </Text>
+        </Pressable>
       </View>
       <BottomBar>
         <View className="flex-row gap-2">
