@@ -1,5 +1,6 @@
 import {
   buildMemoryPayload,
+  isMemoryExpired,
   MAX_SHARE_PHOTOS,
   memoryLink,
   memoryTitle,
@@ -90,6 +91,12 @@ describe('링크와 제목', () => {
   it('제목', () => {
     expect(memoryTitle('우리 둘', 2026)).toBe('우리 둘의 2026년');
     expect(memoryTitle('', 2026)).toBe('나의 2026년');
+  });
+
+  it('기간이 지났는지', () => {
+    const now = new Date('2026-12-14T00:00:00Z');
+    expect(isMemoryExpired('2026-12-13T23:59:59Z', now)).toBe(true);
+    expect(isMemoryExpired('2026-12-14T00:00:01Z', now)).toBe(false);
   });
 
   it('링크', () => {

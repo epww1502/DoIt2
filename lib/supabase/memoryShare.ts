@@ -6,6 +6,8 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import {
+  isMemoryExpired,
+  MEMORY_SHARE_DAYS,
   memoryLink,
   memoryTitle,
   type MemoryPayload,
@@ -25,6 +27,8 @@ export type MemoryShare = {
   year: number;
   photoCount: number;
   createdAt: string;
+  /** 이때까지 열린다 */
+  expiresAt: string;
   link: string;
 };
 
@@ -116,28 +120,44 @@ export async function createMemoryShare(
     year,
     photoCount: photos.length,
     createdAt: new Date().toISOString(),
+    expiresAt: new Date(
+      Date.now() + MEMORY_SHARE_DAYS * 24 * 60 * 60 * 1000
+    ).toISOString(),
     link: memoryLink(id),
   };
 }
 
-/** 내가 켜 둔 링크들 (최근 것부터) */
+/**
+ * 내가 켜 둔 링크들 (최근 것부터).
+ * 기간이 지난 링크는 여기서 사진까지 지운다 (서버는 열리지 않게만 막고, 사진은 앱이 지운다)
+ */
 export async function listMemoryShares(): Promise<MemoryShare[]> {
   const { data, error } = await supabase
     .from('shared_memories')
-    .select('id, title, year, payload, created_at')
+    .select('id, title, year, payload, created_at, expires_at')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row) => {
-    const photos = (row.payload as { photos?: unknown } | null)?.photos;
-    return {
-      id: row.id,
-      title: row.title,
-      year: row.year,
-      photoCount: Array.isArray(photos) ? photos.length : 0,
-      createdAt: row.created_at,
-      link: memoryLink(row.id),
-    };
-  });
+  const now = new Date();
+  const rows = data ?? [];
+  await Promise.all(
+    rows
+      .filter((row) => isMemoryExpired(row.expires_at, now))
+      .map((row) => deleteMemoryShare(row.id).catch(() => {}))
+  );
+  return rows
+    .filter((row) => !isMemoryExpired(row.expires_at, now))
+    .map((row) => {
+      const photos = (row.payload as { photos?: unknown } | null)?.photos;
+      return {
+        id: row.id,
+        title: row.title,
+        year: row.year,
+        photoCount: Array.isArray(photos) ? photos.length : 0,
+        createdAt: row.created_at,
+        expiresAt: row.expires_at,
+        link: memoryLink(row.id),
+      };
+    });
 }
 
 /** 링크 끄기: 올린 사진을 지우고 나서 링크를 지운다 (사진만 남는 일이 없게) */

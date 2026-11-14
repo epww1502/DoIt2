@@ -21,7 +21,11 @@ import { useLoad } from '@/hooks/useLoad';
 import { useTogether } from '@/hooks/useTogether';
 import { useYearRecap } from '@/hooks/useYearRecap';
 import { albumPhotos, photoKey, type AlbumPhoto } from '@/lib/bucket/album';
-import { buildMemoryPayload, MAX_SHARE_PHOTOS } from '@/lib/bucket/memoryShare';
+import {
+  buildMemoryPayload,
+  MAX_SHARE_PHOTOS,
+  MEMORY_SHARE_DAYS,
+} from '@/lib/bucket/memoryShare';
 import { showAlert } from '@/lib/dialog';
 import { describeError } from '@/lib/errors';
 import {
@@ -41,7 +45,7 @@ const MAX_CANDIDATES = 90;
 
 /**
  * 웹 링크로 공유: 한 해 돌아보기를 누구나 열 수 있는 웹 페이지로 만든다.
- * 숫자·별점 높은 기록과 여기서 고른 사진만 올라가고, 켜 둔 링크는 아래에서 끌 수 있다.
+ * 숫자·별점 높은 기록과 여기서 고른 사진만 올라가고, 링크는 30일 뒤 꺼진다 (그 전에도 아래에서 끌 수 있다).
  */
 export default function ShareWebScreen() {
   const { year, recap } = useYearRecap();
@@ -131,7 +135,7 @@ export default function ShareWebScreen() {
         picked.length > 0
           ? ` 고른 사진 ${picked.length}장도 함께 공개돼요.`
           : ''
-      } 언제든 이 화면에서 끌 수 있어요.`,
+      } ${MEMORY_SHARE_DAYS}일 뒤에 저절로 꺼지고, 그 전에도 이 화면에서 끌 수 있어요.`,
       [
         { text: '취소', style: 'cancel' },
         { text: '만들기', onPress: () => void create() },
@@ -171,8 +175,9 @@ export default function ShareWebScreen() {
             {`${year}년 돌아보기를 웹 페이지로 만들어요`}
           </Text>
           <Text variant="muted" size={13}>
-            링크를 아는 사람은 앱이 없어도 볼 수 있어요. 해낸 수, 평균 별점,
-            달마다 그래프, 별점 높은 기록 이름과 아래에서 고른 사진만 올라가요.
+            {`링크를 아는 사람은 앱이 없어도 ${MEMORY_SHARE_DAYS}일 동안 볼 수 있어요. `}
+            해낸 수, 평균 별점, 달마다 그래프, 별점 높은 기록 이름과 아래에서
+            고른 사진만 올라가요.
           </Text>
           <Text variant="muted" size={13}>
             주소, 멤버 이름, 메모, 쓴 돈은 올라가지 않아요.
@@ -246,7 +251,7 @@ export default function ShareWebScreen() {
                     {share.title}
                   </Text>
                   <Text variant="muted" size={12}>
-                    {`${dayjs(share.createdAt).format('YYYY년 M월 D일')}에 만듦 · 사진 ${share.photoCount}장`}
+                    {`${dayjs(share.expiresAt).format('M월 D일')}까지 열려요 · 사진 ${share.photoCount}장`}
                   </Text>
                 </View>
                 <View className="flex-row gap-2">
