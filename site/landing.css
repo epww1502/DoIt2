@@ -158,10 +158,6 @@ img {
   font-size: 17px;
 }
 
-.store.soon {
-  opacity: 0.55;
-}
-
 /* 첫 화면 */
 .hero {
   background: linear-gradient(170deg, var(--soft), var(--bg));

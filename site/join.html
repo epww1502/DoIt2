@@ -105,7 +105,14 @@
         $('code').textContent = code;
         $('ok').hidden = false;
 
+        var APP_STORE = 'https://apps.apple.com/kr/app/id6826993862';
+        // 아이패드는 맥으로 보일 수 있어서 터치가 되는 맥도 아이폰 쪽으로 본다
+        var ios =
+          /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+          (/Macintosh/i.test(navigator.userAgent) &&
+            navigator.maxTouchPoints > 1);
         if (/Android/i.test(navigator.userAgent)) $('install').href = PLAY;
+        else if (ios) $('install').href = APP_STORE;
 
         $('open').addEventListener('click', function () {
           var left = false;
