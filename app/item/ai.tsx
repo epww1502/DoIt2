@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Check, SendHorizontal } from 'lucide-react-native';
+import { Check, Circle, SendHorizontal } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import {
   ErrorState,
   Icon,
   NavBar,
+  ProgressBar,
   Text,
   TextField,
 } from '@/components/atoms';
@@ -18,7 +19,7 @@ import { EmptyState } from '@/components/bucket/EmptyState';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { useTogether } from '@/hooks/useTogether';
-import { parseItems, suggestItems } from '@/lib/ai';
+import { parseItems, suggestItemsLive, type SuggestProgress } from '@/lib/ai';
 import { ensureAiConsent } from '@/lib/aiConsent';
 import {
   draftToSuggestion,
@@ -40,10 +41,12 @@ const MAX_KNOWN = 60;
 /** 원하는 것을 말하는 글의 길이, 그리고 AI에게 같이 보내는 최근 글 수 (서버와 같다) */
 const MAX_ASK = 200;
 const MAX_ASKS = 3;
+/** 한 번에 추천받는 개수 (서버 지시와 같다). 진행 상황을 '몇 개 중 몇 개'로 보여줄 때 쓴다 */
+const SUGGEST_COUNT = 5;
 
 type State =
   | { status: 'idle' }
-  | { status: 'loading' }
+  | { status: 'loading'; progress?: SuggestProgress }
   | { status: 'error'; message: string }
   | { status: 'ready'; drafts: AiSuggestion[] };
 
@@ -78,7 +81,18 @@ export default function AiAddScreen() {
       .getState()
       .items.map((it) => it.title)
       .slice(0, MAX_KNOWN);
-    if (suggest) return suggestItems([...shown, ...known], together, requests);
+    if (suggest) {
+      return suggestItemsLive(
+        [...shown, ...known],
+        together,
+        requests,
+        // 답이 쓰이는 동안: 어느 단계인지와 지금까지 완성된 추천
+        (progress) =>
+          setState((prev) =>
+            prev.status === 'loading' ? { status: 'loading', progress } : prev
+          )
+      );
+    }
     return (await parseItems(text.trim(), known)).map(draftToSuggestion);
   };
   const showDrafts = (drafts: AiSuggestion[] | null) => {
@@ -246,19 +260,20 @@ export default function AiAddScreen() {
             </BottomBar>
           </>
         ) : state.status === 'loading' ? (
-          <View className="flex-1 px-5 pt-1">
-            {askBubbles}
+          suggest ? (
+            <ScrollView contentContainerClassName="gap-2 px-5 pb-8 pt-1">
+              {askBubbles}
+              <SuggestSteps progress={state.progress} asked={asks.length > 0} />
+              {(state.progress?.done ?? []).map((draft) => (
+                <SuggestionCard key={draft.title} draft={draft} />
+              ))}
+            </ScrollView>
+          ) : (
             <View className="items-center gap-3 py-10">
               <ActivityIndicator />
-              <Text variant="muted">
-                {suggest
-                  ? asks.length > 0
-                    ? '말한 것에 맞는 걸 찾고 있어요'
-                    : '어울리는 걸 찾고 있어요'
-                  : '하나씩 나누고 있어요'}
-              </Text>
+              <Text variant="muted">하나씩 나누고 있어요</Text>
             </View>
-          </View>
+          )
         ) : state.status === 'error' ? (
           <>
             <View className="flex-1">
@@ -296,65 +311,15 @@ export default function AiAddScreen() {
               keyboardShouldPersistTaps="handled"
             >
               {askBubbles}
-              {drafts.map((draft) => {
-                const isSelected = selected.has(draft.title);
-                const where = draft.placeQuery || draft.location;
-                return (
-                  <Pressable
-                    key={draft.title}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: isSelected }}
-                    disabled={adding}
-                    onPress={() => toggle(draft.title)}
-                    className={cn(
-                      'flex-row items-start gap-3 rounded-2xl border bg-card p-4',
-                      isSelected ? 'border-2 border-primary' : 'border-border'
-                    )}
-                  >
-                    <ItemIcon item={draft} size={44} iconSize={20} />
-                    <View className="flex-1 gap-0.5">
-                      <Text weight="600" size={15} numberOfLines={2}>
-                        {draft.title}
-                      </Text>
-                      <Text variant="muted" size={12} numberOfLines={1}>
-                        {KIND_META[draft.kind].label} ·{' '}
-                        {getCategory(draft.category).label}
-                        {where ? ` · ${where}` : ''}
-                      </Text>
-                      {draft.todos.length > 0 ? (
-                        <View className="gap-0.5 pt-1.5">
-                          {draft.todos.map((todo) => (
-                            <Text
-                              key={todo}
-                              variant="muted"
-                              size={13}
-                              numberOfLines={1}
-                            >
-                              {`· ${todo}`}
-                            </Text>
-                          ))}
-                        </View>
-                      ) : null}
-                    </View>
-                    <View
-                      className={cn(
-                        'h-7 w-7 items-center justify-center rounded-full border-2',
-                        isSelected
-                          ? 'border-primary bg-primary'
-                          : 'border-muted bg-background'
-                      )}
-                    >
-                      {isSelected ? (
-                        <Icon
-                          as={Check}
-                          size={16}
-                          className="text-primary-foreground"
-                        />
-                      ) : null}
-                    </View>
-                  </Pressable>
-                );
-              })}
+              {drafts.map((draft) => (
+                <SuggestionCard
+                  key={draft.title}
+                  draft={draft}
+                  selected={selected.has(draft.title)}
+                  disabled={adding}
+                  onPress={() => toggle(draft.title)}
+                />
+              ))}
             </ScrollView>
             {askBar}
             <BottomBar>
@@ -374,5 +339,133 @@ export default function AiAddScreen() {
         )}
       </View>
     </SafeAreaView>
+  );
+}
+
+/**
+ * 추천받는 동안의 단계와 진행 막대. 단계는 서버가 알려 주는 실제 진행이고
+ * (연결됨 → 고르는 중 → 쓰는 중), 막대는 다섯 개 중 몇 개가 완성됐는지를 따른다.
+ */
+function SuggestSteps({
+  progress,
+  asked,
+}: {
+  progress: SuggestProgress | undefined;
+  /** 원하는 걸 말해서 받는 중인지 */
+  asked: boolean;
+}) {
+  const count = Math.min(progress?.done.length ?? 0, SUGGEST_COUNT);
+  const writing = progress?.stage === 'writing';
+  const steps = [
+    { label: '담아 둔 것 살펴보기', state: progress ? 'done' : 'active' },
+    {
+      label: asked ? '말한 것에 맞는 것 고르기' : '어울리는 것 고르기',
+      state: writing ? 'done' : progress ? 'active' : 'waiting',
+    },
+    {
+      label: `장소와 할 것 채우기 (${count}/${SUGGEST_COUNT})`,
+      state: writing ? 'active' : 'waiting',
+    },
+  ] as const;
+  // 고르는 동안은 얼마나 남았는지 알 수 없어서 앞부분만 채워 두고, 쓰기 시작하면 완성된 개수만큼 늘린다
+  const percent = !progress
+    ? 4
+    : !writing
+      ? 12
+      : 20 + (count / SUGGEST_COUNT) * 80;
+
+  return (
+    <View
+      accessibilityRole="progressbar"
+      accessibilityLabel={`추천을 만드는 중, ${SUGGEST_COUNT}개 중 ${count}개 완성`}
+      className="gap-3 rounded-2xl p-4 bg-accent"
+    >
+      <ProgressBar value={percent} />
+      <View className="gap-2">
+        {steps.map((step) => (
+          <View key={step.label} className="flex-row items-center gap-2">
+            <View className="h-5 w-5 items-center justify-center">
+              {step.state === 'done' ? (
+                <Icon as={Check} size={16} className="text-primary" />
+              ) : step.state === 'active' ? (
+                <ActivityIndicator size="small" />
+              ) : (
+                <Icon as={Circle} size={10} className="text-muted-foreground" />
+              )}
+            </View>
+            <Text
+              size={14}
+              weight={step.state === 'active' ? '600' : '400'}
+              className={
+                step.state === 'waiting' ? 'text-muted-foreground' : undefined
+              }
+            >
+              {step.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/** 추천 하나: 이름, 분류와 지역, 할 것. onPress가 없으면(받는 중) 고를 수 없는 카드로만 보여준다 */
+function SuggestionCard({
+  draft,
+  selected = false,
+  disabled = false,
+  onPress,
+}: {
+  draft: AiSuggestion;
+  selected?: boolean;
+  disabled?: boolean;
+  onPress?: () => void;
+}) {
+  const where = draft.placeQuery || draft.location;
+  return (
+    <Pressable
+      accessibilityRole={onPress ? 'checkbox' : 'text'}
+      accessibilityState={onPress ? { checked: selected } : undefined}
+      disabled={disabled || !onPress}
+      onPress={onPress}
+      className={cn(
+        'flex-row items-start gap-3 rounded-2xl border bg-card p-4',
+        selected ? 'border-2 border-primary' : 'border-border'
+      )}
+    >
+      <ItemIcon item={draft} size={44} iconSize={20} />
+      <View className="flex-1 gap-0.5">
+        <Text weight="600" size={15} numberOfLines={2}>
+          {draft.title}
+        </Text>
+        <Text variant="muted" size={12} numberOfLines={1}>
+          {KIND_META[draft.kind].label} · {getCategory(draft.category).label}
+          {where ? ` · ${where}` : ''}
+        </Text>
+        {draft.todos.length > 0 ? (
+          <View className="gap-0.5 pt-1.5">
+            {draft.todos.map((todo) => (
+              <Text key={todo} variant="muted" size={13} numberOfLines={1}>
+                {`· ${todo}`}
+              </Text>
+            ))}
+          </View>
+        ) : null}
+      </View>
+      {onPress ? (
+        <View
+          className={cn(
+            'h-7 w-7 items-center justify-center rounded-full border-2',
+            selected
+              ? 'border-primary bg-primary'
+              : 'border-muted bg-background'
+          )}
+        >
+          {selected ? (
+            <Icon as={Check} size={16} className="text-primary-foreground" />
+          ) : null}
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
