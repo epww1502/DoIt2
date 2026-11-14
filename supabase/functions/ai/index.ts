@@ -16,6 +16,9 @@
 //   requests: 사용자가 원하는 것을 말한 글 (이어서 말한 순서대로, 최근 3개까지). 없으면 취향만 보고 고른다
 //   Draft = { title, kind, category, setting }
 //   Suggestion = Draft + { place, location, todos } (fill과 같은 뜻. 예전 앱은 Draft 칸만 읽는다)
+//   stream: true 를 같이 보내면 답을 한 번에 주지 않고, 쓰이는 대로 한 줄씩(JSON 한 줄 = 한 조각) 보낸다:
+//   { stage: 'thinking' } → { stage: 'writing' } → { text: '답의 글자 조각' }... → { done: true } 또는 { error }
+//   조각을 이으면 위와 같은 JSON이 된다. 앱은 이걸로 몇 개까지 완성됐는지 보여준다 (lib/bucket/aiStream.ts)
 // - { action: 'usage' }                           오늘 쓴 횟수와 한도 (횟수에 들어가지 않는다)
 //                                                  → { ai: { used, limit }, auto: { used, limit } }
 //
@@ -335,6 +338,52 @@ function toJob(body: Record<string, unknown>): Job | null {
   return null;
 }
 
+/** 답을 쓰이는 대로 한 줄씩 보낸다 (stream: true). 줄의 모양은 맨 위 설명 참고 */
+function streamAnswer(apiKey: string, params: Anthropic.MessageStreamParams) {
+  const encoder = new TextEncoder();
+  const lines = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (line: unknown) =>
+        controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`));
+      try {
+        send({ stage: 'thinking' });
+        const stream = new Anthropic({ apiKey }).messages.stream(params);
+        for await (const event of stream) {
+          if (
+            event.type === 'content_block_start' &&
+            event.content_block.type === 'text'
+          ) {
+            send({ stage: 'writing' });
+          } else if (
+            event.type === 'content_block_delta' &&
+            event.delta.type === 'text_delta'
+          ) {
+            send({ text: event.delta.text });
+          }
+        }
+        const message = await stream.finalMessage();
+        // 거절했거나 중간에 끊겼으면 JSON이 온전하지 않다
+        send(
+          message.stop_reason === 'end_turn'
+            ? { done: true }
+            : { error: 'ai_failed', reason: message.stop_reason }
+        );
+      } catch (e) {
+        console.error('[ai] stream', e);
+        send({ error: 'ai_failed' });
+      }
+      controller.close();
+    },
+  });
+  return new Response(lines, {
+    headers: {
+      'Content-Type': 'application/x-ndjson',
+      'Cache-Control': 'no-cache',
+      'X-Accel-Buffering': 'no',
+    },
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
@@ -373,18 +422,22 @@ Deno.serve(async (req: Request) => {
   if (usageError) return json({ error: 'usage_failed' }, 500);
   if (!allowed) return json({ error: 'limit' }, 429);
 
+  const params: Anthropic.MessageCreateParamsNonStreaming = {
+    model: MODEL,
+    // 답은 짧다 (항목 몇 개와 할 것). 생각하는 데 쓰는 토큰도 여기에 들어가서, 길게 뽑아 쓰지 못하게 넉넉한 선에서 막는다
+    max_tokens: 4000,
+    system: job.system,
+    messages: [{ role: 'user', content: job.user }],
+    output_config: {
+      effort: job.effort,
+      format: { type: 'json_schema', schema: job.schema },
+    },
+  };
+  // 종류는 앱이 카테고리에 맞춰 다시 고친다 (lib/bucket/aiDraft.ts의 toAiClass)
+  if (body.stream === true) return streamAnswer(apiKey, params);
+
   try {
-    const response = await new Anthropic({ apiKey }).messages.create({
-      model: MODEL,
-      // 답은 짧다 (항목 몇 개와 할 것). 생각하는 데 쓰는 토큰도 여기에 들어가서, 길게 뽑아 쓰지 못하게 넉넉한 선에서 막는다
-      max_tokens: 4000,
-      system: job.system,
-      messages: [{ role: 'user', content: job.user }],
-      output_config: {
-        effort: job.effort,
-        format: { type: 'json_schema', schema: job.schema },
-      },
-    });
+    const response = await new Anthropic({ apiKey }).messages.create(params);
     // 거절했거나 중간에 끊겼으면 JSON이 온전하지 않다
     if (response.stop_reason !== 'end_turn') {
       return json({ error: 'ai_failed', reason: response.stop_reason }, 502);

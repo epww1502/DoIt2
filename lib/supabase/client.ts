@@ -9,6 +9,11 @@ import type { Database } from './database.types';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
 
+/** Edge Function을 직접 부를 때 쓰는 주소와 공개 키 (답을 조금씩 받아야 해서 supabase.functions.invoke를 못 쓸 때) */
+export const functionUrl = (name: string) =>
+  `${supabaseUrl}/functions/v1/${name}`;
+export const supabasePublicKey = supabaseKey;
+
 /** .env에 Supabase 값이 들어 있는지. 없으면 앱은 휴대폰에만 저장하는 모드로 동작한다 */
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey);
 
