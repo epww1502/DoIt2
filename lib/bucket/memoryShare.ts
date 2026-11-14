@@ -7,6 +7,8 @@ import type { YearRecap } from './yearRecap';
 
 /** 링크 하나에 넣을 수 있는 사진 수 (서버도 같은 수로 막는다) */
 export const MAX_SHARE_PHOTOS = 12;
+/** 링크가 열려 있는 날 수 (서버의 expires_at 기본값과 같다) */
+export const MEMORY_SHARE_DAYS = 30;
 /** 별점 높은 기록은 몇 개까지 */
 const MAX_BEST = 5;
 const MAX_REVIEW = 200;
@@ -121,6 +123,11 @@ export function buildMemoryPayload(
 /** 링크 제목 ('우리 둘의 2026년' / '나의 2026년') */
 export function memoryTitle(space: string, year: number) {
   return `${space ? `${space}의` : '나의'} ${year}년`.slice(0, 40);
+}
+
+/** 기간이 지나 더는 열리지 않는 링크인지 */
+export function isMemoryExpired(expiresAt: string, now: Date) {
+  return new Date(expiresAt).getTime() <= now.getTime();
 }
 
 export function memoryLink(id: string) {
