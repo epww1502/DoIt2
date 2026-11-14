@@ -3,46 +3,183 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DoIt2 · 두잇투</title>
+    <title>DoIt2 · 두잇투 — 함께 쓰는 버킷리스트</title>
     <meta
       name="description"
+      content="같이 하고 싶은 걸 담고, 함께한 걸 기록하는 버킷리스트 앱. 연인, 친구, 가족과 함께 써요."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="DoIt2 · 두잇투" />
+    <meta
+      property="og:description"
       content="같이 하고 싶은 걸 담고, 함께한 걸 기록하는 버킷리스트 앱"
     />
+    <meta property="og:image" content="https://doit2app.github.io/icon.png" />
+    <meta property="og:url" content="https://doit2app.github.io/" />
+    <meta name="theme-color" content="#5ab0ff" />
     <link rel="icon" href="icon.png" />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="landing.css" />
   </head>
   <body>
-    <div class="wrap">
-      <header class="brand">
-        <img src="icon.png" alt="" />
-        <a href="./">DoIt2 · 두잇투</a>
-      </header>
+    <header class="in top">
+      <a class="logo" href="./"><img src="icon.png" alt="" />DoIt2 · 두잇투</a>
+      <nav>
+        <a href="#features">기능</a>
+        <a href="#start">쓰는 법</a>
+        <a href="mailto:doit2team@gmail.com">문의</a>
+        <a class="btn small" href="#get">앱 받기</a>
+      </nav>
+    </header>
 
-      <h1>같이 하고 싶은 걸 담고,<br />함께한 걸 기록해요</h1>
-      <p class="muted">연인, 친구, 가족과 함께 쓰는 버킷리스트</p>
-
-      <div class="box">
-        <ul style="margin: 0; padding-left: 20px">
-          <li><b>가보기 · 해보기</b>: 가고 싶은 곳과 해보고 싶은 걸 담아요.</li>
-          <li><b>함께한 기록</b>: 날짜, 별점, 한 줄 후기, 사진으로 남겨요.</li>
-          <li>
-            <b>오늘 뭐 하지?</b>: 고민될 땐 하나 뽑아요. 비 오는 날엔 실외를
-            빼고요.
-          </li>
-          <li><b>공간</b>: 초대 코드로 최대 10명까지 함께 써요.</li>
-          <li>
-            <b>추억 모아보기</b>: 함께한 곳 지도와 달력으로 돌아봐요.
-          </li>
-        </ul>
+    <main>
+      <div class="hero">
+        <div class="in">
+          <div>
+            <span class="badge">연인 · 친구 · 가족과 함께 쓰는 버킷리스트</span>
+            <h1>같이 하고 싶은 걸 담고,<br /><em>함께한 걸</em> 기록해요</h1>
+            <p class="lead muted">
+              가고 싶은 곳, 해보고 싶은 걸 한곳에 모으고 다녀온 날엔 사진과
+              별점, 한 줄 후기를 남겨요.
+            </p>
+            <div class="stores">
+              <a
+                class="store"
+                href="https://play.google.com/store/apps/details?id=com.doit2.app"
+                ><small>GET IT ON</small><b>Google Play</b></a
+              >
+              <span class="store soon"
+                ><small>iPhone은 준비 중</small><b>App Store</b></span
+              >
+            </div>
+            <p class="muted" style="font-size: 14px; margin-top: 14px">
+              가입 없이 바로 시작 · 무료
+            </p>
+          </div>
+          <div class="shots">
+            <img
+              class="shot"
+              src="shots/01-bucketlist.webp"
+              width="600"
+              height="1304"
+              alt="버킷리스트 화면: 가보기와 해보기 목록"
+            />
+            <img
+              class="shot"
+              src="shots/06-memories.webp"
+              width="600"
+              height="1304"
+              alt="추억 모아보기 화면: 함께 해낸 개수와 달마다 그래프"
+            />
+          </div>
+        </div>
       </div>
 
-      <p class="muted">문의: <a href="mailto:doit2team@gmail.com">doit2team@gmail.com</a></p>
+      <section id="features" class="in">
+        <h2>둘이서도, 열 명이서도</h2>
+        <div class="feat">
+          <div class="f">
+            <div class="e">📍</div>
+            <h3>가보기 · 해보기</h3>
+            <p>
+              지도에서 장소를 고르거나 검색해서 담아요. 해보고 싶은 일도 함께
+              모아요.
+            </p>
+          </div>
+          <div class="f">
+            <div class="e">📸</div>
+            <h3>함께한 기록</h3>
+            <p>다녀온 날짜, 별점, 한 줄 후기, 사진으로 그날을 남겨요.</p>
+          </div>
+          <div class="f">
+            <div class="e">🎲</div>
+            <h3>오늘 뭐 하지?</h3>
+            <p>고민될 땐 하나 뽑아요. 비 오는 날엔 실외를 빼고요.</p>
+          </div>
+          <div class="f">
+            <div class="e">🎟️</div>
+            <h3>공간</h3>
+            <p>
+              초대 코드 하나로 최대 10명까지 함께 써요. 여러 공간에 들어갈 수도
+              있어요.
+            </p>
+          </div>
+          <div class="f">
+            <div class="e">📅</div>
+            <h3>목표 날짜</h3>
+            <p>날짜를 잡으면 캘린더에 넣고, 그날 날씨 예보도 볼 수 있어요.</p>
+          </div>
+          <div class="f">
+            <div class="e">🗺️</div>
+            <h3>추억 모아보기</h3>
+            <p>함께한 곳을 지도와 달력, 통계로 돌아봐요.</p>
+          </div>
+        </div>
+      </section>
 
-      <footer>
-        <a href="./">DoIt2</a>
+      <section id="start" class="in">
+        <div class="split">
+          <img
+            class="shot"
+            src="shots/02-pick.webp"
+            width="600"
+            height="1304"
+            loading="lazy"
+            alt="오늘 뭐 하지 화면: 버킷리스트에서 하나 뽑기"
+          />
+          <div>
+            <h2>시작은 금방이에요</h2>
+            <div class="step">
+              <div class="num">1</div>
+              <div>
+                <b>공간을 만들어요</b>
+                <p class="muted">이름과 이모지만 정하면 돼요.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="num">2</div>
+              <div>
+                <b>초대 코드를 보내요</b>
+                <p class="muted">받은 사람은 코드로 바로 들어와요.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="num">3</div>
+              <div>
+                <b>같이 담고, 같이 해내요</b>
+                <p class="muted">하나씩 해낼 때마다 기록이 쌓여요.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="get" class="in">
+        <div class="cta">
+          <h2>같이 하고 싶은 것, 하나 담아볼까요?</h2>
+          <p>지금 DoIt2에 첫 번째 버킷을 담아보세요</p>
+          <div class="stores">
+            <a
+              class="store"
+              href="https://play.google.com/store/apps/details?id=com.doit2.app"
+              ><small>GET IT ON</small><b>Google Play</b></a
+            >
+            <span class="store soon"
+              ><small>iPhone은 준비 중</small><b>App Store</b></span
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="in">
+      <span
+        >DoIt2 ·
+        <a href="mailto:doit2team@gmail.com">doit2team@gmail.com</a></span
+      >
+      <span>
         <a href="privacy.html">개인정보처리방침</a>
         <a href="delete-account.html">계정 삭제</a>
-      </footer>
-    </div>
+      </span>
+    </footer>
   </body>
 </html>
