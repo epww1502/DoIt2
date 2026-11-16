@@ -38,3 +38,6 @@ yarn.lock
 *.generated.*
 expo-env.d.ts
 
+
+# AI 추천 평가 결과 (스크립트가 만드는 기록)
+.claude/hillclimb/
