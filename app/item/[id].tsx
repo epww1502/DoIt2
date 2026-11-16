@@ -1,13 +1,15 @@
 import dayjs from 'dayjs';
+import { requireOptionalNativeModule } from 'expo';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   ExternalLink,
+  Luggage,
   MapPin,
   MoreHorizontal,
   Repeat,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Linking, Pressable, ScrollView, View } from 'react-native';
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -18,6 +20,9 @@ import { usePullRefresh } from '@/hooks/usePullRefresh';
 import { useItemWants } from '@/hooks/useItemWants';
 import { WantRow } from '@/components/bucket/WantButton';
 import { DateVoteCard } from '@/components/bucket/DateVoteCard';
+import { useDateVotes } from '@/hooks/useDateVotes';
+import { tallyDays } from '@/lib/bucket/dateVotes';
+import { planUrl } from '@/lib/goit';
 import { useSpace } from '@/store/useSpaceStore';
 import { useMemberLookup } from '@/store/useMembersStore';
 import { showAlert } from '@/lib/dialog';
@@ -83,6 +88,8 @@ export default function BucketDetailScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   // 같이 갈 날을 끌어서 고르는 동안은 화면이 같이 스크롤되지 않게
   const [scrollLocked, setScrollLocked] = useState(false);
+  // 고잇투로 일정 짤 때 넘길 날 (목표 날짜가 없으면 가장 많이 되는 날)
+  const dateVotes = useDateVotes(together ? spaceId : null);
 
   if (!item) {
     return (
@@ -327,6 +334,37 @@ export default function BucketDetailScreen() {
           </Pressable>
         ) : null}
 
+        {/* 장소가 있으면 고잇투(여행 일정 짜기)에서 이 장소를 넣어 일정을 짠다 */}
+        {item.place && !done ? (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="고잇투로 일정 짜기"
+            onPress={() =>
+              openGoitPlan(
+                item.place!,
+                item.goal?.date ??
+                  mostVotedDay(dateVotes.votesOf(item.id), todayKey())
+              )
+            }
+            className="flex-row items-center gap-3 rounded-2xl border border-border p-4 active:opacity-70"
+          >
+            <Icon as={Luggage} size={18} className="text-muted-foreground" />
+            <View className="flex-1 gap-0.5">
+              <Text weight="600" size={14}>
+                고잇투로 일정 짜기
+              </Text>
+              <Text variant="muted" size={12}>
+                이곳을 넣어 동선과 하루 일정을 짜 줘요
+              </Text>
+            </View>
+            <Icon
+              as={ExternalLink}
+              size={16}
+              className="text-muted-foreground"
+            />
+          </Pressable>
+        ) : null}
+
         {item.memo ? (
           <View className="gap-1 rounded-2xl p-4 bg-accent">
             <Text weight="600" size={13} className="text-muted-foreground">
@@ -448,4 +486,36 @@ export default function BucketDetailScreen() {
       ) : null}
     </SafeAreaView>
   );
+}
+
+/** 가장 많은 사람이 되는 날 (같으면 빠른 날). 표가 없으면 null */
+function mostVotedDay(
+  votes: { day: string; user_id: string }[],
+  today: string
+): string | null {
+  let best: { day: string; count: number } | null = null;
+  for (const t of tallyDays(votes, today)) {
+    if (!best || t.users.length > best.count) {
+      best = { day: t.day, count: t.users.length };
+    }
+  }
+  return best?.day ?? null;
+}
+
+/** 고잇투 일정 짜기 화면을 연다 (앱 안 브라우저가 없는 예전 빌드면 기본 브라우저로) */
+async function openGoitPlan(
+  place: { name: string; address: string },
+  date: string | null
+) {
+  const url = planUrl({ places: [place], date });
+  try {
+    if (requireOptionalNativeModule('ExpoWebBrowser')) {
+      const WebBrowser = await import('expo-web-browser');
+      await WebBrowser.openBrowserAsync(url);
+      return;
+    }
+    await Linking.openURL(url);
+  } catch {
+    showAlert('고잇투를 열 수 없어요', '잠시 후 다시 시도해주세요.');
+  }
 }

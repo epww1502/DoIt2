@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>여행 일정 담기 · DoIt2</title>
+    <meta name="robots" content="noindex" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      name="description"
+      content="고잇투에서 짠 여행 일정을 DoIt2 버킷리스트에 담아요"
+    />
+    <meta property="og:title" content="여행 일정을 DoIt2에 담아요" />
+    <meta
+      property="og:description"
+      content="고잇투에서 짠 일정을 버킷리스트로 옮겨요"
+    />
+    <meta property="og:image" content="https://doit2app.github.io/icon.png" />
+    <meta name="theme-color" content="#5ab0ff" />
+    <link rel="icon" href="icon.png" />
+    <link rel="stylesheet" href="landing.css" />
+    <style>
+      .trip-days {
+        text-align: left;
+        margin-top: 18px;
+      }
+      .trip-day + .trip-day {
+        margin-top: 14px;
+      }
+      .trip-day b {
+        font-size: 14px;
+      }
+      .trip-day ol {
+        margin: 6px 0 0 20px;
+        font-size: 15px;
+      }
+      .trip-day li {
+        margin-bottom: 2px;
+        overflow-wrap: anywhere;
+      }
+      .qr {
+        text-align: center;
+        margin-top: 28px;
+      }
+      .qr img {
+        width: 200px;
+        height: 200px;
+        background: #fff;
+        padding: 10px;
+        border-radius: 16px;
+        image-rendering: pixelated;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      고잇투 일정 담기: goit.html?t=일정 id
+      고잇투(https://go-it-2.vercel.app)에서 공유한 여행 일정을 보여주고 DoIt2 앱으로 넘긴다.
+      일정은 다른 사람이 만든 글자라 모두 글자로만 넣는다 (textContent).
+    -->
+    <main class="join">
+      <a class="logo" href="./"><img src="icon.png" alt="" />DoIt2</a>
+
+      <div id="main" hidden>
+        <div class="invite">
+          <div class="emoji">🧳</div>
+          <p class="muted" id="lead">고잇투에서 짠 여행 일정이에요</p>
+          <p class="name" id="title"></p>
+          <p class="muted" id="when" style="margin-top: 6px" hidden></p>
+          <p class="muted" id="loading" style="margin-top: 12px">
+            불러오는 중…
+          </p>
+          <p class="muted" id="failed" style="margin-top: 12px" hidden>
+            일정을 불러오지 못했어요. 링크가 만료됐을 수 있어요.
+          </p>
+          <div class="trip-days" id="days"></div>
+        </div>
+
+        <button class="btn block" id="open" type="button">
+          두잇투 앱에서 담기
+        </button>
+        <a class="btn ghost block" id="install" href="./#get"
+          >앱이 없어요 · 설치하기</a
+        >
+
+        <p
+          id="hint"
+          class="muted"
+          style="font-size: 14px; margin-top: 16px"
+          hidden
+        >
+          앱이 열리지 않나요? 앱을 설치한 뒤 버킷리스트 아래
+          <b>고잇투 일정 가져오기</b>에 이 페이지 링크를 붙여넣어 주세요.
+        </p>
+
+        <div id="desktop" hidden>
+          <div class="qr">
+            <img id="qr" alt="이 페이지로 가는 QR 코드" />
+            <p class="muted" style="font-size: 14px; margin-top: 10px">
+              휴대폰 카메라로 찍으면 이 페이지가 열려요
+            </p>
+          </div>
+          <button class="btn ghost block" id="copy" type="button">
+            링크 복사
+          </button>
+          <p class="muted" style="font-size: 14px; margin-top: 12px">
+            휴대폰 두잇투 앱의 "고잇투 일정 가져오기"에 이 링크를 붙여넣어도
+            돼요.
+          </p>
+        </div>
+
+        <ol class="how">
+          <li>DoIt2 앱을 설치해요. 가입 없이 바로 시작해요.</li>
+          <li>이 페이지로 돌아와 <b>두잇투 앱에서 담기</b>를 눌러요.</li>
+          <li>장소마다, 또는 여행 하나로 골라 담으면 끝이에요.</li>
+        </ol>
+      </div>
+
+      <div id="bad" hidden>
+        <div class="invite">
+          <div class="emoji">🤔</div>
+          <p class="name">링크가 올바르지 않아요</p>
+          <p class="muted" style="margin-top: 8px">
+            고잇투에서 일정을 다시 공유해 주세요.
+          </p>
+        </div>
+        <a class="btn block" href="./">DoIt2 알아보기</a>
+      </div>
+    </main>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"
+      integrity="sha512-ZDSPMa/JM1D+7kdg2x3BsruQ6T/JpJo3jWDWkCZsP+5yVyp1KfESqLI+7RqB5k24F7p2cV7i2YHh/890y6P6Sw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script>
+      (function () {
+        var PLAY =
+          'https://play.google.com/store/apps/details?id=com.doit2.app';
+        var APP_STORE = 'https://apps.apple.com/kr/app/id6826993862';
+        var FN =
+          'https://obnxkudefzexhooxllkn.supabase.co/functions/v1/goit-plan';
+        var ID = /^[A-Za-z0-9_-]{16,40}$/;
+
+        var $ = function (id) {
+          return document.getElementById(id);
+        };
+        var el = function (tag, text) {
+          var node = document.createElement(tag);
+          if (text !== undefined) node.textContent = text;
+          return node;
+        };
+        var text = function (value, max) {
+          return typeof value === 'string' ? value.trim().slice(0, max) : '';
+        };
+        var isDay = function (value) {
+          return /^\d{4}-\d{2}-\d{2}$/.test(value);
+        };
+        /** '2026-11-30'에 n일 더해 '11월 30일' */
+        var dayLabel = function (value, n) {
+          var p = value.split('-').map(Number);
+          var d = new Date(Date.UTC(p[0], p[1] - 1, p[2] + n));
+          return d.getUTCMonth() + 1 + '월 ' + d.getUTCDate() + '일';
+        };
+
+        var id = (new URLSearchParams(location.search).get('t') || '').trim();
+        if (!ID.test(id)) {
+          $('bad').hidden = false;
+          return;
+        }
+        $('main').hidden = false;
+
+        // 스토어 버튼 (아이패드는 맥으로 보일 수 있어서 터치가 되는 맥도 아이폰 쪽으로 본다)
+        var ua = navigator.userAgent;
+        var android = /Android/i.test(ua);
+        var ios =
+          /iPhone|iPad|iPod/i.test(ua) ||
+          (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+        if (android) $('install').href = PLAY;
+        else if (ios) $('install').href = APP_STORE;
+
+        var appLink = 'doit2://import/goit?t=' + id;
+        $('open').addEventListener('click', function () {
+          var left = false;
+          var onHide = function () {
+            if (document.hidden) left = true;
+          };
+          document.addEventListener('visibilitychange', onHide);
+          location.href = appLink;
+          // 앱이 없으면 페이지가 그대로 남는다. 그때 손으로 넣는 방법을 알려준다
+          setTimeout(function () {
+            document.removeEventListener('visibilitychange', onHide);
+            if (!left) $('hint').hidden = false;
+          }, 1800);
+        });
+
+        // 컴퓨터에서 열었으면 휴대폰으로 옮길 수 있게 QR과 링크 복사
+        var pageUrl = location.origin + location.pathname + '?t=' + id;
+        var mobile = android || ios || /Mobi/i.test(ua);
+        if (!mobile) {
+          $('desktop').hidden = false;
+          if (typeof window.qrcode === 'function') {
+            var qr = window.qrcode(0, 'M');
+            qr.addData(pageUrl);
+            qr.make();
+            $('qr').src = qr.createDataURL(6, 0);
+          } else {
+            $('qr').parentNode.hidden = true;
+          }
+          $('copy').addEventListener('click', function () {
+            var done = function () {
+              $('copy').textContent = '복사했어요 ✓';
+              setTimeout(function () {
+                $('copy').textContent = '링크 복사';
+              }, 1800);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(pageUrl).then(done, function () {});
+            }
+          });
+        }
+
+        var failed = function () {
+          $('loading').hidden = true;
+          $('failed').hidden = false;
+        };
+
+        fetch(FN, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'load', id: id }),
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error('http ' + res.status);
+            return res.json();
+          })
+          .then(function (data) {
+            var trip = data && data.trip;
+            if (
+              !trip ||
+              typeof trip !== 'object' ||
+              !Array.isArray(trip.days)
+            ) {
+              return failed();
+            }
+            render(trip);
+          })
+          .catch(failed);
+
+        function render(trip) {
+          var c =
+            trip.conditions && typeof trip.conditions === 'object'
+              ? trip.conditions
+              : {};
+          var title = text(trip.title, 80) || '여행 일정';
+          var start = isDay(text(c.startDate, 10)) ? c.startDate : '';
+          var days = trip.days.slice(0, 14);
+
+          $('loading').hidden = true;
+          $('title').textContent = title;
+          document.title = title + ' · DoIt2';
+          var n = days.length;
+          var when = [];
+          if (start) {
+            when.push(
+              n > 1
+                ? dayLabel(start, 0) + ' ~ ' + dayLabel(start, n - 1)
+                : dayLabel(start, 0)
+            );
+          }
+          when.push(n > 1 ? n - 1 + '박 ' + n + '일' : '당일치기');
+          $('when').textContent = when.join(' · ');
+          $('when').hidden = false;
+
+          days.forEach(function (day, i) {
+            var stops = day && Array.isArray(day.stops) ? day.stops : [];
+            var names = stops
+              .slice(0, 20)
+              .map(function (s) {
+                return text(s && s.place && s.place.name, 60);
+              })
+              .filter(Boolean);
+            if (names.length === 0) return;
+            var box = el('div');
+            box.className = 'trip-day';
+            box.appendChild(
+              el(
+                'b',
+                i + 1 + '일차' + (start ? ' · ' + dayLabel(start, i) : '')
+              )
+            );
+            var list = el('ol');
+            names.forEach(function (name) {
+              list.appendChild(el('li', name));
+            });
+            box.appendChild(list);
+            $('days').appendChild(box);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

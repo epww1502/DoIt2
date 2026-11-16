@@ -179,6 +179,10 @@ function RootLayoutInner() {
             name="space/join"
             options={{ animation: 'slide_from_bottom' }}
           />
+          <Stack.Screen
+            name="import/goit"
+            options={{ animation: 'slide_from_bottom' }}
+          />
         </Stack>
         {/* 팝업도 테마 변수 안에 둬야 테마색·바탕색을 따라간다 */}
         {/* showAlert 팝업 (기본 Alert 대신) */}
