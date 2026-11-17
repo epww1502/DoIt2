@@ -55,7 +55,7 @@ OTA로는 못 넣고 새 빌드가 있어야 하는 것들을 여기에 모은�
   update public.app_versions set min_version = '0.3.0', updated_at = now() where platform = 'ios';
   ```
 
-- `patches/expo-widgets+58.0.28.patch`: `npm install` 뒤에 저절로 적용된다(`postinstall`). expo-widgets 버전을 올리면
+- `patches/expo-widgets+58.0.29.patch`: `npm install` 뒤에 저절로 적용된다(`postinstall`). expo-widgets 버전을 올리면
   패치 파일 이름의 버전도 맞춰 다시 만들어야 한다 (`npx patch-package expo-widgets`).
 - 빌드 뒤: 0.3.0용 OTA를 한 번 내보낸다 (버전이 바뀌면 OTA는 새 빌드로만 간다).
 
