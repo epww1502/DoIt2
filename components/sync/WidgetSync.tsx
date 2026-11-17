@@ -42,8 +42,8 @@ export function WidgetSync() {
         const days = widgetDays(today);
         // 위젯 모듈이 없는 빌드에서 불러오지 않게, 쓸 때만 불러온다. 화면 부품이 달라서 폰마다 파일이 다르다
         if (Platform.OS === 'ios') {
-           
           const ios =
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             require('@/widgets/ios') as typeof import('@/widgets/ios');
           // 아이폰: 날짜마다 보여줄 값을 미리 넘겨 두면 폰이 그 날짜에 바꿔 준다
           const at = (day: string) => dayjs(day).startOf('day').toDate();
