@@ -30,6 +30,7 @@ import { TitleFontSheet } from '@/components/space/TitleFontSheet';
 import { TrashCard } from '@/components/space/TrashCard';
 import { TITLE_FONTS, type TitleFont } from '@/constants/fonts';
 import { PALETTES } from '@/constants/palettes';
+import { appIconAvailable } from '@/lib/appIcon';
 import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
 import { installedVersion } from '@/lib/appVersion';
 import { showAlert } from '@/lib/dialog';
@@ -103,6 +104,31 @@ export default function SettingsScreen() {
               <PalettePicker />
             </View>
             <TitleFontPicker />
+            {/* 홈 화면 아이콘 바꾸기 (아이콘 모듈이 든 새 빌드에서만) */}
+            {appIconAvailable() ? (
+              <>
+                <Separator />
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push('/app-icon')}
+                  className="flex-row items-center gap-3 active:opacity-70"
+                >
+                  <View className="flex-1 gap-0.5">
+                    <Text weight="600" size={16}>
+                      앱 아이콘
+                    </Text>
+                    <Text variant="muted" size={12}>
+                      홈 화면에 보이는 아이콘의 모양과 색을 골라요
+                    </Text>
+                  </View>
+                  <Icon
+                    as={ChevronRight}
+                    size={18}
+                    className="text-muted-foreground"
+                  />
+                </Pressable>
+              </>
+            ) : null}
           </CardContent>
         </Card>
 

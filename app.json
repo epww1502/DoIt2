@@ -130,6 +130,65 @@
         {
           "disableAutoUpload": true
         }
+      ],
+      [
+        "expo-quick-actions/icon/plugin",
+        {
+          "text_dark_sky": {
+            "image": "./assets/icons/icon-sky-dark.png"
+          },
+          "char_sky": {
+            "image": "./assets/icons/icon-char-sky.png"
+          },
+          "text_light_mint": {
+            "image": "./assets/icons/icon-mint-light.png"
+          },
+          "text_dark_mint": {
+            "image": "./assets/icons/icon-mint-dark.png"
+          },
+          "char_mint": {
+            "image": "./assets/icons/icon-char-mint.png"
+          },
+          "text_light_green": {
+            "image": "./assets/icons/icon-green-light.png"
+          },
+          "text_dark_green": {
+            "image": "./assets/icons/icon-green-dark.png"
+          },
+          "char_green": {
+            "image": "./assets/icons/icon-char-green.png"
+          },
+          "text_light_pink": {
+            "image": "./assets/icons/icon-pink-light.png"
+          },
+          "text_dark_pink": {
+            "image": "./assets/icons/icon-pink-dark.png"
+          },
+          "char_pink": {
+            "image": "./assets/icons/icon-char-pink.png"
+          },
+          "text_light_purple": {
+            "image": "./assets/icons/icon-purple-light.png"
+          },
+          "text_dark_purple": {
+            "image": "./assets/icons/icon-purple-dark.png"
+          },
+          "char_purple": {
+            "image": "./assets/icons/icon-char-purple.png"
+          },
+          "text_light_orange": {
+            "image": "./assets/icons/icon-orange-light.png"
+          },
+          "text_dark_orange": {
+            "image": "./assets/icons/icon-orange-dark.png"
+          },
+          "char_orange": {
+            "image": "./assets/icons/icon-char-orange.png"
+          },
+          "char_night": {
+            "image": "./assets/icons/icon-char-night.png"
+          }
+        }
       ]
     ],
     "experiments": {
