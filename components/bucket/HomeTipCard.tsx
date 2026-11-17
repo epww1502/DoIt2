@@ -30,12 +30,12 @@ export function HomeTipCard({ tip, together }: HomeTipCardProps) {
       <View className="flex-1 gap-0.5">
         <Text weight="600" size={14}>
           {isPick
-            ? '뭐 할지 못 정하겠다면 뽑아 보세요'
+            ? '뭐 할지 고민되면 뽑아 보세요'
             : `다녀왔다면 ${together ? '같이 ' : ''}기록을 남겨요`}
         </Text>
         <Text size={12} className="text-muted-foreground">
           {isPick
-            ? "'오늘 뭐 하지'가 담아 둔 것 중에 하나를 골라줘요"
+            ? '담아 둔 것 중에 하나를 골라줘요'
             : '항목을 누르면 사진, 별점, 한 줄 후기를 남길 수 있어요'}
         </Text>
       </View>
