@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   List,
   ListPlus,
+  Luggage,
   Map as MapIcon,
   Rows3,
   RotateCcw,
@@ -200,6 +201,7 @@ export default function BucketListScreen() {
   const canImport = useImportSources().length > 0;
   const goImport = () => router.push('/item/import');
   const goShared = () => router.push('/item/shared');
+  const goGoit = () => router.push('/import/goit');
   const goAiSuggest = () =>
     router.push({ pathname: '/item/ai', params: { mode: 'suggest' } });
   const goAiParse = () => router.push('/item/ai');
@@ -322,6 +324,11 @@ export default function BucketListScreen() {
         icon={Inbox}
         label="공유받은 목록 가져오기"
         onPress={goShared}
+      />
+      <FooterLink
+        icon={Luggage}
+        label="고잇투 일정 가져오기"
+        onPress={goGoit}
       />
       {resting.length > 0 ? (
         <FooterLink
