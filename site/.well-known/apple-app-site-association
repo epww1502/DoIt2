@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["H8ZH4RLJ36.com.doit2.app"],
+        "components": [{ "/": "/join.html", "comment": "초대 링크는 앱으로 연다" }]
+      }
+    ]
+  }
+}
