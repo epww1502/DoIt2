@@ -95,7 +95,7 @@ export function SpaceCoachMark({
         {/* 뚫린 자리의 테두리 */}
         <View
           pointerEvents="none"
-          className="rounded-full border-2 border-primary"
+          className="rounded-lg border-2 border-primary"
           style={{
             position: 'absolute',
             left,
