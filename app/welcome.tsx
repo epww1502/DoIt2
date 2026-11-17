@@ -3,13 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Share, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Chip, Text } from '@/components/atoms';
+import { Button, Chip, Text, TextField } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { draftToInput } from '@/lib/bucket/aiDraft';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
 import { inviteMessage } from '@/lib/inviteLink';
 import {
+  customStarter,
+  STARTER_TITLE_MAX,
   STARTERS,
   WHO_OPTIONS,
   type WhoKey,
@@ -76,6 +79,10 @@ export default function WelcomeScreen() {
   const [step, setStep] = useState<Step>('who');
   const [who, setWho] = useState<WhoOption | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
+  /** 직접 써서 더한 것들 (예시 뒤에 같이 보인다) */
+  const [custom, setCustom] = useState<string[]>([]);
+  const [draft, setDraft] = useState('');
+  const keyboardHeight = useKeyboardHeight();
   const [busy, setBusy] = useState(false);
   /** 만들어 준 공간 (초대 단계에서 쓴다) */
   const [space, setSpace] = useState<SpaceRow | null>(null);
@@ -96,6 +103,9 @@ export default function WelcomeScreen() {
     if (spaceCount > 0 && !madeHere.current) finish();
   }, [spaceCount]);
 
+  // 쓰다 만 글도 담을 것으로 센다
+  const pickedCount =
+    picked.length + (draft.trim() && !picked.includes(draft.trim()) ? 1 : 0);
   const together = who !== null && who.key !== 'solo';
   const steps: Step[] =
     together || who === null ? ['who', 'pick', 'invite'] : ['who', 'pick'];
@@ -104,6 +114,8 @@ export default function WelcomeScreen() {
     hapticSelect();
     setWho(option);
     setPicked([]);
+    setCustom([]);
+    setDraft('');
     setStep('pick');
   };
 
@@ -114,12 +126,34 @@ export default function WelcomeScreen() {
     );
   };
 
+  /** 직접 쓴 것을 예시 옆에 더하고 고른 것으로 둔다. 이미 있는 이름이면 그것을 고른다 */
+  const addCustom = () => {
+    const title = draft.trim();
+    if (!title || !who) return;
+    hapticSelect();
+    const known =
+      custom.includes(title) ||
+      STARTERS[who.key].some((starter) => starter.title === title);
+    if (!known) setCustom((list) => [...list, title]);
+    setPicked((list) => (list.includes(title) ? list : [...list, title]));
+    setDraft('');
+  };
+
   /** 고른 것을 담는다. 함께 쓰면 공간을 먼저 만들고 그 안에 담는다 */
   const start = async () => {
     if (!who) return;
     setBusy(true);
-    const inputs = STARTERS[who.key]
-      .filter((starter) => picked.includes(starter.title))
+    // 쓰다 만 글이 있으면 그것도 담는다 ('추가'를 누르지 않고 시작하는 사람이 많다)
+    const typed = draft.trim();
+    const titles =
+      typed && !picked.includes(typed) ? [...picked, typed] : picked;
+    const inputs = [...STARTERS[who.key], ...custom.map(customStarter)]
+      .concat(typed && !custom.includes(typed) ? [customStarter(typed)] : [])
+      .filter(
+        (starter, i, all) =>
+          titles.includes(starter.title) &&
+          all.findIndex((s) => s.title === starter.title) === i
+      )
       .map(draftToInput);
     let created: SpaceRow | null = null;
     if (together) {
@@ -203,21 +237,51 @@ export default function WelcomeScreen() {
       ) : null}
 
       {step === 'pick' && who ? (
-        <View className="flex-1">
-          <ScrollView contentContainerClassName="gap-6 px-5 pb-8 pt-8">
+        <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
+          <ScrollView
+            contentContainerClassName="gap-6 px-5 pb-8 pt-8"
+            keyboardShouldPersistTaps="handled"
+          >
             <Heading
               title="해보고 싶은 걸 골라보세요"
-              detail="누르면 버킷리스트에 담겨요. 나중에 직접 써서 더 담을 수 있어요."
+              detail="누르면 버킷리스트에 담겨요. 떠오르는 게 있으면 직접 써도 돼요."
             />
             <View className="flex-row flex-wrap gap-2">
-              {STARTERS[who.key as WhoKey].map((starter) => (
+              {[
+                ...STARTERS[who.key as WhoKey].map((starter) => starter.title),
+                ...custom,
+              ].map((title) => (
                 <Chip
-                  key={starter.title}
-                  label={starter.title}
-                  selected={picked.includes(starter.title)}
-                  onPress={() => toggle(starter.title)}
+                  key={title}
+                  label={title}
+                  selected={picked.includes(title)}
+                  onPress={() => toggle(title)}
                 />
               ))}
+            </View>
+            <View className="gap-2">
+              <Text weight="600" size={14}>
+                직접 쓰기
+              </Text>
+              <View className="flex-row items-center gap-2">
+                <TextField
+                  className="flex-1"
+                  value={draft}
+                  onChangeText={setDraft}
+                  placeholder="예) 제주도 한 달 살기"
+                  maxLength={STARTER_TITLE_MAX}
+                  returnKeyType="done"
+                  onSubmitEditing={addCustom}
+                  submitBehavior="submit"
+                />
+                <Button
+                  label="추가"
+                  size="md"
+                  variant="outline"
+                  disabled={!draft.trim()}
+                  onPress={addCustom}
+                />
+              </View>
             </View>
           </ScrollView>
           <BottomBar>
@@ -226,11 +290,11 @@ export default function WelcomeScreen() {
                 label={
                   busy
                     ? '준비하는 중…'
-                    : picked.length > 0
-                      ? `${picked.length}개 담고 시작하기`
+                    : pickedCount > 0
+                      ? `${pickedCount}개 담고 시작하기`
                       : '나중에 담을게요'
                 }
-                variant={picked.length > 0 ? undefined : 'outline'}
+                variant={pickedCount > 0 ? undefined : 'outline'}
                 disabled={busy}
                 onPress={() => void start()}
               />

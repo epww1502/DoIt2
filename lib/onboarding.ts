@@ -107,6 +107,21 @@ export const STARTERS: Record<WhoKey, AiDraft[]> = {
   ],
 };
 
+/** 직접 쓰는 이름의 길이 (항목 이름과 같다) */
+export const STARTER_TITLE_MAX = 40;
+
+/**
+ * 시작 화면에서 직접 쓴 것. 종류를 알 수 없어서 '기타'로 담는다 (항목을 열어 바꿀 수 있다).
+ */
+export function customStarter(title: string): AiDraft {
+  return {
+    title: title.trim().slice(0, STARTER_TITLE_MAX),
+    kind: 'activity',
+    category: 'etc',
+    setting: 'indoor',
+  };
+}
+
 /**
  * 복사해 둔 글에서 초대 코드를 찾는다. 못 찾으면 빈 글자.
  * - 초대 글·초대 페이지가 복사해 주는 "초대 코드: ABC123"

@@ -25,6 +25,8 @@ jest.mock('@/components/atoms', () => {
       el(Pressable, props, el(Text, null, props.label)),
     Chip: (props: { label: string; onPress?: () => void }) =>
       el(Pressable, props, el(Text, null, props.label)),
+    TextField: (props: { placeholder?: string }) =>
+      el(jest.requireActual('react-native').TextInput, props),
   };
 });
 jest.mock('@/lib/haptics', () => ({
@@ -57,6 +59,7 @@ jest.mock('@/store/useSettingsStore', () => ({
 jest.mock('@/components/space/SpaceAvatar', () => ({
   SpaceAvatar: () => null,
 }));
+jest.mock('@/hooks/useKeyboardHeight', () => ({ useKeyboardHeight: () => 0 }));
 jest.mock('@/components/bucket/BottomBar', () => {
   const { View } = jest.requireActual('react-native');
   return { BottomBar: View };
@@ -131,4 +134,31 @@ it('함께 쓰려는데 서버에 연결하지 못하면 이 폰에 담고 알�
   expect(texts(r)).toContain('이 휴대폰에 먼저 담았어요');
   await press(r, '시작하기');
   expect(mockSetWelcomed).toHaveBeenCalledWith(true);
+});
+
+it('직접 쓴 것도 예시와 같이 담는다 (추가를 누른 것, 쓰다 만 것 모두)', async () => {
+  jest.clearAllMocks();
+  let r!: TestRenderer.ReactTestRenderer;
+  await act(async () => {
+    r = TestRenderer.create(<WelcomeScreen />);
+  });
+  await press(r, '혼자');
+  await press(r, '등산 가기');
+  const input = () =>
+    r.root.findAll((n) => n.props.placeholder === '예) 제주도 한 달 살기')[0];
+  await act(async () => input().props.onChangeText(' 제주도 한 달 살기 '));
+  await press(r, '추가');
+  expect(texts(r)).toContain('제주도 한 달 살기');
+  await act(async () => input().props.onChangeText('기타 배우기'));
+  await press(r, '3개 담고 시작하기');
+  const added = mockAddItems.mock.calls[0][0] as {
+    title: string;
+    category: string;
+  }[];
+  expect(added.map((i) => i.title)).toEqual([
+    '등산 가기',
+    '제주도 한 달 살기',
+    '기타 배우기',
+  ]);
+  expect(added[1].category).toBe('etc');
 });
