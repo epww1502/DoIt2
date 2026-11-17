@@ -13,6 +13,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "type-check": "tsc --noEmit",
     "prepare": "husky",
+    "postinstall": "patch-package",
     "test": "jest",
     "eval:ai": "node scripts/ai-eval/run-eval.mjs --flow .claude/hillclimb/ai-suggest --variant baseline --model claude-haiku-5-5 --reps 2 --concurrency 3 --timeout-s 180",
     "update": "for p in android ios; do npx eas-cli update --channel production --environment production --platform $p --message \"$(git log -1 --pretty=%s)\" || exit 1; done"
@@ -105,6 +106,7 @@
     "jest": "~30.5.2",
     "jest-expo": "~58.0.12",
     "lint-staged": "^15.5.2",
+    "patch-package": "^8.0.1",
     "postcss": "^8.5.31",
     "prettier": "^3.9.10",
     "react-test-renderer": "^19.3.0",
