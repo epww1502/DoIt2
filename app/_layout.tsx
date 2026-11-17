@@ -13,7 +13,10 @@ import { DialogHost } from '@/components/atoms/DialogHost';
 import { ConnectionSync } from '@/components/sync/ConnectionSync';
 import { InboxSync } from '@/components/sync/InboxSync';
 import { MemoryShareSync } from '@/components/sync/MemoryShareSync';
+import { QuickActionsSync } from '@/components/sync/QuickActionsSync';
+import { ShareInSync } from '@/components/sync/ShareInSync';
 import { WelcomeGate } from '@/components/sync/WelcomeGate';
+import { WidgetSync } from '@/components/sync/WidgetSync';
 import { OfflineBanner } from '@/components/sync/OfflineBanner';
 import { PushSync } from '@/components/sync/PushSync';
 import { ReminderSync } from '@/components/sync/ReminderSync';
@@ -28,11 +31,14 @@ import { useFontsLoader } from '@/hooks/useFontsLoader';
 import { useStartupUpdate } from '@/hooks/useStartupUpdate';
 import { useSurface } from '@/hooks/useSurface';
 import { installCrashReporter, reportError } from '@/lib/errorReport';
+import { initSentry } from '@/lib/sentry';
 import { useBucketStoreHydrated } from '@/store/useBucketStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 
 // 처리되지 않은 오류도 서버에 남긴다 (앱을 켤 때 한 번)
 installCrashReporter();
+// 새 빌드에서는 Sentry도 켠다 (앱이 통째로 꺼지는 경우까지 잡는다)
+initSentry();
 
 /** 화면을 그리다 터지면 앱이 꺼지는 대신 다시 시도 화면을 보여주고 기록을 남긴다 */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
@@ -114,6 +120,12 @@ function RootLayoutInner() {
       <MemoryShareSync />
       {/* 처음 켠 사람을 시작 화면으로 보낸다 (화면 없음) */}
       <WelcomeGate />
+      {/* 홈 화면 위젯의 내용을 고쳐 둔다 (화면 없음, 새 빌드의 아이폰부터) */}
+      <WidgetSync />
+      {/* 다른 앱에서 공유로 넘어온 것을 담기 화면으로 (화면 없음, 새 빌드부터) */}
+      <ShareInSync />
+      {/* 앱 아이콘 꾹 누르기 바로가기 (화면 없음, 새 빌드부터) */}
+      <QuickActionsSync />
       {/* 개인정보처리방침이 바뀐 것을 한 번 알린다 */}
       <PolicyNotice />
       <View className="flex-1 bg-background" style={themeVars}>
@@ -176,6 +188,7 @@ function RootLayoutInner() {
           />
           <Stack.Screen name="profile" />
           <Stack.Screen name="notifications" />
+          <Stack.Screen name="app-icon" />
           <Stack.Screen name="trash" />
           <Stack.Screen name="account/restore" />
           <Stack.Screen

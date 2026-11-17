@@ -82,6 +82,9 @@ type SettingsState = {
   setPickTried: (value: boolean) => void;
   pickTipDismissed: boolean;
   dismissPickTip: () => void;
+  /** 스토어 별점을 물어본 적이 있는지 (한 번만 묻는다) */
+  reviewAsked: boolean;
+  setReviewAsked: (value: boolean) => void;
   /** '다녀왔다면 기록해 보세요' 안내를 닫았는지 */
   recordTipDismissed: boolean;
   dismissRecordTip: () => void;
@@ -131,6 +134,8 @@ export const useSettingsStore = create<SettingsState>()(
       setPickTried: (pickTried) => set({ pickTried }),
       pickTipDismissed: false,
       dismissPickTip: () => set({ pickTipDismissed: true }),
+      reviewAsked: false,
+      setReviewAsked: (reviewAsked) => set({ reviewAsked }),
       recordTipDismissed: false,
       dismissRecordTip: () => set({ recordTipDismissed: true }),
       setSpaceTipPending: (spaceTipPending) => set({ spaceTipPending }),

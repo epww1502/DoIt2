@@ -1,0 +1,33 @@
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
+index b0b6479..0f430ab 100644
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetInteractionAction.kt
+@@ -5,6 +5,7 @@ import android.content.Intent
+ import android.net.Uri
+ import androidx.glance.action.Action
+ import androidx.glance.appwidget.action.actionSendBroadcast
++import androidx.glance.appwidget.action.actionStartActivity
+ import expo.modules.widgets.notifications.ExpoWidgetsNotificationReceiver
+ 
+ internal const val WIDGET_INTERACTION_ACTION = "expo.modules.widgets.ACTION_WIDGET_INTERACTION"
+@@ -26,7 +27,20 @@ internal data class WidgetInteraction(
+   val target: String
+ )
+ 
++/**
++ * DoIt2 패치 (project_month에서 쓰던 것과 같다): target이 "open:<url>"인 위젯 버튼은 앱으로 방송을 보내는 대신
++ * 그 URL로 앱 화면을 바로 연다. (런처가 여는 Activity라 Android 10+ 백그라운드 실행 제한에 걸리지 않는다)
++ */
++private const val OPEN_URL_TARGET_PREFIX = "open:"
++
+ internal fun WidgetInteraction.toGlanceAction(context: Context): Action {
++  if (source is InteractionSource.Widget && target.startsWith(OPEN_URL_TARGET_PREFIX)) {
++    val openIntent = Intent(Intent.ACTION_VIEW, Uri.parse(target.removePrefix(OPEN_URL_TARGET_PREFIX)))
++      .setPackage(context.packageName)
++      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
++    return actionStartActivity(openIntent)
++  }
++
+   val intent = when (source) {
+     is InteractionSource.Widget -> Intent(WIDGET_INTERACTION_ACTION)
+       .setComponent(widgetProviderComponentName(context, source.name))

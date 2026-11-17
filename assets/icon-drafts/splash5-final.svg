@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" style="display:block">
+<g transform="translate(512 455) scale(0.6711) translate(-507 -548.5)">
+<path d="M660 495 C745 495 805 560 805 650 C805 750 750 800 660 800 C570 800 525 750 525 650 C525 560 575 495 660 495 Z" fill="#FFD84D"/>
+<path d="M290 405 C470 395 610 480 610 610 C610 740 520 800 380 800 L300 800 C240 800 215 775 213 720 C208 640 208 560 213 490 C216 430 240 407 290 405 Z" fill="#FFFFFF"/>
+<circle cx="350" cy="590" r="22" fill="#2B3A55"/><circle cx="470" cy="590" r="22" fill="#2B3A55"/>
+<path d="M380 640 Q410 670 440 640" fill="none" stroke="#2B3A55" stroke-width="15" stroke-linecap="round"/>
+<ellipse cx="305" cy="640" rx="34" ry="22" fill="#FFB3C7"/><ellipse cx="515" cy="640" rx="34" ry="22" fill="#FFB3C7"/>
+<circle cx="680" cy="630" r="20" fill="#2B3A55"/><circle cx="755" cy="630" r="20" fill="#2B3A55"/>
+<path d="M696 676 Q718 700 740 676" fill="none" stroke="#2B3A55" stroke-width="14" stroke-linecap="round"/>
+<ellipse cx="782" cy="676" rx="22" ry="16" fill="#FF9EB8" opacity="0.85"/>
+<g transform="translate(668 405) rotate(-8) scale(1.45)"><g transform="translate(-26 4) rotate(-10) scale(0.8)"><path d="M0 32 C-62 -8 -74 -58 -38 -76 C-16 -86 0 -72 0 -56 C0 -72 16 -86 38 -76 C74 -58 62 -8 0 32 Z" fill="#FFFFFF"/></g><g transform="translate(30 -6) rotate(10) scale(0.8)"><path d="M0 32 C-62 -8 -74 -58 -38 -76 C-16 -86 0 -72 0 -56 C0 -72 16 -86 38 -76 C74 -58 62 -8 0 32 Z" fill="#FF7A9A"/></g></g>
+</g>
+<text x="512" y="728" text-anchor="middle" font-family="P" font-size="118" letter-spacing="-2" fill="#FFFFFF">Doit<tspan fill="#FFD84D">2</tspan></text>
+</svg>

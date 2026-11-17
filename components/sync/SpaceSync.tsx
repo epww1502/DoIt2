@@ -8,6 +8,7 @@ import type {
 } from '@/lib/supabase/database.types';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useProfileStore } from '@/store/useProfileStore';
+import { setSentryUser } from '@/lib/sentry';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
 /**
@@ -25,6 +26,11 @@ export function SpaceSync() {
   useEffect(() => {
     void useSpaceStore.getState().init();
   }, []);
+
+  // 오류 기록에 어느 계정에서 났는지 붙인다 (새 빌드의 Sentry. 계정 id만)
+  useEffect(() => {
+    setSentryUser(userId);
+  }, [userId]);
 
   // 로그인되거나 계정을 불러오면 내 프로필을 받는다
   useEffect(() => {

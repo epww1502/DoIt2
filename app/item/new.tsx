@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Sparkles } from 'lucide-react-native';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -89,7 +89,15 @@ const SETTING_OPTIONS: { value: BucketSetting; label: string }[] = [
 
 /** 버킷리스트 담기. ?id= 가 있으면 수정 */
 export default function BucketFormScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  // shared…: 다른 앱에서 '공유 → DoIt2'로 넘어온 것 (components/sync/ShareInSync.tsx)
+  const { id, sharedMap, sharedTitle, sharedUrl, sharedLinkTitle } =
+    useLocalSearchParams<{
+      id?: string;
+      sharedMap?: string;
+      sharedTitle?: string;
+      sharedUrl?: string;
+      sharedLinkTitle?: string;
+    }>();
   const { keyboardHeight, scrollRef, onScroll, ensureFocusedVisible } =
     useKeyboardAwareForm();
   const editing = useBucketItem(id);
@@ -97,7 +105,9 @@ export default function BucketFormScreen() {
   const updateItem = useBucketStore((state) => state.updateItem);
 
   const [kind, setKind] = useState<BucketKind>(editing?.kind ?? 'place');
-  const [title, setTitle] = useState(editing?.title ?? '');
+  const [title, setTitle] = useState(
+    editing?.title ?? (sharedTitle ?? '').slice(0, 40)
+  );
   const [category, setCategory] = useState<CategoryKey>(
     editing?.category ?? CATEGORIES_BY_KIND.place[0].key
   );
@@ -107,7 +117,10 @@ export default function BucketFormScreen() {
   const [location, setLocation] = useState(editing?.location ?? '');
   const [place, setPlace] = useState<PlaceInfo | null>(editing?.place ?? null);
   const [memo, setMemo] = useState(editing?.memo ?? '');
-  const [links, setLinks] = useState<ItemLink[]>(editing?.links ?? []);
+  const [links, setLinks] = useState<ItemLink[]>(
+    editing?.links ??
+      (sharedUrl ? [{ url: sharedUrl, title: sharedLinkTitle ?? null }] : [])
+  );
   // 목표 날짜 (선택). 스위치를 켜야 보인다
   const [goal, setGoal] = useState<GoalInfo | null>(editing?.goal ?? null);
   const [repeat, setRepeat] = useState<RepeatInfo | null>(
@@ -239,6 +252,14 @@ export default function BucketFormScreen() {
     })();
     return true;
   };
+
+  // 지도 앱에서 공유로 넘어왔으면 붙여넣었을 때와 똑같이 이름·장소·링크를 채운다 (화면이 열릴 때 한 번)
+  const sharedMapDone = useRef(false);
+  useEffect(() => {
+    if (!sharedMap || sharedMapDone.current) return;
+    sharedMapDone.current = true;
+    fillFromMapShare(sharedMap);
+  });
 
   const clearPlace = () => {
     setPlace(null);

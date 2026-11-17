@@ -5,6 +5,7 @@ import {
   STARTERS,
   WHO_OPTIONS,
 } from '@/lib/onboarding';
+import { joinRouteFromUrl } from '@/lib/inviteLink';
 
 describe('inviteCodeFromText', () => {
   it('초대 글에서 코드를 찾는다', () => {
@@ -117,5 +118,36 @@ describe('homeTip', () => {
     const picked = { ...base, todoCount: 5, pickTried: true };
     expect(homeTip({ ...picked, doneCount: 1 })).toBeNull();
     expect(homeTip({ ...picked, recordTipDismissed: true })).toBeNull();
+  });
+});
+
+describe('joinRouteFromUrl', () => {
+  it('초대 링크를 초대 코드 화면으로 바꾼다', () => {
+    expect(
+      joinRouteFromUrl(
+        'https://doit2app.github.io/join.html?c=ab12cd&s=%EC%9A%B0%EB%A6%AC&e=x'
+      )
+    ).toBe('/space/join?code=AB12CD');
+    expect(joinRouteFromUrl('/join.html?c=ZZ99ZZ')).toBe(
+      '/space/join?code=ZZ99ZZ'
+    );
+  });
+
+  it('코드가 없거나 이상하면 빈 초대 코드 화면으로 보낸다', () => {
+    expect(joinRouteFromUrl('https://doit2app.github.io/join.html')).toBe(
+      '/space/join'
+    );
+    expect(joinRouteFromUrl('/join.html?c=abc')).toBe('/space/join');
+  });
+
+  it('초대 링크가 아니면 건드리지 않는다', () => {
+    expect(joinRouteFromUrl('doit2://space/join?code=AB12CD')).toBeNull();
+    expect(joinRouteFromUrl('/item/123')).toBeNull();
+    expect(
+      joinRouteFromUrl('https://doit2app.github.io/memories.html?id=1')
+    ).toBeNull();
+    expect(
+      joinRouteFromUrl('https://evil.example/join.html?c=AB12CD')
+    ).toBeNull();
   });
 });

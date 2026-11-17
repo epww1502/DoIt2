@@ -32,3 +32,20 @@ export function cleanInviteCode(raw: string | string[] | undefined) {
     .toUpperCase()
     .slice(0, 6);
 }
+
+/**
+ * 앱을 연 주소가 초대 링크(https://doit2app.github.io/join.html?c=코드)면 앱 안의 초대 화면 주소로 바꾼다.
+ * 초대 링크가 아니면 null (app/+native-intent.tsx가 받은 주소를 그대로 쓴다).
+ * 새 빌드부터 초대 링크를 누르면 웹 페이지 대신 앱이 바로 열린다 (app.json의 associatedDomains·intentFilters).
+ */
+export function joinRouteFromUrl(url: string) {
+  const match =
+    /^(?:https?:\/\/doit2app\.github\.io)?\/join(?:\.html)?(?:\?(.*))?$/.exec(
+      url.trim()
+    );
+  if (!match) return null;
+  const code = cleanInviteCode(
+    new URLSearchParams(match[1] ?? '').get('c') ?? undefined
+  );
+  return code.length === 6 ? `/space/join?code=${code}` : '/space/join';
+}

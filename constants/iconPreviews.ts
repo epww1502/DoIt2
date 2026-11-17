@@ -1,0 +1,22 @@
+/** 아이콘 고르기 화면에 보여줄 그림 (아이콘 이름 → 그림). 기본 아이콘은 'default' */
+export const ICON_PREVIEWS: Record<string, number> = {
+  default: require('@/assets/icons/icon-sky-light.png'),
+  char_green: require('@/assets/icons/icon-char-green.png'),
+  char_mint: require('@/assets/icons/icon-char-mint.png'),
+  char_night: require('@/assets/icons/icon-char-night.png'),
+  char_orange: require('@/assets/icons/icon-char-orange.png'),
+  char_pink: require('@/assets/icons/icon-char-pink.png'),
+  char_purple: require('@/assets/icons/icon-char-purple.png'),
+  char_sky: require('@/assets/icons/icon-char-sky.png'),
+  text_dark_green: require('@/assets/icons/icon-green-dark.png'),
+  text_dark_mint: require('@/assets/icons/icon-mint-dark.png'),
+  text_dark_orange: require('@/assets/icons/icon-orange-dark.png'),
+  text_dark_pink: require('@/assets/icons/icon-pink-dark.png'),
+  text_dark_purple: require('@/assets/icons/icon-purple-dark.png'),
+  text_dark_sky: require('@/assets/icons/icon-sky-dark.png'),
+  text_light_green: require('@/assets/icons/icon-green-light.png'),
+  text_light_mint: require('@/assets/icons/icon-mint-light.png'),
+  text_light_orange: require('@/assets/icons/icon-orange-light.png'),
+  text_light_pink: require('@/assets/icons/icon-pink-light.png'),
+  text_light_purple: require('@/assets/icons/icon-purple-light.png'),
+};

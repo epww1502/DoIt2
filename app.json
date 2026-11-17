@@ -2,7 +2,7 @@
   "expo": {
     "name": "DoIt2",
     "slug": "doit2",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "doit2",
@@ -14,6 +14,7 @@
       "icon": "./assets/expo.icon",
       "supportsTablet": false,
       "bundleIdentifier": "com.doit2.app",
+      "associatedDomains": ["applinks:doit2app.github.io"],
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -27,6 +28,20 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "doit2app.github.io",
+              "pathPrefix": "/join.html"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
@@ -36,11 +51,15 @@
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ]
     },
     "plugins": [
       "expo-router",
+      "expo-status-bar",
+      "expo-web-browser",
       [
         "expo-splash-screen",
         {
@@ -81,6 +100,200 @@
           "savePhotosPermission": "공유 카드를 사진 앨범에 저장하려면 사진 권한이 필요해요.",
           "isAccessMediaLocationEnabled": false,
           "granularPermissions": ["photo"]
+        }
+      ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "shortcut_add": {
+              "foregroundImage": "./assets/shortcuts/add.png",
+              "backgroundColor": "#5AB0FF"
+            },
+            "shortcut_pick": {
+              "foregroundImage": "./assets/shortcuts/pick.png",
+              "backgroundColor": "#5AB0FF"
+            },
+            "shortcut_done": {
+              "foregroundImage": "./assets/shortcuts/done.png",
+              "backgroundColor": "#5AB0FF"
+            }
+          }
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "정한 날을 캘린더에 일정으로 넣으려면 캘린더 접근 권한이 필요해요."
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "disableAutoUpload": true
+        }
+      ],
+      [
+        "expo-quick-actions/icon/plugin",
+        {
+          "text_dark_sky": {
+            "image": "./assets/icons/icon-sky-dark.png"
+          },
+          "char_sky": {
+            "image": "./assets/icons/icon-char-sky.png"
+          },
+          "text_light_mint": {
+            "image": "./assets/icons/icon-mint-light.png"
+          },
+          "text_dark_mint": {
+            "image": "./assets/icons/icon-mint-dark.png"
+          },
+          "char_mint": {
+            "image": "./assets/icons/icon-char-mint.png"
+          },
+          "text_light_green": {
+            "image": "./assets/icons/icon-green-light.png"
+          },
+          "text_dark_green": {
+            "image": "./assets/icons/icon-green-dark.png"
+          },
+          "char_green": {
+            "image": "./assets/icons/icon-char-green.png"
+          },
+          "text_light_pink": {
+            "image": "./assets/icons/icon-pink-light.png"
+          },
+          "text_dark_pink": {
+            "image": "./assets/icons/icon-pink-dark.png"
+          },
+          "char_pink": {
+            "image": "./assets/icons/icon-char-pink.png"
+          },
+          "text_light_purple": {
+            "image": "./assets/icons/icon-purple-light.png"
+          },
+          "text_dark_purple": {
+            "image": "./assets/icons/icon-purple-dark.png"
+          },
+          "char_purple": {
+            "image": "./assets/icons/icon-char-purple.png"
+          },
+          "text_light_orange": {
+            "image": "./assets/icons/icon-orange-light.png"
+          },
+          "text_dark_orange": {
+            "image": "./assets/icons/icon-orange-dark.png"
+          },
+          "char_orange": {
+            "image": "./assets/icons/icon-char-orange.png"
+          },
+          "char_night": {
+            "image": "./assets/icons/icon-char-night.png"
+          }
+        }
+      ],
+      [
+        "expo-share-intent",
+        {
+          "iosActivationRules": {
+            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+            "NSExtensionActivationSupportsWebPageWithMaxCount": 1,
+            "NSExtensionActivationSupportsText": true
+          },
+          "androidIntentFilters": ["text/*"]
+        }
+      ],
+      "./plugins/withWidgetAutoRefresh",
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.doit2.app",
+          "widgets": [
+            {
+              "name": "DoItMemory",
+              "displayName": "1년 전 오늘",
+              "description": "지난해 이맘때의 기록을 보여줘요",
+              "supportedFamilies": ["systemSmall", "systemMedium"],
+              "ios": {
+                "supportedFamilies": ["systemSmall", "systemMedium"],
+                "initialLayout": "./widgets/ios.tsx"
+              },
+              "android": {
+                "minWidth": 250,
+                "minHeight": 110,
+                "targetCellWidth": 4,
+                "targetCellHeight": 2,
+                "resizeMode": "both",
+                "initialLayout": "./widgets/android.tsx"
+              }
+            },
+            {
+              "name": "DoItDday",
+              "displayName": "다가오는 날",
+              "description": "가장 가까운 일정까지 며칠 남았는지 보여줘요",
+              "supportedFamilies": ["systemSmall"],
+              "ios": {
+                "supportedFamilies": ["systemSmall"],
+                "initialLayout": "./widgets/ios.tsx"
+              },
+              "android": {
+                "minWidth": 110,
+                "minHeight": 110,
+                "targetCellWidth": 2,
+                "targetCellHeight": 2,
+                "resizeMode": "both",
+                "initialLayout": "./widgets/android.tsx"
+              }
+            },
+            {
+              "name": "DoItNext",
+              "displayName": "다음에 할 것",
+              "description": "아직 안 한 것을 보여주고, 누르면 그 항목으로 가요",
+              "supportedFamilies": ["systemMedium", "systemLarge"],
+              "ios": {
+                "supportedFamilies": ["systemMedium", "systemLarge"],
+                "initialLayout": "./widgets/ios.tsx"
+              },
+              "android": {
+                "minWidth": 250,
+                "minHeight": 110,
+                "targetCellWidth": 4,
+                "targetCellHeight": 2,
+                "resizeMode": "both",
+                "initialLayout": "./widgets/android.tsx"
+              }
+            },
+            {
+              "name": "DoItPick",
+              "displayName": "오늘 뭐 하지",
+              "description": "담아 둔 것 중에 하나를 뽑아줘요",
+              "supportedFamilies": ["systemSmall", "systemMedium"],
+              "ios": {
+                "supportedFamilies": ["systemSmall", "systemMedium"],
+                "initialLayout": "./widgets/ios.tsx",
+                "configuration": {
+                  "title": "오늘 뭐 하지",
+                  "description": "위젯에서 눌러 다시 뽑을 수 있어요",
+                  "parameters": {
+                    "includeDone": {
+                      "title": "이미 해본 것도 포함",
+                      "type": "boolean",
+                      "default": false
+                    }
+                  }
+                }
+              },
+              "android": {
+                "minWidth": 110,
+                "minHeight": 110,
+                "targetCellWidth": 2,
+                "targetCellHeight": 2,
+                "resizeMode": "both",
+                "initialLayout": "./widgets/android.tsx"
+              }
+            }
+          ],
+          "enableAndroid": true
         }
       ]
     ],

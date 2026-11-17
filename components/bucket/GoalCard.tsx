@@ -8,8 +8,14 @@ import { goalDday } from '@/components/bucket/goalDday';
 import { useGoalWeather } from '@/hooks/useGoalWeather';
 import { goalEvent, goalLabel } from '@/lib/bucket/calendarEvent';
 import { GOAL_REMIND_META, type BucketItem } from '@/lib/bucket/types';
-import { openGoogleCalendar, shareIcs } from '@/lib/calendarShare';
+import {
+  addToDeviceCalendar,
+  canAddToDeviceCalendar,
+  openGoogleCalendar,
+  shareIcs,
+} from '@/lib/calendarShare';
 import { showAlert } from '@/lib/dialog';
+import { trackStep } from '@/lib/steps';
 import type { DayWeather } from '@/lib/forecast';
 
 /** 목표 날짜 카드: 날짜(기간)·알림·D-day, 날씨 예보, 캘린더에 넣기 */
@@ -76,6 +82,18 @@ export function GoalCard({ item }: { item: BucketItem }) {
             </Text>
           }
           items={[
+            // 새 빌드: 폰의 일정 추가 화면을 바로 연다
+            ...(canAddToDeviceCalendar()
+              ? [
+                  {
+                    label: '폰 캘린더에 바로 넣기',
+                    onPress: run(() => {
+                      trackStep('calendar_added');
+                      return addToDeviceCalendar(event);
+                    }),
+                  },
+                ]
+              : []),
             {
               label: '구글 캘린더',
               onPress: run(() => openGoogleCalendar(event)),

@@ -71,6 +71,7 @@ import { HomeTipCard } from '@/components/bucket/HomeTipCard';
 import { InviteCard } from '@/components/space/InviteCard';
 import { homeTip } from '@/lib/onboarding';
 import { trackStep } from '@/lib/steps';
+import { askStoreReview, shouldAskReview } from '@/lib/storeReview';
 import {
   SpaceCoachMark,
   type TargetRect,
@@ -236,11 +237,30 @@ export default function BucketListScreen() {
   });
   // 기록이 없다가 처음 생긴 순간을 센다 (전부터 기록이 있던 사람은 세지 않는다)
   const hadNoRecord = useRef(doneCount === 0);
+  // 기록이 늘어서 세 번째가 되면 스토어 별점을 한 번 물어본다 (새 빌드부터)
+  const lastDoneCount = useRef(doneCount);
   useEffect(() => {
     if (hadNoRecord.current && doneCount > 0) {
       hadNoRecord.current = false;
       trackStep('first_record');
     }
+    const before = lastDoneCount.current;
+    lastDoneCount.current = doneCount;
+    const settings = useSettingsStore.getState();
+    if (
+      !shouldAskReview({ before, now: doneCount, asked: settings.reviewAsked })
+    ) {
+      return;
+    }
+    // 기록을 남기고 돌아온 화면이 자리 잡은 뒤에 묻는다
+    const timer = setTimeout(() => {
+      void askStoreReview().then((shown) => {
+        if (!shown) return;
+        useSettingsStore.getState().setReviewAsked(true);
+        trackStep('review_asked');
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
   }, [doneCount]);
   const closeSpaceTip = () => {
     setTipTarget(null);
