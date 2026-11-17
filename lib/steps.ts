@@ -40,7 +40,9 @@ export type AppStep =
   /** 폰 캘린더에 바로 넣기를 눌렀다 */
   | 'calendar_added'
   /** 초대 링크를 눌러 앱이 바로 열렸다 */
-  | 'invite_link_open';
+  | 'invite_link_open'
+  /** 스토어 별점 창을 띄웠다 */
+  | 'review_asked';
 
 const sent = new Set<string>();
 
