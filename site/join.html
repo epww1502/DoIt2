@@ -52,14 +52,20 @@
           style="font-size: 14px; margin-top: 16px"
           hidden
         >
-          앱이 열리지 않나요? 앱을 설치한 뒤
-          <b>공간 → 초대 코드로 들어가기</b>에 위 코드를 넣어주세요.
+          앱이 열리지 않나요? 앱을 설치하고 처음 켰을 때
+          <b>초대를 받았어요</b>를 누른 뒤 위 코드를 넣어주세요.
         </p>
 
         <ol class="how">
-          <li>DoIt2 앱을 설치해요. 가입 없이 바로 시작해요.</li>
-          <li>이 페이지로 돌아와 <b>앱에서 열고 함께하기</b>를 눌러요.</li>
-          <li>코드가 채워진 화면에서 <b>들어가기</b>를 누르면 끝이에요.</li>
+          <li>
+            <b>설치하기</b>를 누르면 초대 코드가 복사돼요. 앱을 설치해요. 가입
+            없이 바로 시작해요.
+          </li>
+          <li>
+            앱을 처음 켜서 <b>초대를 받았어요</b>를 누르고
+            <b>복사한 초대 코드 붙여넣기</b>를 눌러요.
+          </li>
+          <li><b>들어가기</b>를 누르면 끝이에요.</li>
         </ol>
       </div>
 
@@ -128,6 +134,16 @@
           }, 1800);
         });
 
+        // 설치하러 가기 전에 코드를 복사해 둔다. 앱을 깔고 나면 이 페이지로 돌아오지 않아도
+        // 앱의 '복사한 초대 코드 붙여넣기'로 바로 들어올 수 있다 (앱은 '초대 코드: XXXXXX' 모양을 찾는다)
+        $('install').addEventListener('click', function () {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard
+              .writeText('DoIt2 초대 코드: ' + code)
+              .catch(function () {});
+          }
+        });
+
         $('copy').addEventListener('click', function () {
           var done = function () {
             $('copy').textContent = '복사했어요 ✓';
@@ -136,7 +152,9 @@
             }, 1800);
           };
           if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(code).then(done, function () {});
+            navigator.clipboard
+              .writeText('DoIt2 초대 코드: ' + code)
+              .then(done, function () {});
           }
         });
       })();

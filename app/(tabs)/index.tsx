@@ -18,7 +18,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -67,6 +67,14 @@ import {
   SelectionHeader,
 } from '@/components/bucket/SelectionBar';
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
+import { HomeTipCard } from '@/components/bucket/HomeTipCard';
+import { InviteCard } from '@/components/space/InviteCard';
+import { homeTip } from '@/lib/onboarding';
+import { trackStep } from '@/lib/steps';
+import {
+  SpaceCoachMark,
+  type TargetRect,
+} from '@/components/space/SpaceCoachMark';
 import { useSelection } from '@/hooks/useSelection';
 import { useBucketStore } from '@/store/useBucketStore';
 import { type BucketView, useSettingsStore } from '@/store/useSettingsStore';
@@ -198,6 +206,46 @@ export default function BucketListScreen() {
   const goNew = () => router.push('/item/new');
   const goRedo = () => router.push('/item/redo');
   // 내가 공간장인 다른 공간(또는 나만 보기)에서 버킷리스트를 가져올 수 있는지
+  const currentSpace = useSpace(useBucketStore((s) => s.spaceId));
+  // 시작 화면을 마치고 처음 왔을 때 한 번: 공간 바꾸기 버튼을 비추고 '여기서 추가해요'를 알려 준다
+  const spaceTipPending = useSettingsStore((s) => s.spaceTipPending);
+  const switcherRef = useRef<ComponentRef<typeof View>>(null);
+  const [tipTarget, setTipTarget] = useState<TargetRect | null>(null);
+  useEffect(() => {
+    if (!spaceTipPending) return;
+    // 화면이 넘어오는 움직임이 끝난 뒤에 자리를 잰다
+    const timer = setTimeout(() => {
+      switcherRef.current?.measureInWindow((x, y, width, height) => {
+        if (width > 0 && height > 0) setTipTarget({ x, y, width, height });
+      });
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [spaceTipPending]);
+  // 쓰는 순서대로 하나씩 권한다: 3개 넘게 담았으면 뽑기, 그다음 첫 기록
+  const pickTried = useSettingsStore((s) => s.pickTried);
+  const pickTipDismissed = useSettingsStore((s) => s.pickTipDismissed);
+  const recordTipDismissed = useSettingsStore((s) => s.recordTipDismissed);
+  const guided = useSettingsStore((s) => s.guided);
+  const tip = homeTip({
+    guided,
+    todoCount: todo.length,
+    doneCount,
+    pickTried,
+    pickTipDismissed,
+    recordTipDismissed,
+  });
+  // 기록이 없다가 처음 생긴 순간을 센다 (전부터 기록이 있던 사람은 세지 않는다)
+  const hadNoRecord = useRef(doneCount === 0);
+  useEffect(() => {
+    if (hadNoRecord.current && doneCount > 0) {
+      hadNoRecord.current = false;
+      trackStep('first_record');
+    }
+  }, [doneCount]);
+  const closeSpaceTip = () => {
+    setTipTarget(null);
+    useSettingsStore.getState().setSpaceTipPending(false);
+  };
   const canImport = useImportSources().length > 0;
   const goImport = () => router.push('/item/import');
   const goShared = () => router.push('/item/shared');
@@ -393,7 +441,12 @@ export default function BucketListScreen() {
         />
       ) : (
         <ScreenHeader
-          right={<SpaceSwitcher />}
+          right={
+            // 시작 화면을 마친 뒤 이 버튼을 비춰 주려고 자리를 잰다
+            <View ref={switcherRef} collapsable={false}>
+              <SpaceSwitcher />
+            </View>
+          }
           title="우리의 버킷리스트"
           subtitle={
             items.length === 0
@@ -403,7 +456,25 @@ export default function BucketListScreen() {
         />
       )}
 
+      {spaceTipPending && tipTarget ? (
+        <SpaceCoachMark
+          target={tipTarget}
+          together={together}
+          onClose={closeSpaceTip}
+        />
+      ) : null}
+
       <SyncStaleNotice sync={sync} />
+
+      {/* 다음에 해 볼 것 하나 (뽑기 → 기록) */}
+      {tip && !selection.selecting ? (
+        <HomeTipCard tip={tip} together={together} />
+      ) : null}
+
+      {/* 함께 쓰는 공간에 아직 나만 있으면 초대를 권한다 */}
+      {currentSpace && !selection.selecting ? (
+        <InviteCard space={currentSpace} />
+      ) : null}
 
       {shownCount > 0 ? (
         <View className="mx-5 mb-4 gap-2 rounded-2xl p-4 bg-accent">
