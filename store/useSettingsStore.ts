@@ -71,6 +71,9 @@ type SettingsState = {
   /** 버킷리스트 위의 '초대하기' 안내를 닫은 공간들 */
   inviteCardHidden: string[];
   hideInviteCard: (spaceId: string) => void;
+  /** 시작 화면을 마친 뒤 '공간은 여기서 추가해요' 안내를 아직 안 보여줬는지 */
+  spaceTipPending: boolean;
+  setSpaceTipPending: (value: boolean) => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -110,6 +113,8 @@ export const useSettingsStore = create<SettingsState>()(
       setPolicyNoticeSeen: (policyNoticeSeen) => set({ policyNoticeSeen }),
       welcomed: false,
       setWelcomed: (welcomed) => set({ welcomed }),
+      spaceTipPending: false,
+      setSpaceTipPending: (spaceTipPending) => set({ spaceTipPending }),
       inviteCardHidden: [],
       hideInviteCard: (spaceId) =>
         set((state) => ({

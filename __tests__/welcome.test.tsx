@@ -53,8 +53,14 @@ jest.mock('@/store/useBucketStore', () => {
   return { useBucketStore: { getState: () => state } };
 });
 const mockSetWelcomed = jest.fn();
+const mockSetSpaceTipPending = jest.fn();
 jest.mock('@/store/useSettingsStore', () => ({
-  useSettingsStore: { getState: () => ({ setWelcomed: mockSetWelcomed }) },
+  useSettingsStore: {
+    getState: () => ({
+      setWelcomed: mockSetWelcomed,
+      setSpaceTipPending: mockSetSpaceTipPending,
+    }),
+  },
 }));
 jest.mock('@/components/space/SpaceAvatar', () => ({
   SpaceAvatar: () => null,
@@ -105,6 +111,8 @@ it('연인과 → 고르기 → 공간 만들고 담기 → 초대 → 시작', 
   await press(r, '나중에 할게요');
   expect(mockSetWelcomed).toHaveBeenCalledWith(true);
   expect(router.replace).toHaveBeenCalledWith('/');
+  // 첫 화면에서 공간을 어디서 더 만드는지 알려 주게 해 둔다
+  expect(mockSetSpaceTipPending).toHaveBeenCalledWith(true);
 });
 
 it('혼자 → 아무것도 안 고르고 시작하면 공간을 만들지 않는다', async () => {

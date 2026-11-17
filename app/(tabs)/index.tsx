@@ -18,7 +18,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -68,6 +68,10 @@ import {
 } from '@/components/bucket/SelectionBar';
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
 import { InviteCard } from '@/components/space/InviteCard';
+import {
+  SpaceCoachMark,
+  type TargetRect,
+} from '@/components/space/SpaceCoachMark';
 import { useSelection } from '@/hooks/useSelection';
 import { useBucketStore } from '@/store/useBucketStore';
 import { type BucketView, useSettingsStore } from '@/store/useSettingsStore';
@@ -200,6 +204,24 @@ export default function BucketListScreen() {
   const goRedo = () => router.push('/item/redo');
   // 내가 공간장인 다른 공간(또는 나만 보기)에서 버킷리스트를 가져올 수 있는지
   const currentSpace = useSpace(useBucketStore((s) => s.spaceId));
+  // 시작 화면을 마치고 처음 왔을 때 한 번: 공간 바꾸기 버튼을 비추고 '여기서 추가해요'를 알려 준다
+  const spaceTipPending = useSettingsStore((s) => s.spaceTipPending);
+  const switcherRef = useRef<ComponentRef<typeof View>>(null);
+  const [tipTarget, setTipTarget] = useState<TargetRect | null>(null);
+  useEffect(() => {
+    if (!spaceTipPending) return;
+    // 화면이 넘어오는 움직임이 끝난 뒤에 자리를 잰다
+    const timer = setTimeout(() => {
+      switcherRef.current?.measureInWindow((x, y, width, height) => {
+        if (width > 0 && height > 0) setTipTarget({ x, y, width, height });
+      });
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [spaceTipPending]);
+  const closeSpaceTip = () => {
+    setTipTarget(null);
+    useSettingsStore.getState().setSpaceTipPending(false);
+  };
   const canImport = useImportSources().length > 0;
   const goImport = () => router.push('/item/import');
   const goShared = () => router.push('/item/shared');
@@ -395,7 +417,12 @@ export default function BucketListScreen() {
         />
       ) : (
         <ScreenHeader
-          right={<SpaceSwitcher />}
+          right={
+            // 시작 화면을 마친 뒤 이 버튼을 비춰 주려고 자리를 잰다
+            <View ref={switcherRef} collapsable={false}>
+              <SpaceSwitcher />
+            </View>
+          }
           title="우리의 버킷리스트"
           subtitle={
             items.length === 0
@@ -404,6 +431,14 @@ export default function BucketListScreen() {
           }
         />
       )}
+
+      {spaceTipPending && tipTarget ? (
+        <SpaceCoachMark
+          target={tipTarget}
+          together={together}
+          onClose={closeSpaceTip}
+        />
+      ) : null}
 
       <SyncStaleNotice sync={sync} />
 

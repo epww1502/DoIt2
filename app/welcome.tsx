@@ -91,7 +91,10 @@ export default function WelcomeScreen() {
   const [offline, setOffline] = useState(false);
 
   const finish = () => {
-    useSettingsStore.getState().setWelcomed(true);
+    const settings = useSettingsStore.getState();
+    settings.setWelcomed(true);
+    // 첫 화면에서 한 번, 공간을 어디서 더 만드는지 알려 준다
+    settings.setSpaceTipPending(true);
     router.replace('/');
   };
 
