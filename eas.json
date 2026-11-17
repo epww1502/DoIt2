@@ -16,12 +16,26 @@
       "environment": "production",
       "autoIncrement": true,
       "channel": "production"
+    },
+    "simulator": {
+      "extends": "production",
+      "autoIncrement": false,
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
     }
   },
   "submit": {
     "production": {
       "ios": {
         "ascAppId": "6826993862"
+      },
+      "android": {
+        "track": "production",
+        "releaseStatus": "draft"
       }
     }
   }

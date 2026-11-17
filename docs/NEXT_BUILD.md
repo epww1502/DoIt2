@@ -68,9 +68,28 @@ OTA로는 못 넣고 새 빌드가 있어야 하는 것들을 여기에 모은�
   패치 파일 이름의 버전도 맞춰 다시 만들어야 한다 (`npx patch-package expo-widgets`).
 - 빌드 뒤: 0.3.0용 OTA를 한 번 내보낸다 (버전이 바뀌면 OTA는 새 빌드로만 간다).
 
+## 0.3.0을 낸 기록 (2026-11-17)
+
+- 빌드: 아이폰·안드로이드 모두 0.3.0 (빌드 번호 5), 첫 시도에 성공. 둘 다 심사에 넣었다.
+- 아이폰 인증서: 앱 그룹이 새로 켜져서 앱의 옛 프로파일이 무효가 됐다. 빌드 때 Apple 로그인을 하고
+  앱·`ShareExtension`·`ExpoWidgetsTarget` 셋 다 **배포 인증서는 다시 쓰고, 프로파일은 새로** 만들었다.
+- EAS에 저장된 App Store Connect API 키(`28L5QSV5H7`)가 빌드 때 Apple에서 401로 거부됐다. 그래서 빌드는
+  Apple 로그인으로 했다. 제출은 같은 키로 됐지만, 다음에도 401이 나면 App Store Connect에서 키를 새로 만들어 바꾼다.
+- 안드로이드 제출: `eas.json`의 `submit.production.android`에 따라 **프로덕션 트랙 초안**으로 올라간다.
+  Play Console에서 출시 노트를 넣고 검토에 보낸다. 제출용 서비스 계정은 Firebase 것
+  (`firebase-adminsdk-fbsvc@doit2-1b006.iam.gserviceaccount.com`)을 Play Console 사용자로 초대해서 쓴다.
+- 무료 EAS 제출 대기열은 저녁에 수십 분 걸릴 수 있다. 급하면 AAB를 받아 Play Console에 직접 올린다.
+- App Store Connect의 첫 버전 이름은 "1.0"이지만 안의 빌드는 0.2.0이었다. Apple은 빌드 버전으로 비교해서 0.3.0을 받아 줬다.
+- 윈도우에서 Windows PowerShell은 `npx`가 실행 정책에 막힌다. 터미널에서는 `npx.cmd`로 부른다.
+- 클라우드 시뮬레이터(Expo Simulators): `eas.json`의 `simulator` 프로필로 빌드하고
+  `eas simulator:start --platform ios --device "iPhone 17 Pro Max" --build-id <id>`로 연다.
+  이 계정은 세션이 **최대 40분**이다. 캡처는 `--pixel-density 3`로 찍으면 1320x2868이라 `app-store/raw/`와 크기가 같다.
+  지도 공유를 딥 링크로 흉내 내면 줄바꿈이 사라져서 장소가 채워지지 않는다.
+
 ## 미룬 것
 
 - 근처 알림 (백그라운드 위치 권한이 필요해 심사·배터리 부담이 큼)
-- 앱 잠금, 별점 요청 (필요해지면)
+- 앱 잠금 (필요해지면)
+- 새 기능 스크린샷 (위젯·공유로 담기): 0.3.0은 기존 6장으로 냈다. 다음 버전 심사 전에 넣는다.
 
 빌드 순서는 `docs/RELEASE.md`를 따른다.

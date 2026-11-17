@@ -55,3 +55,6 @@ service-account*.json
 
 # App Review 녹화 영상 (용량이 커서 올리지 않음)
 app-store/recording/
+
+# Expo cloud simulator session (token)
+.env.eas-simulator
