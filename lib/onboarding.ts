@@ -2,7 +2,8 @@
  * 처음 켰을 때 묻는 것들 (app/welcome.tsx).
  * '공간'이라는 말을 몰라도 되게, 누구와 쓸지만 묻고 이름·아이콘은 여기 정해 둔 값으로 만든다.
  */
-import type { AiDraft } from '@/lib/bucket/aiDraft';
+import { type AiDraft, draftToInput } from '@/lib/bucket/aiDraft';
+import type { BucketInput } from '@/lib/bucket/types';
 
 export type WhoKey = 'couple' | 'friends' | 'family' | 'solo';
 
@@ -109,16 +110,28 @@ export const STARTERS: Record<WhoKey, AiDraft[]> = {
 
 /** 직접 쓰는 이름의 길이 (항목 이름과 같다) */
 export const STARTER_TITLE_MAX = 40;
+/** '직접 해보기'에서 넣을 수 있는 할 것 수 (더 넣고 싶으면 담은 뒤 항목에서) */
+export const GUIDED_TODO_MAX = 3;
 
-/**
- * 시작 화면에서 직접 쓴 것. 종류를 알 수 없어서 '기타'로 담는다 (항목을 열어 바꿀 수 있다).
- */
-export function customStarter(title: string): AiDraft {
+/** '직접 해보기'로 만든 것 (components/bucket/GuidedAdd.tsx) */
+export type GuidedItem = AiDraft & { todos: string[] };
+
+/** 시작 화면에서 고르거나 직접 만든 것을 addItems에 넣을 모양으로 */
+export function starterToInput(
+  starter: AiDraft | GuidedItem,
+  newId: () => string
+): BucketInput {
+  const todos = 'todos' in starter ? starter.todos : [];
   return {
-    title: title.trim().slice(0, STARTER_TITLE_MAX),
-    kind: 'activity',
-    category: 'etc',
-    setting: 'indoor',
+    ...draftToInput({
+      title: starter.title,
+      kind: starter.kind,
+      category: starter.category,
+      setting: starter.setting,
+    }),
+    ...(todos.length > 0
+      ? { todos: todos.map((text) => ({ id: newId(), text, done: false })) }
+      : {}),
   };
 }
 

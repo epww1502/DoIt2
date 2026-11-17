@@ -3,16 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Share, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Chip, Text, TextField } from '@/components/atoms';
+import { Button, Chip, Text } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
+import { GuidedAdd } from '@/components/bucket/GuidedAdd';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
-import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
-import { draftToInput } from '@/lib/bucket/aiDraft';
+import { newTodoId } from '@/lib/bucket/types';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
 import { inviteMessage } from '@/lib/inviteLink';
 import {
-  customStarter,
-  STARTER_TITLE_MAX,
+  type GuidedItem,
+  starterToInput,
   STARTERS,
   WHO_OPTIONS,
   type WhoKey,
@@ -23,7 +23,8 @@ import { useBucketStore } from '@/store/useBucketStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
-type Step = 'who' | 'pick' | 'invite';
+/** try: 고르는 단계에서 '직접 해보기'를 눌렀을 때 (점에는 고르는 단계로 보인다) */
+type Step = 'who' | 'pick' | 'try' | 'invite';
 
 /** 지금 몇 번째인지 보여주는 점 (혼자 쓰면 초대 단계가 없어서 두 개) */
 function StepDots({ steps, current }: { steps: Step[]; current: Step }) {
@@ -80,9 +81,7 @@ export default function WelcomeScreen() {
   const [who, setWho] = useState<WhoOption | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
   /** 직접 써서 더한 것들 (예시 뒤에 같이 보인다) */
-  const [custom, setCustom] = useState<string[]>([]);
-  const [draft, setDraft] = useState('');
-  const keyboardHeight = useKeyboardHeight();
+  const [custom, setCustom] = useState<GuidedItem[]>([]);
   const [busy, setBusy] = useState(false);
   /** 만들어 준 공간 (초대 단계에서 쓴다) */
   const [space, setSpace] = useState<SpaceRow | null>(null);
@@ -103,9 +102,7 @@ export default function WelcomeScreen() {
     if (spaceCount > 0 && !madeHere.current) finish();
   }, [spaceCount]);
 
-  // 쓰다 만 글도 담을 것으로 센다
-  const pickedCount =
-    picked.length + (draft.trim() && !picked.includes(draft.trim()) ? 1 : 0);
+  const pickedCount = picked.length;
   const together = who !== null && who.key !== 'solo';
   const steps: Step[] =
     together || who === null ? ['who', 'pick', 'invite'] : ['who', 'pick'];
@@ -115,7 +112,6 @@ export default function WelcomeScreen() {
     setWho(option);
     setPicked([]);
     setCustom([]);
-    setDraft('');
     setStep('pick');
   };
 
@@ -126,35 +122,31 @@ export default function WelcomeScreen() {
     );
   };
 
-  /** 직접 쓴 것을 예시 옆에 더하고 고른 것으로 둔다. 이미 있는 이름이면 그것을 고른다 */
-  const addCustom = () => {
-    const title = draft.trim();
-    if (!title || !who) return;
-    hapticSelect();
-    const known =
-      custom.includes(title) ||
-      STARTERS[who.key].some((starter) => starter.title === title);
-    if (!known) setCustom((list) => [...list, title]);
-    setPicked((list) => (list.includes(title) ? list : [...list, title]));
-    setDraft('');
+  /** '직접 해보기'로 만든 것을 예시 옆에 더하고 고른 것으로 둔다. 같은 이름이 있으면 새로 만든 것으로 바꾼다 */
+  const addCustom = (item: GuidedItem) => {
+    setCustom((list) => [
+      ...list.filter((it) => it.title !== item.title),
+      item,
+    ]);
+    setPicked((list) =>
+      list.includes(item.title) ? list : [...list, item.title]
+    );
+    setStep('pick');
   };
 
   /** 고른 것을 담는다. 함께 쓰면 공간을 먼저 만들고 그 안에 담는다 */
   const start = async () => {
     if (!who) return;
     setBusy(true);
-    // 쓰다 만 글이 있으면 그것도 담는다 ('추가'를 누르지 않고 시작하는 사람이 많다)
-    const typed = draft.trim();
-    const titles =
-      typed && !picked.includes(typed) ? [...picked, typed] : picked;
-    const inputs = [...STARTERS[who.key], ...custom.map(customStarter)]
-      .concat(typed && !custom.includes(typed) ? [customStarter(typed)] : [])
-      .filter(
-        (starter, i, all) =>
-          titles.includes(starter.title) &&
-          all.findIndex((s) => s.title === starter.title) === i
-      )
-      .map(draftToInput);
+    // 직접 만든 것이 예시와 이름이 같으면 직접 만든 쪽을 담는다
+    const inputs = [
+      ...STARTERS[who.key].filter(
+        (starter) => !custom.some((it) => it.title === starter.title)
+      ),
+      ...custom,
+    ]
+      .filter((starter) => picked.includes(starter.title))
+      .map((starter) => starterToInput(starter, newTodoId));
     let created: SpaceRow | null = null;
     if (together) {
       try {
@@ -192,7 +184,7 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <StepDots steps={steps} current={step} />
+      <StepDots steps={steps} current={step === 'try' ? 'pick' : step} />
 
       {step === 'who' ? (
         <ScrollView contentContainerClassName="gap-6 px-5 pb-10 pt-8">
@@ -237,19 +229,20 @@ export default function WelcomeScreen() {
       ) : null}
 
       {step === 'pick' && who ? (
-        <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
-          <ScrollView
-            contentContainerClassName="gap-6 px-5 pb-8 pt-8"
-            keyboardShouldPersistTaps="handled"
-          >
+        <View className="flex-1">
+          <ScrollView contentContainerClassName="gap-6 px-5 pb-8 pt-8">
             <Heading
               title="해보고 싶은 걸 골라보세요"
-              detail="누르면 버킷리스트에 담겨요. 떠오르는 게 있으면 직접 써도 돼요."
+              detail="누르면 버킷리스트에 담겨요. 직접 하나 만들어 봐도 좋아요."
             />
             <View className="flex-row flex-wrap gap-2">
               {[
                 ...STARTERS[who.key as WhoKey].map((starter) => starter.title),
-                ...custom,
+                ...custom
+                  .map((item) => item.title)
+                  .filter(
+                    (title) => !STARTERS[who.key].some((s) => s.title === title)
+                  ),
               ].map((title) => (
                 <Chip
                   key={title}
@@ -259,29 +252,21 @@ export default function WelcomeScreen() {
                 />
               ))}
             </View>
-            <View className="gap-2">
-              <Text weight="600" size={14}>
-                직접 쓰기
+            <View className="gap-2 rounded-2xl border border-border bg-card p-4">
+              <Text weight="700" size={16}>
+                직접 하나 담아볼까요?
               </Text>
-              <View className="flex-row items-center gap-2">
-                <TextField
-                  className="flex-1"
-                  value={draft}
-                  onChangeText={setDraft}
-                  placeholder="예) 제주도 한 달 살기"
-                  maxLength={STARTER_TITLE_MAX}
-                  returnKeyType="done"
-                  onSubmitEditing={addCustom}
-                  submitBehavior="submit"
-                />
-                <Button
-                  label="추가"
-                  size="md"
-                  variant="outline"
-                  disabled={!draft.trim()}
-                  onPress={addCustom}
-                />
-              </View>
+              <Text size={13} className="text-muted-foreground">
+                이름, 카테고리, 할 것을 하나씩 물어보면서 같이 만들어요. 1분이면
+                돼요.
+              </Text>
+              <Button
+                label="직접 해보기"
+                size="md"
+                variant="outline"
+                className="mt-1"
+                onPress={() => setStep('try')}
+              />
             </View>
           </ScrollView>
           <BottomBar>
@@ -305,6 +290,14 @@ export default function WelcomeScreen() {
             </View>
           </BottomBar>
         </View>
+      ) : null}
+
+      {step === 'try' && who ? (
+        <GuidedAdd
+          together={together}
+          onDone={addCustom}
+          onCancel={() => setStep('pick')}
+        />
       ) : null}
 
       {step === 'invite' && who ? (

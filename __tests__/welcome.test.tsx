@@ -136,7 +136,7 @@ it('함께 쓰려는데 서버에 연결하지 못하면 이 폰에 담고 알�
   expect(mockSetWelcomed).toHaveBeenCalledWith(true);
 });
 
-it('직접 쓴 것도 예시와 같이 담는다 (추가를 누른 것, 쓰다 만 것 모두)', async () => {
+it('직접 해보기: 한 칸을 채우면 다음 칸이 나타나고, 만든 것이 예시와 같이 담긴다', async () => {
   jest.clearAllMocks();
   let r!: TestRenderer.ReactTestRenderer;
   await act(async () => {
@@ -144,21 +144,62 @@ it('직접 쓴 것도 예시와 같이 담는다 (추가를 누른 것, 쓰다 �
   });
   await press(r, '혼자');
   await press(r, '등산 가기');
-  const input = () =>
-    r.root.findAll((n) => n.props.placeholder === '예) 제주도 한 달 살기')[0];
-  await act(async () => input().props.onChangeText(' 제주도 한 달 살기 '));
+  await press(r, '직접 해보기');
+  expect(texts(r)).toContain('하나 같이 담아볼까요?');
+  // 처음에는 첫 칸만 보인다
+  expect(texts(r)).not.toContain('카테고리');
+  await press(r, '탐방 · 가고 싶은 곳');
+  const field = (placeholder: string) =>
+    r.root.findAll((n) => n.props.placeholder === placeholder)[0];
+  await act(async () =>
+    field('예) 성수동 그 파스타집').props.onChangeText('제주도 한 달 살기')
+  );
+  expect(texts(r)).not.toContain('카테고리');
+  await press(r, '다음');
+  expect(texts(r)).toContain('카테고리');
+  expect(texts(r)).not.toContain('실내에서 해요');
+  await press(r, '여행');
+  await press(r, '실외');
+  await act(async () =>
+    field('예) 예약하기, 준비물 챙기기').props.onChangeText('숙소 알아보기')
+  );
   await press(r, '추가');
-  expect(texts(r)).toContain('제주도 한 달 살기');
-  await act(async () => input().props.onChangeText('기타 배우기'));
-  await press(r, '3개 담고 시작하기');
+  await act(async () =>
+    field('예) 예약하기, 준비물 챙기기').props.onChangeText('항공권 예매')
+  );
+  await press(r, '이대로 담기');
+  // 고르는 화면으로 돌아오고, 만든 것이 고른 상태로 들어 있다
+  expect(texts(r)).toContain('해보고 싶은 걸 골라보세요');
+  await press(r, '2개 담고 시작하기');
   const added = mockAddItems.mock.calls[0][0] as {
     title: string;
+    kind: string;
     category: string;
+    setting: string;
+    todos?: { text: string; done: boolean }[];
   }[];
-  expect(added.map((i) => i.title)).toEqual([
-    '등산 가기',
-    '제주도 한 달 살기',
-    '기타 배우기',
+  expect(added.map((i) => i.title)).toEqual(['등산 가기', '제주도 한 달 살기']);
+  expect(added[1]).toMatchObject({
+    kind: 'place',
+    category: 'trip',
+    setting: 'outdoor',
+  });
+  expect(added[1].todos?.map((t) => t.text)).toEqual([
+    '숙소 알아보기',
+    '항공권 예매',
   ]);
-  expect(added[1].category).toBe('etc');
+  expect(added[0].todos).toBeUndefined();
+});
+
+it('직접 해보기에서 돌아오면 고르던 것이 그대로 있다', async () => {
+  jest.clearAllMocks();
+  let r!: TestRenderer.ReactTestRenderer;
+  await act(async () => {
+    r = TestRenderer.create(<WelcomeScreen />);
+  });
+  await press(r, '친구와');
+  await press(r, '캠핑 가기');
+  await press(r, '직접 해보기');
+  await press(r, '예시에서 고를게요');
+  expect(texts(r)).toContain('1개 담고 시작하기');
 });
