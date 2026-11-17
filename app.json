@@ -51,7 +51,9 @@
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ]
     },
     "plugins": [
@@ -96,6 +98,31 @@
           "savePhotosPermission": "공유 카드를 사진 앨범에 저장하려면 사진 권한이 필요해요.",
           "isAccessMediaLocationEnabled": false,
           "granularPermissions": ["photo"]
+        }
+      ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "shortcut_add": {
+              "foregroundImage": "./assets/shortcuts/add.png",
+              "backgroundColor": "#5AB0FF"
+            },
+            "shortcut_pick": {
+              "foregroundImage": "./assets/shortcuts/pick.png",
+              "backgroundColor": "#5AB0FF"
+            },
+            "shortcut_done": {
+              "foregroundImage": "./assets/shortcuts/done.png",
+              "backgroundColor": "#5AB0FF"
+            }
+          }
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "정한 날을 캘린더에 일정으로 넣으려면 캘린더 접근 권한이 필요해요."
         }
       ]
     ],
