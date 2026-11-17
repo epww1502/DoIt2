@@ -2,7 +2,7 @@
 
 연인, 친구, 가족과 함께 쓰는 버킷리스트 + 기록 앱입니다. 가고 싶은 곳과 해보고 싶은 것을 한 공간에 모으고, 다녀온 뒤에는 사진과 별점, 한 줄 후기를 남깁니다.
 
-[App Store](https://apps.apple.com/kr/app/id6826993862) · [소개 사이트](https://doit2app.github.io)
+[App Store](https://apps.apple.com/kr/app/id6826993862) · [Google Play](https://play.google.com/store/apps/details?id=com.doit2.app) · [소개 사이트](https://doit2app.github.io)
 
 <p>
   <img src="site/shots/01-bucketlist.webp" width="220" alt="버킷리스트 화면" />
