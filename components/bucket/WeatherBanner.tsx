@@ -72,7 +72,12 @@ export function WeatherBanner({
       );
       break;
     case 'error':
-      title = '🌡️ 날씨를 불러오지 못했어요';
+      if (state.reason === 'location') {
+        title = '📍 내 위치를 찾지 못했어요';
+        detail = '폰의 위치(GPS)가 켜져 있는지 확인해 주세요';
+      } else {
+        title = '🌡️ 날씨를 불러오지 못했어요';
+      }
       action = <ActionText label="다시 시도" onPress={onReload} />;
       break;
     case 'ready': {
