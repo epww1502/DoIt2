@@ -7,7 +7,9 @@ import { Button, NavBar, Text, TextField } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { enterSpace } from '@/components/space/spaceFlow';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
+import { readCopiedText } from '@/lib/clipboard';
 import { cleanInviteCode } from '@/lib/inviteLink';
+import { inviteCodeFromText } from '@/lib/onboarding';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
 const CODE_LENGTH = 6;
@@ -25,6 +27,19 @@ export default function JoinSpaceScreen() {
   const leave = () => {
     if (router.canGoBack()) router.back();
     else router.replace('/');
+  };
+
+  /** 초대 글이나 초대 페이지에서 복사해 둔 코드를 넣는다 (앱을 새로 깔고 온 사람은 코드를 외우고 있지 않다) */
+  const paste = async () => {
+    const found = inviteCodeFromText(await readCopiedText());
+    if (found) {
+      setCode(found);
+      setError(null);
+    } else {
+      setError(
+        '복사해 둔 글에서 초대 코드를 찾지 못했어요. 받은 초대 글의 6자리 코드를 넣어주세요.'
+      );
+    }
   };
 
   const join = async () => {
@@ -68,6 +83,14 @@ export default function JoinSpaceScreen() {
             <Text size={13} className="text-destructive">
               {error}
             </Text>
+          ) : null}
+          {code.length !== CODE_LENGTH ? (
+            <Button
+              label="복사한 초대 코드 붙여넣기"
+              variant="outline"
+              size="md"
+              onPress={() => void paste()}
+            />
           ) : null}
         </ScrollView>
         <BottomBar>

@@ -65,6 +65,12 @@ type SettingsState = {
   /** 마지막으로 본 개인정보처리방침 공지의 시행일 (YYYY-MM-DD). 본 적 없으면 null */
   policyNoticeSeen: string | null;
   setPolicyNoticeSeen: (value: string) => void;
+  /** 처음 켰을 때의 시작 화면(app/welcome.tsx)을 봤는지. 전부터 쓰던 사람은 WelcomeGate가 켜 준다 */
+  welcomed: boolean;
+  setWelcomed: (value: boolean) => void;
+  /** 버킷리스트 위의 '초대하기' 안내를 닫은 공간들 */
+  inviteCardHidden: string[];
+  hideInviteCard: (spaceId: string) => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -102,6 +108,13 @@ export const useSettingsStore = create<SettingsState>()(
       setAiConsent: (aiConsent) => set({ aiConsent }),
       policyNoticeSeen: null,
       setPolicyNoticeSeen: (policyNoticeSeen) => set({ policyNoticeSeen }),
+      welcomed: false,
+      setWelcomed: (welcomed) => set({ welcomed }),
+      inviteCardHidden: [],
+      hideInviteCard: (spaceId) =>
+        set((state) => ({
+          inviteCardHidden: [...state.inviteCardHidden, spaceId].slice(-50),
+        })),
     }),
     {
       name: 'doit2-settings',

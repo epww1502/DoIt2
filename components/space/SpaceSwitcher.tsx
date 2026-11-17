@@ -142,6 +142,10 @@ function SpaceSheet({
               <Text weight="700" size={18} className="px-5">
                 어느 공간을 볼까요?
               </Text>
+              <Text size={13} className="px-5 text-muted-foreground">
+                공간은 같이 쓰는 사람들과의 버킷리스트예요. 연인, 친구, 가족마다
+                따로 만들 수 있어요.
+              </Text>
               <ScrollView contentContainerClassName="gap-1 px-3">
                 <SpaceRow
                   emoji={PERSONAL.emoji}

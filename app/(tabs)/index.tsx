@@ -67,6 +67,7 @@ import {
   SelectionHeader,
 } from '@/components/bucket/SelectionBar';
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
+import { InviteCard } from '@/components/space/InviteCard';
 import { useSelection } from '@/hooks/useSelection';
 import { useBucketStore } from '@/store/useBucketStore';
 import { type BucketView, useSettingsStore } from '@/store/useSettingsStore';
@@ -198,6 +199,7 @@ export default function BucketListScreen() {
   const goNew = () => router.push('/item/new');
   const goRedo = () => router.push('/item/redo');
   // 내가 공간장인 다른 공간(또는 나만 보기)에서 버킷리스트를 가져올 수 있는지
+  const currentSpace = useSpace(useBucketStore((s) => s.spaceId));
   const canImport = useImportSources().length > 0;
   const goImport = () => router.push('/item/import');
   const goShared = () => router.push('/item/shared');
@@ -404,6 +406,11 @@ export default function BucketListScreen() {
       )}
 
       <SyncStaleNotice sync={sync} />
+
+      {/* 함께 쓰는 공간에 아직 나만 있으면 초대를 권한다 */}
+      {currentSpace && !selection.selecting ? (
+        <InviteCard space={currentSpace} />
+      ) : null}
 
       {shownCount > 0 ? (
         <View className="mx-5 mb-4 gap-2 rounded-2xl p-4 bg-accent">
