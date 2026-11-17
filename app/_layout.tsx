@@ -29,11 +29,14 @@ import { useFontsLoader } from '@/hooks/useFontsLoader';
 import { useStartupUpdate } from '@/hooks/useStartupUpdate';
 import { useSurface } from '@/hooks/useSurface';
 import { installCrashReporter, reportError } from '@/lib/errorReport';
+import { initSentry } from '@/lib/sentry';
 import { useBucketStoreHydrated } from '@/store/useBucketStore';
 import { usePrimaryColor } from '@/store/useSettingsStore';
 
 // 처리되지 않은 오류도 서버에 남긴다 (앱을 켤 때 한 번)
 installCrashReporter();
+// 새 빌드에서는 Sentry도 켠다 (앱이 통째로 꺼지는 경우까지 잡는다)
+initSentry();
 
 /** 화면을 그리다 터지면 앱이 꺼지는 대신 다시 시도 화면을 보여주고 기록을 남긴다 */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {

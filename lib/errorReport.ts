@@ -9,6 +9,7 @@ import * as Updates from 'expo-updates';
 import { Platform } from 'react-native';
 
 import { installedVersion } from '@/lib/appVersion';
+import { captureForSentry } from '@/lib/sentry';
 import { isNetworkError } from '@/lib/connection';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 
@@ -78,6 +79,8 @@ export async function reportError(
   title?: string
 ) {
   if (__DEV__ || !isSupabaseConfigured) return;
+  // 새 빌드에서는 Sentry에도 보낸다 (없으면 아무 일도 하지 않는다)
+  captureForSentry(e, kind, title);
   const row = toErrorRow(kind, e, title);
   const key = `${kind}:${row.message}`;
   if (seen.has(key)) return;

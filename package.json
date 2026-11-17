@@ -27,6 +27,7 @@
     "@expo-google-fonts/yeon-sung": "^0.4.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@rn-primitives/slot": "^1.5.2",
+    "@sentry/react-native": "~8.28.0",
     "@supabase/supabase-js": "^2.118.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
