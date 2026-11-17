@@ -24,6 +24,7 @@
 //                                                  → { ai: { used, limit }, auto: { used, limit } }
 //
 // 하루 한도(한국 날짜)를 넘으면 429 { error: 'limit' }. 한 사람 한도와 모든 사람 합계 한도가 있다.
+// 부를 때마다 결과(답함·한도에 걸림·실패)와 토큰 수를 ai_events 표에 남긴다 (요청 내용은 남기지 않는다).
 // 답의 모양은 앱(lib/bucket/aiDraft.ts)이 한 번 더 걸러서 쓴다.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Anthropic from 'npm:@anthropic-ai/sdk';
@@ -31,7 +32,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const MODEL = 'claude-haiku-5-5';
 /** 눌러서 쓰는 기능(쪼개기·여러 개 담기·추천)의 하루 횟수 */
-const DAILY_LIMIT = 20;
+const DAILY_LIMIT = 10;
 /** 담을 때 저절로 되는 분류의 하루 횟수 */
 const DAILY_AUTO_LIMIT = 60;
 /**
@@ -339,13 +340,43 @@ function toJob(body: Record<string, unknown>): Job | null {
   return null;
 }
 
+type Outcome = 'ok' | 'limit_user' | 'limit_global' | 'failed';
+
+/**
+ * 부른 기록을 남긴다 (ai_events). 한도에 걸린 사람이 있는지, 실제로 토큰을 얼마나 쓰는지 보려는 것.
+ * 요청 내용은 남기지 않는다. 기록에 실패해도 답은 그대로 준다.
+ */
+async function record(
+  userId: string,
+  action: string,
+  outcome: Outcome,
+  result?: { model?: string; usage?: Anthropic.Usage; startedAt?: number }
+) {
+  const { error } = await admin.from('ai_events').insert({
+    user_id: userId,
+    action,
+    outcome,
+    model: result?.model ?? null,
+    input_tokens: result?.usage?.input_tokens ?? null,
+    output_tokens: result?.usage?.output_tokens ?? null,
+    ms: result?.startedAt ? Date.now() - result.startedAt : null,
+  });
+  if (error) console.error('[ai] record', error.message);
+}
+
 /** 답을 쓰이는 대로 한 줄씩 보낸다 (stream: true). 줄의 모양은 맨 위 설명 참고 */
-function streamAnswer(apiKey: string, params: Anthropic.MessageStreamParams) {
+function streamAnswer(
+  apiKey: string,
+  params: Anthropic.MessageStreamParams,
+  userId: string,
+  action: string
+) {
   const encoder = new TextEncoder();
   const lines = new ReadableStream<Uint8Array>({
     async start(controller) {
       const send = (line: unknown) =>
         controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`));
+      const startedAt = Date.now();
       try {
         send({ stage: 'thinking' });
         const stream = new Anthropic({ apiKey }).messages.stream(params);
@@ -363,6 +394,12 @@ function streamAnswer(apiKey: string, params: Anthropic.MessageStreamParams) {
           }
         }
         const message = await stream.finalMessage();
+        await record(
+          userId,
+          action,
+          message.stop_reason === 'end_turn' ? 'ok' : 'failed',
+          { model: message.model, usage: message.usage, startedAt }
+        );
         // 거절했거나 중간에 끊겼으면 JSON이 온전하지 않다
         send(
           message.stop_reason === 'end_turn'
@@ -371,6 +408,7 @@ function streamAnswer(apiKey: string, params: Anthropic.MessageStreamParams) {
         );
       } catch (e) {
         console.error('[ai] stream', e);
+        await record(userId, action, 'failed', { startedAt });
         send({ error: 'ai_failed' });
       }
       controller.close();
@@ -405,23 +443,29 @@ Deno.serve(async (req: Request) => {
   if (body?.action === 'usage') return usageOf(auth.user.id);
   const job = toJob(body ?? {});
   if (!job) return json({ error: 'invalid_request' }, 400);
+  const userId = auth.user.id;
+  const action = String(body.action);
 
   const { data: usedToday, error: totalError } =
     await admin.rpc('ai_used_today');
   if (totalError) return json({ error: 'usage_failed' }, 500);
   if ((usedToday ?? 0) >= GLOBAL_DAILY_LIMIT) {
+    await record(userId, action, 'limit_global');
     return json({ error: 'limit' }, 429);
   }
 
   // ponytail: Claude를 부르기 전에 센다 (실패한 요청도 횟수에 들어간다).
   // 한도가 넉넉해서 괜찮고, 실패를 되돌려 주려면 여기서 올린 횟수를 다시 내리면 된다.
   const { data: allowed, error: usageError } = await admin.rpc('use_ai', {
-    p_user: auth.user.id,
+    p_user: userId,
     p_kind: job.usage,
     p_limit: job.limit,
   });
   if (usageError) return json({ error: 'usage_failed' }, 500);
-  if (!allowed) return json({ error: 'limit' }, 429);
+  if (!allowed) {
+    await record(userId, action, 'limit_user');
+    return json({ error: 'limit' }, 429);
+  }
 
   const params: Anthropic.MessageCreateParamsNonStreaming = {
     model: MODEL,
@@ -435,15 +479,25 @@ Deno.serve(async (req: Request) => {
     },
   };
   // 종류는 앱이 카테고리에 맞춰 다시 고친다 (lib/bucket/aiDraft.ts의 toAiClass)
-  if (body.stream === true) return streamAnswer(apiKey, params);
+  if (body.stream === true) {
+    return streamAnswer(apiKey, params, userId, action);
+  }
 
+  const startedAt = Date.now();
   try {
     const response = await new Anthropic({ apiKey }).messages.create(params);
+    const block = response.content.find((b) => b.type === 'text');
     // 거절했거나 중간에 끊겼으면 JSON이 온전하지 않다
+    const ok =
+      response.stop_reason === 'end_turn' && block && block.type === 'text';
+    await record(userId, action, ok ? 'ok' : 'failed', {
+      model: response.model,
+      usage: response.usage,
+      startedAt,
+    });
     if (response.stop_reason !== 'end_turn') {
       return json({ error: 'ai_failed', reason: response.stop_reason }, 502);
     }
-    const block = response.content.find((b) => b.type === 'text');
     if (!block || block.type !== 'text') {
       return json({ error: 'ai_failed' }, 502);
     }
@@ -453,6 +507,7 @@ Deno.serve(async (req: Request) => {
     return answer;
   } catch (e) {
     console.error('[ai]', e);
+    await record(userId, action, 'failed', { startedAt });
     return json({ error: 'ai_failed' }, 502);
   }
 });
