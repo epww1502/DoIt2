@@ -200,6 +200,49 @@
           },
           "androidIntentFilters": ["text/*"]
         }
+      ],
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.doit2.app",
+          "widgets": [
+            {
+              "name": "DoItMemory",
+              "displayName": "1년 전 오늘",
+              "description": "지난해 이맘때의 기록을 보여줘요",
+              "supportedFamilies": ["systemSmall", "systemMedium"]
+            },
+            {
+              "name": "DoItDday",
+              "displayName": "다가오는 날",
+              "description": "가장 가까운 일정까지 며칠 남았는지 보여줘요",
+              "supportedFamilies": ["systemSmall"]
+            },
+            {
+              "name": "DoItNext",
+              "displayName": "다음에 할 것",
+              "description": "아직 안 한 것을 보여주고, 누르면 그 항목으로 가요",
+              "supportedFamilies": ["systemMedium", "systemLarge"]
+            },
+            {
+              "name": "DoItPick",
+              "displayName": "오늘 뭐 하지",
+              "description": "담아 둔 것 중에 하나를 뽑아줘요",
+              "supportedFamilies": ["systemSmall", "systemMedium"],
+              "configuration": {
+                "title": "오늘 뭐 하지",
+                "description": "위젯에서 눌러 다시 뽑을 수 있어요",
+                "parameters": {
+                  "includeDone": {
+                    "title": "이미 해본 것도 포함",
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              }
+            }
+          ]
+        }
       ]
     ],
     "experiments": {

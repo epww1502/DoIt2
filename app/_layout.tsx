@@ -16,6 +16,7 @@ import { MemoryShareSync } from '@/components/sync/MemoryShareSync';
 import { QuickActionsSync } from '@/components/sync/QuickActionsSync';
 import { ShareInSync } from '@/components/sync/ShareInSync';
 import { WelcomeGate } from '@/components/sync/WelcomeGate';
+import { WidgetSync } from '@/components/sync/WidgetSync';
 import { OfflineBanner } from '@/components/sync/OfflineBanner';
 import { PushSync } from '@/components/sync/PushSync';
 import { ReminderSync } from '@/components/sync/ReminderSync';
@@ -119,6 +120,8 @@ function RootLayoutInner() {
       <MemoryShareSync />
       {/* 처음 켠 사람을 시작 화면으로 보낸다 (화면 없음) */}
       <WelcomeGate />
+      {/* 홈 화면 위젯의 내용을 고쳐 둔다 (화면 없음, 새 빌드의 아이폰부터) */}
+      <WidgetSync />
       {/* 다른 앱에서 공유로 넘어온 것을 담기 화면으로 (화면 없음, 새 빌드부터) */}
       <ShareInSync />
       {/* 앱 아이콘 꾹 누르기 바로가기 (화면 없음, 새 빌드부터) */}
