@@ -1,4 +1,5 @@
 import {
+  homeTip,
   inviteCodeFromText,
   needsWelcome,
   STARTERS,
@@ -76,5 +77,45 @@ describe('처음에 보여주는 예시', () => {
     for (const who of WHO_OPTIONS) {
       expect(Boolean(who.spaceName)).toBe(who.key !== 'solo');
     }
+  });
+});
+
+describe('homeTip', () => {
+  const base = {
+    guided: true,
+    todoCount: 0,
+    doneCount: 0,
+    pickTried: false,
+    pickTipDismissed: false,
+    recordTipDismissed: false,
+  };
+
+  it('전부터 쓰던 사람에게는 안내하지 않는다', () => {
+    expect(homeTip({ ...base, guided: false, todoCount: 5 })).toBeNull();
+  });
+
+  it('담은 게 없으면 안내하지 않는다', () => {
+    expect(homeTip(base)).toBeNull();
+  });
+
+  it('하나라도 담았고 기록이 없으면 기록을 권한다', () => {
+    expect(homeTip({ ...base, todoCount: 1 })).toBe('record');
+  });
+
+  it('3개 넘게 쌓이면 뽑기를 먼저 권한다', () => {
+    expect(homeTip({ ...base, todoCount: 3 })).toBe('pick');
+  });
+
+  it('뽑아 봤거나 닫았으면 기록 안내로 넘어간다', () => {
+    expect(homeTip({ ...base, todoCount: 5, pickTried: true })).toBe('record');
+    expect(homeTip({ ...base, todoCount: 5, pickTipDismissed: true })).toBe(
+      'record'
+    );
+  });
+
+  it('기록을 남겼거나 닫았으면 더 안내하지 않는다', () => {
+    const picked = { ...base, todoCount: 5, pickTried: true };
+    expect(homeTip({ ...picked, doneCount: 1 })).toBeNull();
+    expect(homeTip({ ...picked, recordTipDismissed: true })).toBeNull();
   });
 });

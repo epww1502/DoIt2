@@ -67,7 +67,10 @@ import {
   SelectionHeader,
 } from '@/components/bucket/SelectionBar';
 import { SpaceSwitcher } from '@/components/space/SpaceSwitcher';
+import { HomeTipCard } from '@/components/bucket/HomeTipCard';
 import { InviteCard } from '@/components/space/InviteCard';
+import { homeTip } from '@/lib/onboarding';
+import { trackStep } from '@/lib/steps';
 import {
   SpaceCoachMark,
   type TargetRect,
@@ -218,6 +221,27 @@ export default function BucketListScreen() {
     }, 600);
     return () => clearTimeout(timer);
   }, [spaceTipPending]);
+  // 쓰는 순서대로 하나씩 권한다: 3개 넘게 담았으면 뽑기, 그다음 첫 기록
+  const pickTried = useSettingsStore((s) => s.pickTried);
+  const pickTipDismissed = useSettingsStore((s) => s.pickTipDismissed);
+  const recordTipDismissed = useSettingsStore((s) => s.recordTipDismissed);
+  const guided = useSettingsStore((s) => s.guided);
+  const tip = homeTip({
+    guided,
+    todoCount: todo.length,
+    doneCount,
+    pickTried,
+    pickTipDismissed,
+    recordTipDismissed,
+  });
+  // 기록이 없다가 처음 생긴 순간을 센다 (전부터 기록이 있던 사람은 세지 않는다)
+  const hadNoRecord = useRef(doneCount === 0);
+  useEffect(() => {
+    if (hadNoRecord.current && doneCount > 0) {
+      hadNoRecord.current = false;
+      trackStep('first_record');
+    }
+  }, [doneCount]);
   const closeSpaceTip = () => {
     setTipTarget(null);
     useSettingsStore.getState().setSpaceTipPending(false);
@@ -441,6 +465,11 @@ export default function BucketListScreen() {
       ) : null}
 
       <SyncStaleNotice sync={sync} />
+
+      {/* 다음에 해 볼 것 하나 (뽑기 → 기록) */}
+      {tip && !selection.selecting ? (
+        <HomeTipCard tip={tip} together={together} />
+      ) : null}
 
       {/* 함께 쓰는 공간에 아직 나만 있으면 초대를 권한다 */}
       {currentSpace && !selection.selecting ? (

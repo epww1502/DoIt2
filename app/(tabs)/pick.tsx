@@ -46,6 +46,7 @@ import { todayKey } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import { weatherKey } from '@/lib/weather';
 import { useBucketStore } from '@/store/useBucketStore';
+import { trackStep } from '@/lib/steps';
 import { usePrimaryColor, useSettingsStore } from '@/store/useSettingsStore';
 import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 import { useItemWants } from '@/hooks/useItemWants';
@@ -195,6 +196,11 @@ export default function PickScreen() {
 
   const shuffle = () => {
     if (candidates.length === 0 || isShuffling) return;
+    // 처음 뽑아 봤으면 버킷리스트 위의 '뽑아 보세요' 안내를 더 띄우지 않는다
+    if (!useSettingsStore.getState().pickTried) {
+      useSettingsStore.getState().setPickTried(true);
+      trackStep('first_pick');
+    }
     // 직전에 뽑힌 것은 되도록 피한다
     // '하고 싶어요' 한 명마다 한 번 더 뽑힐 기회 (아무도 안 눌렀으면 모두 같게)
     const picked = randomOf(

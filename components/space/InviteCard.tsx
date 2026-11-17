@@ -3,6 +3,7 @@ import { Pressable, Share, View } from 'react-native';
 
 import { Icon, Text } from '@/components/atoms';
 import { inviteMessage } from '@/lib/inviteLink';
+import { trackStep } from '@/lib/steps';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import type { Space } from '@/store/useSpaceStore';
 
@@ -27,7 +28,10 @@ export function InviteCard({ space }: { space: Space }) {
       <Pressable
         accessibilityRole="button"
         hitSlop={8}
-        onPress={() => void Share.share({ message: inviteMessage(space) })}
+        onPress={() => {
+          trackStep('invite_sent', 'home');
+          void Share.share({ message: inviteMessage(space) });
+        }}
         className="rounded-full bg-primary px-3 py-1.5 active:opacity-70"
       >
         <Text weight="600" size={13} className="text-primary-foreground">

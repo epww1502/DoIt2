@@ -4,9 +4,12 @@ import TestRenderer from 'react-test-renderer';
 import WelcomeScreen from '@/app/welcome';
 import { router } from 'expo-router';
 
+const mockParams: { joined?: string } = {};
 jest.mock('expo-router', () => ({
   router: { replace: jest.fn(), push: jest.fn() },
+  useLocalSearchParams: () => mockParams,
 }));
+jest.mock('@/lib/steps', () => ({ trackStep: jest.fn() }));
 jest.mock('react-native-safe-area-context', () => {
   const { View } = jest.requireActual('react-native');
   return {
@@ -36,21 +39,40 @@ jest.mock('@/lib/haptics', () => ({
 const mockCreateSpace = jest.fn<Promise<unknown>, unknown[]>();
 const mockSwitchSpace = jest.fn<Promise<void>, unknown[]>(async () => {});
 const mockAddItems = jest.fn<void, unknown[]>();
+type MockSpace = {
+  id: string;
+  name: string;
+  emoji: string;
+  memberCount: number;
+};
+const mockSpaceState: { spaces: MockSpace[]; spaceId: string | null } = {
+  spaces: [],
+  spaceId: null,
+};
 jest.mock('@/store/useSpaceStore', () => {
   const state = {
-    spaces: [],
+    get spaces() {
+      return mockSpaceState.spaces;
+    },
     createSpace: (...a: unknown[]) => mockCreateSpace(...a),
   };
   const useSpaceStore = (sel: (s: typeof state) => unknown) => sel(state);
   useSpaceStore.getState = () => state;
-  return { useSpaceStore };
+  const useSpace = (id: string | null) =>
+    mockSpaceState.spaces.find((sp) => sp.id === id) ?? null;
+  return { useSpaceStore, useSpace };
 });
 jest.mock('@/store/useBucketStore', () => {
   const state = {
+    get spaceId() {
+      return mockSpaceState.spaceId;
+    },
     switchSpace: (...a: unknown[]) => mockSwitchSpace(...a),
     addItems: (...a: unknown[]) => mockAddItems(...a),
   };
-  return { useBucketStore: { getState: () => state } };
+  const useBucketStore = (sel: (s: typeof state) => unknown) => sel(state);
+  useBucketStore.getState = () => state;
+  return { useBucketStore };
 });
 const mockSetWelcomed = jest.fn();
 const mockSetSpaceTipPending = jest.fn();
@@ -59,6 +81,7 @@ jest.mock('@/store/useSettingsStore', () => ({
     getState: () => ({
       setWelcomed: mockSetWelcomed,
       setSpaceTipPending: mockSetSpaceTipPending,
+      setGuided: jest.fn(),
     }),
   },
 }));
@@ -210,4 +233,54 @@ it('직접 해보기에서 돌아오면 고르던 것이 그대로 있다', asyn
   await press(r, '직접 해보기');
   await press(r, '예시에서 고를게요');
   expect(texts(r)).toContain('1개 담고 시작하기');
+});
+
+describe('초대받아 들어온 사람', () => {
+  afterEach(() => {
+    mockSpaceState.spaces = [];
+    mockSpaceState.spaceId = null;
+    delete mockParams.joined;
+  });
+
+  it('초대 링크로 처음 켰으면 들어온 곳을 알려주고, 고른 것을 그 공간에 담는다', async () => {
+    jest.clearAllMocks();
+    mockSpaceState.spaces = [
+      { id: 's9', name: '우리 가족', emoji: '👨‍👩‍👧', memberCount: 3 },
+    ];
+    mockSpaceState.spaceId = 's9';
+    mockParams.joined = '1';
+    let r!: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      r = TestRenderer.create(<WelcomeScreen />);
+    });
+    expect(texts(r)).toContain("'우리 가족'에 들어왔어요");
+    expect(texts(r)).toContain('지금 3명이 같이 쓰고 있어요');
+    // 누구와 쓸지는 묻지 않는다
+    expect(texts(r)).not.toContain('누구와 같이 쓸까요?');
+    await press(r, '나도 하나 담아볼게요');
+    await press(r, '캠핑 가기');
+    await press(r, '1개 담고 시작하기');
+    // 공간을 새로 만들지 않고, 초대 단계도 없다
+    expect(mockCreateSpace).not.toHaveBeenCalled();
+    expect(mockAddItems).toHaveBeenCalled();
+    expect(mockSetWelcomed).toHaveBeenCalledWith(true);
+    expect(router.replace).toHaveBeenCalledWith('/');
+  });
+
+  it('둘러보기만 해도 된다', async () => {
+    jest.clearAllMocks();
+    mockSpaceState.spaces = [
+      { id: 's9', name: '우리 가족', emoji: '👨‍👩‍👧', memberCount: 1 },
+    ];
+    mockSpaceState.spaceId = 's9';
+    mockParams.joined = '1';
+    let r!: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      r = TestRenderer.create(<WelcomeScreen />);
+    });
+    expect(texts(r)).not.toContain('명이 같이 쓰고 있어요');
+    await press(r, '먼저 둘러볼게요');
+    expect(mockAddItems).not.toHaveBeenCalled();
+    expect(mockSetWelcomed).toHaveBeenCalledWith(true);
+  });
 });

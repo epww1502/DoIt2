@@ -108,6 +108,18 @@ export const STARTERS: Record<WhoKey, AiDraft[]> = {
   ],
 };
 
+/** 초대받아 들어온 사람에게 보여주는 예시 (누구와 쓰는 곳인지 몰라서 두루 맞는 것으로) */
+export const JOINED_STARTERS: AiDraft[] = [
+  place('가보고 싶던 맛집 가기', 'food', 'indoor'),
+  place('당일치기 여행', 'trip', 'outdoor'),
+  place('전시회 보러 가기', 'culture', 'indoor'),
+  place('놀이공원 가기', 'activity', 'outdoor'),
+  activity('같이 요리하기', 'cook', 'indoor'),
+  activity('같이 사진 찍기', 'memory', 'indoor'),
+  place('분위기 좋은 카페 가기', 'cafe', 'indoor'),
+  place('캠핑 가기', 'trip', 'outdoor'),
+];
+
 /** 직접 쓰는 이름의 길이 (항목 이름과 같다) */
 export const STARTER_TITLE_MAX = 40;
 /** '직접 해보기'에서 넣을 수 있는 할 것 수 (더 넣고 싶으면 담은 뒤 항목에서) */
@@ -171,4 +183,37 @@ export function needsWelcome(state: {
     state.spaceCount === 0 &&
     state.itemCount === 0
   );
+}
+
+export type HomeTip = 'pick' | 'record' | null;
+
+/**
+ * 버킷리스트 위에 보여줄 안내 하나 (쓰는 순서대로: 담기 → 뽑기 → 기록).
+ * - pick: 할 것이 3개 넘게 쌓였는데 '오늘 뭐 하지'를 뽑아 본 적이 없을 때
+ * - record: 담아 둔 것은 있는데 기록을 한 번도 남기지 않았을 때
+ * 한 번에 하나만 보여준다. 닫으면 다시 나오지 않는다.
+ */
+export function homeTip(state: {
+  /** 새 시작 화면을 거친 사람인지 (전부터 쓰던 사람에게는 안내하지 않는다) */
+  guided: boolean;
+  /** 아직 안 한 것 수 */
+  todoCount: number;
+  /** 기록을 남긴 것 수 */
+  doneCount: number;
+  pickTried: boolean;
+  pickTipDismissed: boolean;
+  recordTipDismissed: boolean;
+}): HomeTip {
+  if (!state.guided) return null;
+  if (state.todoCount >= 3 && !state.pickTried && !state.pickTipDismissed) {
+    return 'pick';
+  }
+  if (
+    state.todoCount >= 1 &&
+    state.doneCount === 0 &&
+    !state.recordTipDismissed
+  ) {
+    return 'record';
+  }
+  return null;
 }

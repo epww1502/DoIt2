@@ -57,6 +57,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      app_steps: {
+        Row: {
+          app_version: string | null;
+          created_at: string;
+          detail: string | null;
+          id: number;
+          platform: string | null;
+          step: string;
+          user_id: string;
+        };
+        Insert: {
+          app_version?: string | null;
+          created_at?: string;
+          detail?: string | null;
+          id?: number;
+          platform?: string | null;
+          step: string;
+          user_id?: string;
+        };
+        Update: {
+          app_version?: string | null;
+          created_at?: string;
+          detail?: string | null;
+          id?: number;
+          platform?: string | null;
+          step?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       app_versions: {
         Row: {
           message: string | null;
