@@ -18,10 +18,10 @@ export function InviteCard({ space }: { space: Space }) {
     <View className="mx-5 mb-4 flex-row items-center gap-3 rounded-2xl border border-primary/30 px-4 py-3 bg-accent">
       <View className="flex-1 gap-0.5">
         <Text weight="600" size={14}>
-          아직 혼자예요. 같이 쓸 사람을 초대해요
+          같이 쓸 사람을 초대해요
         </Text>
         <Text size={12} className="text-muted-foreground">
-          링크를 보내면 받은 사람이 눌러서 바로 들어와요
+          링크를 보내면 눌러서 바로 들어와요
         </Text>
       </View>
       <Pressable
