@@ -37,14 +37,14 @@ describe('위젯에 넘길 값', () => {
       title: '제주 협재 해변',
       stars: '★★★★☆',
       review: '노을이 예뻤다',
-      url: 'doit2://item/a',
+      url: 'doit2://item/a?from=widget',
     });
   });
 
   it('추억이 없으면 빈 값이고 누르면 앱 첫 화면으로 간다', () => {
     expect(memoryProps([item('a')], TODAY)).toMatchObject({
       label: '',
-      url: 'doit2://',
+      url: 'doit2://?from=widget',
     });
   });
 
@@ -60,7 +60,7 @@ describe('위젯에 넘길 값', () => {
       dday: 'D-12',
       title: '가평 글램핑',
       date: '11월 29일',
-      url: 'doit2://item/a',
+      url: 'doit2://item/a?from=widget',
     });
     // 미리 만들어 두는 다음 날 치는 하루 줄어 있다
     expect(ddayProps(items, '2026-11-18').dday).toBe('D-11');
@@ -86,10 +86,10 @@ describe('위젯에 넘길 값', () => {
     ];
     const next = nextProps(items, TODAY);
     expect(next.items.map((i) => i.url)).toEqual([
-      'doit2://item/eeeee',
-      'doit2://item/dddd',
-      'doit2://item/ccc',
-      'doit2://item/bb',
+      'doit2://item/eeeee?from=widget',
+      'doit2://item/dddd?from=widget',
+      'doit2://item/ccc?from=widget',
+      'doit2://item/bb?from=widget',
     ]);
     expect(next.more).toBe(1);
   });

@@ -52,8 +52,9 @@ export type PickProps = {
   index: number;
 };
 
-const itemUrl = (id: string) => `doit2://item/${id}`;
-const HOME_URL = 'doit2://';
+// from=widget: 위젯을 눌러 열었다는 표시 (app/+native-intent.tsx가 세고, 화면 주소에는 영향이 없다)
+const itemUrl = (id: string) => `doit2://item/${id}?from=widget`;
+const HOME_URL = 'doit2://?from=widget';
 
 /** 그날의 추억 (1년 전 오늘 → 지난 이맘때). 없으면 빈 값 */
 export function memoryProps(items: BucketItem[], today: string): MemoryProps {

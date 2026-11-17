@@ -6,6 +6,7 @@ import {
   quickActionItems,
   quickActionsAvailable,
 } from '@/lib/quickActions';
+import { trackStep } from '@/lib/steps';
 
 /**
  * 화면 없이, 앱 아이콘을 꾹 눌렀을 때의 바로가기를 등록하고 눌리면 그 화면으로 보내는 컴포넌트
@@ -23,7 +24,9 @@ export function QuickActionsSync() {
         await QuickActions.setItems(quickActionItems());
         const go = (action: unknown) => {
           const href = quickActionHref(action);
-          if (href) router.push(href as Href);
+          if (!href) return;
+          trackStep('quick_action', String((action as { id?: unknown }).id));
+          router.push(href as Href);
         };
         // 바로가기로 앱을 켰을 때
         go(QuickActions.initial);

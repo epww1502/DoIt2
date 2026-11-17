@@ -27,7 +27,20 @@ export type AppStep =
   /** 처음으로 기록을 남겼다 */
   | 'first_record'
   /** 첫 화면의 안내를 눌렀다 (detail: pick·record) */
-  | 'tip_tapped';
+  | 'tip_tapped'
+  // ── 0.3.0 빌드에서 넣은 기능이 실제로 쓰이는지 ──
+  /** 다른 앱에서 공유로 넘어와 담기 화면이 열렸다 (detail: map·link·text) */
+  | 'share_in'
+  /** 홈 화면 위젯을 눌러 앱이 열렸다 */
+  | 'widget_open'
+  /** 앱 아이콘 꾹 누르기 바로가기로 들어왔다 (detail: add·pick·done) */
+  | 'quick_action'
+  /** 홈 화면 아이콘을 바꿨다 (detail: 아이콘 이름, 기본이면 default) */
+  | 'icon_changed'
+  /** 폰 캘린더에 바로 넣기를 눌렀다 */
+  | 'calendar_added'
+  /** 초대 링크를 눌러 앱이 바로 열렸다 */
+  | 'invite_link_open';
 
 const sent = new Set<string>();
 

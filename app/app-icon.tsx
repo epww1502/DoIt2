@@ -19,6 +19,7 @@ import {
 } from '@/lib/appIcon';
 import { showAlert } from '@/lib/dialog';
 import { hapticSelect } from '@/lib/haptics';
+import { trackStep } from '@/lib/steps';
 
 /** 밤색 바탕 (아이콘 그림과 같은 색) */
 const NIGHT = '#1F1D2B';
@@ -90,6 +91,8 @@ export default function AppIconScreen() {
   const apply = async () => {
     setBusy(true);
     try {
+      // 안드로이드는 바꾸면 앱이 닫혀서, 바꾸기 전에 적어 둔다
+      trackStep('icon_changed', name ?? 'default');
       await applyIconChoice(choice);
       setApplied(name);
     } catch {

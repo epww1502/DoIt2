@@ -15,6 +15,7 @@ import {
   shareIcs,
 } from '@/lib/calendarShare';
 import { showAlert } from '@/lib/dialog';
+import { trackStep } from '@/lib/steps';
 import type { DayWeather } from '@/lib/forecast';
 
 /** 목표 날짜 카드: 날짜(기간)·알림·D-day, 날씨 예보, 캘린더에 넣기 */
@@ -86,7 +87,10 @@ export function GoalCard({ item }: { item: BucketItem }) {
               ? [
                   {
                     label: '폰 캘린더에 바로 넣기',
-                    onPress: run(() => addToDeviceCalendar(event)),
+                    onPress: run(() => {
+                      trackStep('calendar_added');
+                      return addToDeviceCalendar(event);
+                    }),
                   },
                 ]
               : []),
