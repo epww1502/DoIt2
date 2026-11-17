@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { reportError } from '@/lib/errorReport';
 import { fetchTodayWeather, type TodayWeather } from '@/lib/weather';
@@ -41,8 +41,14 @@ async function findPosition() {
       maxAge: LAST_POSITION_MAX_AGE_MS,
     });
     if (recent) return recent;
+    // 안드로이드의 Low(저전력)는 기지국만 써서 위치가 아예 안 잡히는 폰이 있다. Balanced는 와이파이도 써서 금방 잡힌다
     return await withTimeout(
-      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low }),
+      Location.getCurrentPositionAsync({
+        accuracy:
+          Platform.OS === 'android'
+            ? Location.Accuracy.Balanced
+            : Location.Accuracy.Low,
+      }),
       LOCATION_TIMEOUT_MS
     );
   } catch (e) {
