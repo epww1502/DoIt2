@@ -1,12 +1,19 @@
+import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { create } from 'zustand';
 
 import { deletePhoto } from '@/lib/bucket/photo';
-import { deleteMyAccount, signInWithAccountCode } from '@/lib/supabase/account';
+import {
+  deleteMyAccount,
+  ensureAccountCode,
+  InvalidAccountCodeError,
+  signInWithAccountCode,
+} from '@/lib/supabase/account';
 import { noteFailure } from '@/lib/connection';
 import { clearSavedPhotos } from '@/lib/photoCache';
 import { removePhoto, uploadPhoto } from '@/lib/supabase/bucketRemote';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import type { SpaceRow } from '@/lib/supabase/database.types';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 export type SpaceStatus =
   /** .env에 Supabase 값이 없다 → 휴대폰에만 저장 */
@@ -68,6 +75,54 @@ function friendlyError(message: string, fallback: string) {
   return new Error(key ? RPC_ERRORS[key] : fallback);
 }
 
+/** 이 폰에 저장된 설정(계정 코드 포함)을 다 읽을 때까지 기다린다 */
+function settingsHydrated() {
+  if (useSettingsStore.persist.hasHydrated()) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    const unsub = useSettingsStore.persist.onFinishHydration(() => {
+      unsub();
+      resolve();
+    });
+  });
+}
+
+let issuingCode = false;
+/** 서버에 코드가 이미 있다고 확인한 계정 (이번 실행 동안 다시 묻지 않는다) */
+let codeExistsFor: string | null = null;
+
+/**
+ * 이 폰에 계정 코드가 없으면, 서버에도 없을 때만 새로 만들어 저장해 둔다.
+ * 로그인이 사라져도 이 코드로 같은 계정에 다시 들어간다.
+ * 서버에 이미 있으면(예전에 만들어 폰 밖에 적어 둔 코드) 그 코드를 그대로 살려 둔다.
+ * 다른 계정의 코드가 저장돼 있으면 건드리지 않는다 (그 계정으로 돌아갈 열쇠라서).
+ */
+export async function keepAccountCode(userId: string) {
+  if (
+    issuingCode ||
+    codeExistsFor === userId ||
+    useSettingsStore.getState().accountCode
+  ) {
+    return;
+  }
+  issuingCode = true;
+  try {
+    const code = await ensureAccountCode();
+    if (!code) {
+      codeExistsFor = userId;
+      return;
+    }
+    // 만드는 사이 다른 계정으로 바뀌었으면 저장하지 않는다
+    if (useSpaceStore.getState().userId === userId) {
+      useSettingsStore.getState().setAccountCode({ userId, code });
+    }
+  } catch (e) {
+    // 다음에 켤 때 다시 만든다
+    noteFailure(e);
+  } finally {
+    issuingCode = false;
+  }
+}
+
 export const useSpaceStore = create<SpaceState>((set, get) => {
   /** 공간을 만들거나 들어간 뒤 목록을 다시 받는다. 실패하면 받은 공간만 목록에 넣어둔다 */
   const refreshOrAdd = async (row: SpaceRow) => {
@@ -90,7 +145,10 @@ export const useSpaceStore = create<SpaceState>((set, get) => {
       if (!isSupabaseConfigured) return;
       set({ status: 'loading' });
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        // 저장된 로그인의 토큰을 새로 받다가 인터넷 때문에 실패했다. 새 계정을 만들면
+        // 쓰던 계정 위에 덮어쓰니, 오류로 두고 다시 연결되면 다시 시도한다
+        if (isAuthRetryableFetchError(sessionError)) throw sessionError;
         let userId = data.session?.user.id ?? null;
         if (!userId) {
           // 이메일·비밀번호 없이 시작한다 (나중에 카카오·Apple 로그인을 이어 붙일 수 있다)
@@ -98,10 +156,28 @@ export const useSpaceStore = create<SpaceState>((set, get) => {
             await supabase.auth.signInAnonymously();
           if (error) throw error;
           userId = signIn.user?.id ?? null;
+          // 로그인이 사라졌지만 이 폰에 계정 코드가 있다 → 그 계정으로 돌아간다
+          // (코드로 불러오기는 로그인한 상태에서만 돼서 잠깐 익명으로 들어간 뒤에 한다)
+          await settingsHydrated();
+          const saved = useSettingsStore.getState().accountCode;
+          if (saved && saved.userId !== userId) {
+            try {
+              userId = await signInWithAccountCode(saved.code);
+            } catch (e) {
+              if (!(e instanceof InvalidAccountCodeError)) {
+                // 인터넷 문제: 잠깐 들어간 익명 계정을 이 폰에서 지워야 다음에 다시 코드로 돌아간다
+                await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+                throw e;
+              }
+              // 코드를 더 이상 못 쓴다 (계정을 지웠거나 다른 폰에서 새 코드를 만듦)
+              useSettingsStore.getState().setAccountCode(null);
+            }
+          }
         }
         set({ userId });
         await get().refreshSpaces();
         set({ status: 'ready' });
+        if (userId) void keepAccountCode(userId);
       } catch (e) {
         console.warn('[space] init failed', e);
         noteFailure(e);
@@ -112,6 +188,8 @@ export const useSpaceStore = create<SpaceState>((set, get) => {
     restoreAccount: async (code) => {
       const userId = await signInWithAccountCode(code);
       set({ userId, spaces: [] });
+      // 다음에 로그인이 사라져도 이 계정으로 돌아오게 코드를 저장해 둔다
+      useSettingsStore.getState().setAccountCode({ userId, code });
       // 다른 계정으로 바꿨으면 예전 계정의 사진을 남기지 않는다
       void clearSavedPhotos();
       try {
@@ -128,6 +206,8 @@ export const useSpaceStore = create<SpaceState>((set, get) => {
     deleteAccount: async () => {
       await deleteMyAccount();
       set({ userId: null, spaces: [] });
+      // 지운 계정의 코드로 되돌아가지 않게
+      useSettingsStore.getState().setAccountCode(null);
       void clearSavedPhotos();
       // 새 익명 계정으로 다시 로그인
       await get().init();

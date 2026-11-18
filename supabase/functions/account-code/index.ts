@@ -4,6 +4,8 @@
 // 요청 본문 (로그인한 사용자의 JWT 필요)
 // - { action: 'issue' }                 내 계정 코드를 새로 만든다 → { code }
 //                                       (예전 코드는 더 이상 못 쓴다)
+// - { action: 'ensure' }                코드가 없을 때만 새로 만든다 → { code }
+//                                       이미 있으면 그대로 두고 → { exists: true } (코드는 해시만 있어서 돌려줄 수 없다)
 // - { action: 'restore', code: string } 코드의 계정으로 로그인 → { access_token, refresh_token }
 //
 // 코드는 해시만 account_codes 테이블에 저장한다.
@@ -81,6 +83,25 @@ async function issue(userId: string) {
   return json({ code: formatCode(raw) });
 }
 
+async function ensure(userId: string) {
+  const raw = randomString(CODE_LENGTH, ALPHABET);
+  // 이미 있으면 넣지 않는다 (확인과 넣기를 한 번에 해서 동시에 불려도 예전 코드를 덮지 않는다)
+  const { data, error } = await admin
+    .from('account_codes')
+    .upsert(
+      {
+        user_id: userId,
+        code_hash: await hash(raw),
+        created_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id', ignoreDuplicates: true }
+    )
+    .select('user_id');
+  if (error) return json({ error: 'issue_failed' }, 500);
+  if (!data?.length) return json({ exists: true });
+  return json({ code: formatCode(raw) });
+}
+
 async function restore(code: unknown) {
   if (typeof code !== 'string' || normalize(code).length !== CODE_LENGTH) {
     return json({ error: 'invalid_code' }, 400);
@@ -134,6 +155,7 @@ Deno.serve(async (req) => {
   }
 
   if (body.action === 'issue') return issue(auth.user.id);
+  if (body.action === 'ensure') return ensure(auth.user.id);
   if (body.action === 'restore') return restore(body.code);
   return json({ error: 'unknown_action' }, 400);
 });

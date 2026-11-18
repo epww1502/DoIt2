@@ -259,7 +259,6 @@ function DeleteAccountLink() {
       // 이 폰에 남은 데이터도 비운다
       useBucketStore.getState().resetAll();
       useProfileStore.setState({ profile: null });
-      useSettingsStore.getState().setAccountCode(null);
       useRecentPlacesStore.getState().clear();
       useInboxStore.getState().clear();
       useLocalInboxStore.getState().clear();

@@ -19,6 +19,24 @@ export async function issueAccountCode() {
   return data.code;
 }
 
+/**
+ * 내 계정 코드가 없을 때만 새로 만든다. 새로 만들었으면 코드, 이미 있으면 null
+ * (예전에 만들어 폰 밖에 적어 둔 코드를 못 쓰게 만들지 않는다)
+ */
+export async function ensureAccountCode() {
+  const { data, error } = await supabase.functions.invoke<{
+    code?: string;
+    exists?: boolean;
+  }>('account-code', { body: { action: 'ensure' } });
+  if (error || (!data?.code && !data?.exists)) {
+    throw new Error('코드를 만들지 못했어요. 잠시 후 다시 시도해주세요.');
+  }
+  return data.code ?? null;
+}
+
+/** 계정 코드가 틀렸거나 더 이상 쓸 수 없다 (인터넷 문제와 구분한다) */
+export class InvalidAccountCodeError extends Error {}
+
 /** 코드의 계정으로 이 폰을 로그인시킨다. 성공하면 그 계정의 user id */
 export async function signInWithAccountCode(code: string) {
   const { data, error } = await supabase.functions.invoke<{
@@ -27,11 +45,12 @@ export async function signInWithAccountCode(code: string) {
   }>('account-code', { body: { action: 'restore', code } });
   if (error || !data?.access_token) {
     const status = (error as { context?: Response } | null)?.context?.status;
-    throw new Error(
-      status === 404 || status === 400
-        ? '계정 코드가 맞지 않아요. 다시 확인해주세요.'
-        : '불러오지 못했어요. 잠시 후 다시 시도해주세요.'
-    );
+    if (status === 404 || status === 400) {
+      throw new InvalidAccountCodeError(
+        '계정 코드가 맞지 않아요. 다시 확인해주세요.'
+      );
+    }
+    throw new Error('불러오지 못했어요. 잠시 후 다시 시도해주세요.');
   }
   const { data: session, error: sessionError } =
     await supabase.auth.setSession(data);
