@@ -18,6 +18,7 @@ import { ShareInSync } from '@/components/sync/ShareInSync';
 import { WelcomeGate } from '@/components/sync/WelcomeGate';
 import { WidgetSync } from '@/components/sync/WidgetSync';
 import { OfflineBanner } from '@/components/sync/OfflineBanner';
+import { UpdateReadyBanner } from '@/components/sync/UpdateReadyBanner';
 import { PushSync } from '@/components/sync/PushSync';
 import { ReminderSync } from '@/components/sync/ReminderSync';
 import { SpaceSync } from '@/components/sync/SpaceSync';
@@ -204,6 +205,8 @@ function RootLayoutInner() {
             options={{ animation: 'slide_from_bottom' }}
           />
         </Stack>
+        {/* 새 버전을 다 받아 두면 아래에 '다시 시작' 띠 */}
+        <UpdateReadyBanner />
         {/* 팝업도 테마 변수 안에 둬야 테마색·바탕색을 따라간다 */}
         {/* showAlert 팝업 (기본 Alert 대신) */}
         <DialogHost />
