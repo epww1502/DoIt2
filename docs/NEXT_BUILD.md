@@ -78,6 +78,8 @@ OTA로는 못 넣고 새 빌드가 있어야 하는 것들을 여기에 모은�
 - 안드로이드 제출: `eas.json`의 `submit.production.android`에 따라 **프로덕션 트랙 초안**으로 올라간다.
   Play Console에서 출시 노트를 넣고 검토에 보낸다. 제출용 서비스 계정은 Firebase 것
   (`firebase-adminsdk-fbsvc@doit2-1b006.iam.gserviceaccount.com`)을 Play Console 사용자로 초대해서 쓴다.
+- 업데이트 강제: 2026-11-18에 Play 스토어에 0.3.0이 보여서 안드로이드 `min_version`을 `0.3.0`으로 올렸다.
+  아이폰도 같은 날 App Store Connect에서 출시를 확인하고 `0.3.0`으로 올렸다.
 - 무료 EAS 제출 대기열은 저녁에 수십 분 걸릴 수 있다. 급하면 AAB를 받아 Play Console에 직접 올린다.
 - App Store Connect의 첫 버전 이름은 "1.0"이지만 안의 빌드는 0.2.0이었다. Apple은 빌드 버전으로 비교해서 0.3.0을 받아 줬다.
 - 윈도우에서 Windows PowerShell은 `npx`가 실행 정책에 막힌다. 터미널에서는 `npx.cmd`로 부른다.
