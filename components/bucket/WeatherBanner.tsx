@@ -60,6 +60,10 @@ export function WeatherBanner({
   switch (state.status) {
     case 'loading':
       title = '🌡️ 오늘 날씨를 확인하고 있어요';
+      // 받은 뒤처럼 두 줄로 둬서 날씨가 들어올 때 아래 화면이 튀지 않게
+      detail = rainMatters
+        ? rainDetail(rainMatters, includeOutdoor, excludedCount)
+        : '비가 오면 실외는 빼고 뽑아요';
       break;
     case 'denied':
       title = '📍 위치 권한이 없어서 내 위치 날씨는 못 봤어요';
@@ -77,6 +81,10 @@ export function WeatherBanner({
         detail = '폰의 위치(GPS)가 켜져 있는지 확인해 주세요';
       } else {
         title = '🌡️ 날씨를 불러오지 못했어요';
+        // 장소 날씨로 뺀 게 있으면 그걸 알려준다
+        detail = rainMatters
+          ? rainDetail(rainMatters, includeOutdoor, excludedCount)
+          : '날씨와 상관없이 모두 뽑아요';
       }
       action = <ActionText label="다시 시도" onPress={onReload} />;
       break;
