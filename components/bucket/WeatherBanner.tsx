@@ -54,23 +54,22 @@ export function WeatherBanner({
   excludedCount,
 }: WeatherBannerProps) {
   let title: string;
-  let detail: string | null = null;
+  let detail: string;
   let action: React.ReactNode = null;
 
   switch (state.status) {
     case 'loading':
       title = '🌡️ 오늘 날씨를 확인하고 있어요';
-      // 받은 뒤처럼 두 줄로 둬서 날씨가 들어올 때 아래 화면이 튀지 않게
       detail = rainMatters
         ? rainDetail(rainMatters, includeOutdoor, excludedCount)
         : '비가 오면 실외는 빼고 뽑아요';
       break;
     case 'denied':
-      title = '📍 위치 권한이 없어서 내 위치 날씨는 못 봤어요';
+      title = '📍 위치 권한이 없어요';
       // 장소 좌표가 있는 항목은 권한 없이도 그 장소 날씨로 판단한다
       detail = rainMatters
         ? rainDetail(rainMatters, includeOutdoor, excludedCount)
-        : '장소를 고른 항목은 그 장소 날씨로 판단해요';
+        : '장소를 고른 항목은 그 장소 날씨로 봐요';
       action = (
         <ActionText label="설정 열기" onPress={() => Linking.openSettings()} />
       );
@@ -78,7 +77,7 @@ export function WeatherBanner({
     case 'error':
       if (state.reason === 'location') {
         title = '📍 내 위치를 찾지 못했어요';
-        detail = '폰의 위치(GPS)가 켜져 있는지 확인해 주세요';
+        detail = '위치(GPS)가 켜져 있는지 봐 주세요';
       } else {
         title = '🌡️ 날씨를 불러오지 못했어요';
         // 장소 날씨로 뺀 게 있으면 그걸 알려준다
@@ -98,15 +97,15 @@ export function WeatherBanner({
 
   return (
     <View className="mx-5 mb-4 flex-row items-center gap-3 rounded-2xl px-4 py-3 bg-accent">
+      {/* 어느 상태든 제목 한 줄 + 설명 한 줄로 높이를 같게 둔다.
+          날씨를 받는 중 → 받음 → 실패로 바뀔 때 아래 화면이 튀지 않게 (글자를 키운 폰에서도) */}
       <View className="flex-1 gap-0.5">
-        <Text weight="600" size={14}>
+        <Text weight="600" size={14} numberOfLines={1}>
           {title}
         </Text>
-        {detail ? (
-          <Text size={12} className="text-muted-foreground">
-            {detail}
-          </Text>
-        ) : null}
+        <Text size={12} numberOfLines={1} className="text-muted-foreground">
+          {detail}
+        </Text>
       </View>
       {action}
     </View>

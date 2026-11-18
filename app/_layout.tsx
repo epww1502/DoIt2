@@ -18,6 +18,7 @@ import { ShareInSync } from '@/components/sync/ShareInSync';
 import { WelcomeGate } from '@/components/sync/WelcomeGate';
 import { WidgetSync } from '@/components/sync/WidgetSync';
 import { OfflineBanner } from '@/components/sync/OfflineBanner';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UpdateReadyBanner } from '@/components/sync/UpdateReadyBanner';
 import { PushSync } from '@/components/sync/PushSync';
 import { ReminderSync } from '@/components/sync/ReminderSync';
@@ -132,79 +133,82 @@ function RootLayoutInner() {
       <View className="flex-1 bg-background" style={themeVars}>
         {/* 오프라인 안내 띠: 화면 위를 차지해서 아래 화면을 밀어 내린다 */}
         <OfflineBanner />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: 'slide_from_right',
-          }}
-        >
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="welcome"
-            options={{ animation: 'fade', gestureEnabled: false }}
-          />
-          <Stack.Screen
-            name="item/new"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="record/[id]"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="item/search-place"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="item/shared"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="item/import"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="item/ai"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="item/redo"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen name="space/index" />
-          <Stack.Screen name="space/profile" />
-          <Stack.Screen name="space/list" />
-          <Stack.Screen name="done/map" />
-          <Stack.Screen name="done/stats" />
-          <Stack.Screen name="done/year" />
-          <Stack.Screen name="done/share-web" />
-          <Stack.Screen name="done/photos" />
-          <Stack.Screen
-            name="share/[id]"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="photo"
-            options={{ presentation: 'fullScreenModal', animation: 'fade' }}
-          />
-          <Stack.Screen name="profile" />
-          <Stack.Screen name="notifications" />
-          <Stack.Screen name="app-icon" />
-          <Stack.Screen name="trash" />
-          <Stack.Screen name="account/restore" />
-          <Stack.Screen
-            name="space/new"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="space/join"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-          <Stack.Screen
-            name="import/goit"
-            options={{ animation: 'slide_from_bottom' }}
-          />
-        </Stack>
+        {/* 화면들이 useSafeAreaInsets()로 위 여백을 줄 때, 오프라인 띠가 있으면 겹치는 만큼만 받게 한 번 더 잰다 */}
+        <SafeAreaProvider style={{ flex: 1 }}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="welcome"
+              options={{ animation: 'fade', gestureEnabled: false }}
+            />
+            <Stack.Screen
+              name="item/new"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="record/[id]"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="item/search-place"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="item/shared"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="item/import"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="item/ai"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="item/redo"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen name="space/index" />
+            <Stack.Screen name="space/profile" />
+            <Stack.Screen name="space/list" />
+            <Stack.Screen name="done/map" />
+            <Stack.Screen name="done/stats" />
+            <Stack.Screen name="done/year" />
+            <Stack.Screen name="done/share-web" />
+            <Stack.Screen name="done/photos" />
+            <Stack.Screen
+              name="share/[id]"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="photo"
+              options={{ presentation: 'fullScreenModal', animation: 'fade' }}
+            />
+            <Stack.Screen name="profile" />
+            <Stack.Screen name="notifications" />
+            <Stack.Screen name="app-icon" />
+            <Stack.Screen name="trash" />
+            <Stack.Screen name="account/restore" />
+            <Stack.Screen
+              name="space/new"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="space/join"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="import/goit"
+              options={{ animation: 'slide_from_bottom' }}
+            />
+          </Stack>
+        </SafeAreaProvider>
         {/* 새 버전을 다 받아 두면 아래에 '다시 시작' 띠 */}
         <UpdateReadyBanner />
         {/* 팝업도 테마 변수 안에 둬야 테마색·바탕색을 따라간다 */}

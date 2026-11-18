@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import * as Updates from 'expo-updates';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   AppSwitch,
@@ -65,6 +65,9 @@ const PICK_STYLE_OPTIONS: { value: PickStyle; label: string }[] = [
 ];
 
 export default function SettingsScreen() {
+  // SafeAreaView는 탭을 처음 열 때 위 여백이 한 박자 늦게 들어가서 화면이 튄다.
+  // 첫 렌더부터 있는 값으로 준다 (오프라인 띠가 있으면 루트의 SafeAreaProvider가 겹치는 만큼만 준다)
+  const insets = useSafeAreaInsets();
   const { mode, setMode } = useThemeMode();
   const pickStyle = useSettingsStore((s) => s.pickStyle);
   const setPickStyle = useSettingsStore((s) => s.setPickStyle);
@@ -73,7 +76,7 @@ export default function SettingsScreen() {
   const tabBarSpace = useTabBarSpace();
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-background">
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <ScreenHeader title="설정" subtitle="공간과 화면을 바꿀 수 있어요" />
       <ScrollView
         contentContainerClassName="gap-4 px-5 pt-3"
@@ -192,7 +195,7 @@ export default function SettingsScreen() {
           DoIt2 · 두잇투 v{installedVersion()}
         </Text>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

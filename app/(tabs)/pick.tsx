@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { SlidersHorizontal } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Icon, Text } from '@/components/atoms';
 import { ItemIcon } from '@/components/bucket/ItemIcon';
@@ -69,6 +69,9 @@ function randomOf<T>(list: T[], except?: T, weight?: (item: T) => number): T {
 }
 
 export default function PickScreen() {
+  // SafeAreaView는 탭을 처음 열 때 위 여백이 한 박자 늦게 들어가서 화면이 튄다.
+  // 첫 렌더부터 있는 값으로 준다 (오프라인 띠가 있으면 루트의 SafeAreaProvider가 겹치는 만큼만 준다)
+  const insets = useSafeAreaInsets();
   const items = useBucketStore((state) => state.items);
   const primary = usePrimaryColor();
   // 함께 쓰는 공간이면 '하고 싶어요'를 많이 받은 것이 더 잘 뽑힌다
@@ -234,7 +237,7 @@ export default function PickScreen() {
   const decided = current && !isShuffling;
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-background">
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <ScreenHeader
         right={<SpaceSwitcher />}
         title="오늘 뭐 하지?"
@@ -448,6 +451,6 @@ export default function PickScreen() {
         onApply={applyPickFilter}
         onClose={() => setFilterOpen(false)}
       />
-    </SafeAreaView>
+    </View>
   );
 }

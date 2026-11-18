@@ -14,7 +14,7 @@ import {
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTogether } from '@/hooks/useTogether';
 import { usePullRefresh } from '@/hooks/usePullRefresh';
@@ -70,6 +70,9 @@ const KIND_OPTIONS: SegmentedOption<KindOption>[] = [
 ];
 
 export default function DoneScreen() {
+  // SafeAreaView는 탭을 처음 열 때 위 여백이 한 박자 늦게 들어가서 화면이 튄다.
+  // 첫 렌더부터 있는 값으로 준다 (오프라인 띠가 있으면 루트의 SafeAreaProvider가 겹치는 만큼만 준다)
+  const insets = useSafeAreaInsets();
   const refreshControl = usePullRefresh();
   const items = useBucketStore((state) => state.items);
   // 공간 목록을 아직 못 받았으면 '없음' 대신 불러오는 중·다시 시도
@@ -176,7 +179,7 @@ export default function DoneScreen() {
     );
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-background">
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       {selection.selecting ? (
         <SelectionHeader
           count={selectedIds.length}
@@ -442,7 +445,7 @@ export default function DoneScreen() {
         }}
         onClose={() => setFilterOpen(false)}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
