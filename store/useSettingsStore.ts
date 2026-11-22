@@ -175,6 +175,15 @@ export const useSettingsStore = create<SettingsState>()(
         backupNudgeDismissed: state.backupNudgeDismissed,
         aiConsent: state.aiConsent,
         policyNoticeSeen: state.policyNoticeSeen,
+        // 한 번 보거나 닫은 것은 앱을 다시 켜도 그대로여야 한다
+        welcomed: state.welcomed,
+        inviteCardHidden: state.inviteCardHidden,
+        spaceTipPending: state.spaceTipPending,
+        guided: state.guided,
+        pickTried: state.pickTried,
+        pickTipDismissed: state.pickTipDismissed,
+        recordTipDismissed: state.recordTipDismissed,
+        reviewAsked: state.reviewAsked,
       }),
     }
   )

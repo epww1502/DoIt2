@@ -71,7 +71,11 @@ import { HomeTipCard } from '@/components/bucket/HomeTipCard';
 import { InviteCard } from '@/components/space/InviteCard';
 import { homeTip } from '@/lib/onboarding';
 import { trackStep } from '@/lib/steps';
-import { askStoreReview, shouldAskReview } from '@/lib/storeReview';
+import {
+  askStoreReview,
+  shouldAskReview,
+  takeNewRecord,
+} from '@/lib/storeReview';
 import {
   SpaceCoachMark,
   type TargetRect,
@@ -238,33 +242,41 @@ export default function BucketListScreen() {
     pickTipDismissed,
     recordTipDismissed,
   });
-  // 기록이 없다가 처음 생긴 순간을 센다 (전부터 기록이 있던 사람은 세지 않는다)
-  const hadNoRecord = useRef(doneCount === 0);
-  // 기록이 늘어서 세 번째가 되면 스토어 별점을 한 번 물어본다 (새 빌드부터)
-  const lastDoneCount = useRef(doneCount);
+  // 이 폰에서 방금 새 기록을 남겼을 때만 센다. 기록 수가 늘어난 것만 보면 앱을 켜서 목록을 불러올 때,
+  // 서버에서 받을 때, 공간을 바꿀 때도 늘어난 것으로 보인다 (그래서 켤 때마다 다시 세고 다시 물었다)
+  const reviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (hadNoRecord.current && doneCount > 0) {
-      hadNoRecord.current = false;
-      trackStep('first_record');
-    }
-    const before = lastDoneCount.current;
-    lastDoneCount.current = doneCount;
-    const settings = useSettingsStore.getState();
+    if (!takeNewRecord()) return;
+    // 기록이 없다가 처음 생긴 순간
+    if (doneCount === 1) trackStep('first_record');
+    // 세 번째 기록부터 스토어 별점을 한 번 물어본다 (새 빌드부터)
+    const { reviewAsked } = useSettingsStore.getState();
     if (
-      !shouldAskReview({ before, now: doneCount, asked: settings.reviewAsked })
+      !shouldAskReview({
+        before: doneCount - 1,
+        now: doneCount,
+        asked: reviewAsked,
+      })
     ) {
       return;
     }
-    // 기록을 남기고 돌아온 화면이 자리 잡은 뒤에 묻는다
-    const timer = setTimeout(() => {
+    // 기록을 남기고 돌아온 화면이 자리 잡은 뒤에 묻는다.
+    // 그 사이 서버 목록이 들어와 기록 수가 또 바뀌어도 취소하지 않는다
+    if (reviewTimer.current) clearTimeout(reviewTimer.current);
+    reviewTimer.current = setTimeout(() => {
       void askStoreReview().then((shown) => {
         if (!shown) return;
         useSettingsStore.getState().setReviewAsked(true);
         trackStep('review_asked');
       });
     }, 1500);
-    return () => clearTimeout(timer);
   }, [doneCount]);
+  useEffect(
+    () => () => {
+      if (reviewTimer.current) clearTimeout(reviewTimer.current);
+    },
+    []
+  );
   const closeSpaceTip = () => {
     setTipTarget(null);
     useSettingsStore.getState().setSpaceTipPending(false);
