@@ -251,6 +251,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      inquiries: {
+        Row: {
+          app_version: string | null;
+          contact: string | null;
+          created_at: string;
+          handled_at: string | null;
+          id: string;
+          message: string;
+          platform: string | null;
+          user_id: string;
+        };
+        Insert: {
+          app_version?: string | null;
+          contact?: string | null;
+          created_at?: string;
+          handled_at?: string | null;
+          id?: string;
+          message: string;
+          platform?: string | null;
+          user_id: string;
+        };
+        Update: {
+          app_version?: string | null;
+          contact?: string | null;
+          created_at?: string;
+          handled_at?: string | null;
+          id?: string;
+          message?: string;
+          platform?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       item_comments: {
         Row: {
           body: string;
@@ -674,6 +707,15 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      admin_dashboard: { Args: never; Returns: Json };
+      admin_lock: { Args: never; Returns: undefined };
+      admin_set_pin: {
+        Args: { new_pin: string; old_pin?: string };
+        Returns: Json;
+      };
+      admin_status: { Args: never; Returns: Json };
+      admin_unlock: { Args: { pin: string }; Returns: Json };
+      is_app_admin: { Args: never; Returns: boolean };
       trash_items: {
         Args: { p_ids: string[] };
         Returns: number;

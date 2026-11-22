@@ -30,6 +30,7 @@ import { TitleFontSheet } from '@/components/space/TitleFontSheet';
 import { TrashCard } from '@/components/space/TrashCard';
 import { TITLE_FONTS, type TitleFont } from '@/constants/fonts';
 import { PALETTES } from '@/constants/palettes';
+import { fetchAdminStatus } from '@/lib/admin';
 import { appIconAvailable } from '@/lib/appIcon';
 import { type ThemeMode, useThemeMode } from '@/contexts/ThemeModeContext';
 import { installedVersion } from '@/lib/appVersion';
@@ -215,11 +216,52 @@ export default function SettingsScreen() {
           </CardContent>
         </Card>
 
+        <AdminRow />
+
         <Text variant="muted" size={12} className="mt-4 text-center">
           DoIt2 · 두잇투 v{installedVersion()}
         </Text>
       </ScrollView>
     </View>
+  );
+}
+
+/** 관리자 계정에만 보이는 줄. 관리자인지는 서버가 알려준다 (들어갈 때는 PIN을 따로 묻는다) */
+function AdminRow() {
+  const userId = useSpaceStore((s) => s.userId);
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    if (!userId) return;
+    void fetchAdminStatus().then((status) => {
+      if (alive) setAdmin(status.admin);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+  if (!admin || !userId) return null;
+
+  return (
+    <Card className="rounded-2xl border-primary/40">
+      <CardContent className="p-5">
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/admin')}
+          className="flex-row items-center gap-3 active:opacity-70"
+        >
+          <View className="flex-1 gap-0.5">
+            <Text weight="600" size={16}>
+              관리자 모드
+            </Text>
+            <Text variant="muted" size={12}>
+              사용자·공간 현황과 받은 문의를 봐요
+            </Text>
+          </View>
+          <Icon as={ChevronRight} size={18} className="text-muted-foreground" />
+        </Pressable>
+      </CardContent>
+    </Card>
   );
 }
 
