@@ -135,7 +135,12 @@ export function notifySpace(
 
 /** 알림을 눌렀을 때 넘어온 값 */
 /** spaceId: null이면 '나만 보기' 항목 (폰 안 알림) */
-export type PushData = { spaceId?: string | null; itemId?: string | null };
+export type PushData = {
+  spaceId?: string | null;
+  itemId?: string | null;
+  /** 항목이 아닌 화면으로 가는 알림 (inquiries: 관리자에게 온 새 문의) */
+  screen?: string | null;
+};
 
 /**
  * 알림을 누르면 부를 함수를 건다. 앱이 꺼져 있다가 알림으로 켜진 경우도 처리한다.

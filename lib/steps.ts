@@ -51,7 +51,9 @@ export type AppStep =
   /** 답의 단계를 눌러 그 화면으로 갔다 (detail: 질문 id:화면 주소) */
   | 'faq_step'
   /** 문의하기를 눌렀다 */
-  | 'faq_contact';
+  | 'faq_contact'
+  /** 문의를 보냈다 (detail: 연락처를 적었으면 contact, 아니면 no_contact) */
+  | 'inquiry_sent';
 
 const sent = new Set<string>();
 

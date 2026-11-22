@@ -1,19 +1,15 @@
 import { type Href, router, useLocalSearchParams } from 'expo-router';
 import { ChevronDown, ChevronRight, ChevronUp } from 'lucide-react-native';
 import { Fragment, useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Icon, NavBar, Text } from '@/components/atoms';
-import { installedVersion } from '@/lib/appVersion';
-import { showAlert } from '@/lib/dialog';
 import {
-  FAQ_CONTACT_EMAIL,
   FAQ_GROUPS,
   FAQ_TAB_HREFS,
   type FaqItem,
   type FaqStep,
-  faqContactUrl,
 } from '@/lib/faq';
 import { trackStep } from '@/lib/steps';
 import { cn } from '@/lib/utils';
@@ -118,13 +114,7 @@ export default function HelpScreen() {
 
   const contact = () => {
     trackStep('faq_contact');
-    void Linking.openURL(faqContactUrl(installedVersion(), Platform.OS)).catch(
-      () =>
-        showAlert(
-          '메일 앱을 열지 못했어요',
-          `${FAQ_CONTACT_EMAIL}으로 보내주세요.`
-        )
-    );
+    router.push('/inquiry');
   };
 
   return (
@@ -152,7 +142,7 @@ export default function HelpScreen() {
         ))}
         <View className="gap-2 pt-2">
           <Text size={13} className="text-center text-muted-foreground">
-            찾는 답이 없나요? 메일로 알려주시면 답해 드려요.
+            찾는 답이 없나요? 적어서 보내주시면 바로 전해져요.
           </Text>
           <Button
             label="문의하기"
