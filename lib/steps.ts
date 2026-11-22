@@ -44,7 +44,14 @@ export type AppStep =
   /** 초대 링크로 앱이 열렸다 (detail: 링크가 바로 앱을 열면 link, 초대 웹 페이지의 '앱에서 열기'면 web) */
   | 'invite_link_open'
   /** 스토어 별점 창을 띄웠다 */
-  | 'review_asked';
+  | 'review_asked'
+  // ── 도움말: 무엇을 찾아봤는지 (많이 열린 질문이 곧 고칠 화면이다) ──
+  /** 질문을 펼쳤다 (detail: 질문 id) */
+  | 'faq_opened'
+  /** 답의 단계를 눌러 그 화면으로 갔다 (detail: 질문 id:화면 주소) */
+  | 'faq_step'
+  /** 문의하기를 눌렀다 */
+  | 'faq_contact';
 
 const sent = new Set<string>();
 
