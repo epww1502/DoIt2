@@ -21,7 +21,11 @@ export function redirectSystemPath({
     // 어떤 길로 앱이 열렸는지 센다 (새 빌드에서 넣은 기능이 쓰이는지 보려고)
     if (path.includes('from=widget')) trackStep('widget_open');
     const join = joinRouteFromUrl(path);
-    if (join && /^https?:/.test(path)) trackStep('invite_link_open');
+    if (join && /^https?:/.test(path)) trackStep('invite_link_open', 'link');
+    // 초대 웹 페이지의 '앱에서 열기' 버튼 (doit2://space/join?code=…)
+    else if (/space\/join\?code=/.test(path)) {
+      trackStep('invite_link_open', 'web');
+    }
     return join ?? path;
   } catch {
     return path;

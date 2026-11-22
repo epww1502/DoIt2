@@ -117,8 +117,18 @@
           /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
           (/Macintosh/i.test(navigator.userAgent) &&
             navigator.maxTouchPoints > 1);
-        if (/Android/i.test(navigator.userAgent)) $('install').href = PLAY;
+        var android = /Android/i.test(navigator.userAgent);
+        if (android) $('install').href = PLAY;
         else if (ios) $('install').href = APP_STORE;
+
+        // 앱은 복사한 글에서 '초대 코드: XXXXXX' 모양을 찾는다
+        function copyCode() {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard
+              .writeText('DoIt2 초대 코드: ' + code)
+              .catch(function () {});
+          }
+        }
 
         $('open').addEventListener('click', function () {
           var left = false;
@@ -126,7 +136,20 @@
             if (document.hidden) left = true;
           };
           document.addEventListener('visibilitychange', onHide);
-          location.href = 'doit2://space/join?code=' + code;
+          if (android) {
+            // 앱이 없으면 스토어로 넘어가니, 설치하고 나서 붙여넣을 수 있게 코드를 먼저 복사해 둔다
+            copyCode();
+            // 안드로이드: 카카오톡 같은 앱 안 브라우저는 doit2:// 주소를 막기도 한다.
+            // intent 주소는 앱이 있으면 앱을 열고, 없으면 Play 스토어로 보낸다
+            location.href =
+              'intent://space/join?code=' +
+              code +
+              '#Intent;scheme=doit2;package=com.doit2.app;S.browser_fallback_url=' +
+              encodeURIComponent(PLAY) +
+              ';end';
+          } else {
+            location.href = 'doit2://space/join?code=' + code;
+          }
           // 앱이 없으면 페이지가 그대로 남는다. 그때 손으로 넣는 방법을 알려준다
           setTimeout(function () {
             document.removeEventListener('visibilitychange', onHide);
@@ -136,13 +159,7 @@
 
         // 설치하러 가기 전에 코드를 복사해 둔다. 앱을 깔고 나면 이 페이지로 돌아오지 않아도
         // 앱의 '복사한 초대 코드 붙여넣기'로 바로 들어올 수 있다 (앱은 '초대 코드: XXXXXX' 모양을 찾는다)
-        $('install').addEventListener('click', function () {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard
-              .writeText('DoIt2 초대 코드: ' + code)
-              .catch(function () {});
-          }
-        });
+        $('install').addEventListener('click', copyCode);
 
         $('copy').addEventListener('click', function () {
           var done = function () {

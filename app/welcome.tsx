@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Share, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Chip, Text } from '@/components/atoms';
@@ -9,7 +9,6 @@ import { GuidedAdd } from '@/components/bucket/GuidedAdd';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
 import { newTodoId } from '@/lib/bucket/types';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
-import { inviteMessage } from '@/lib/inviteLink';
 import {
   type GuidedItem,
   JOINED_STARTERS,
@@ -18,6 +17,7 @@ import {
   WHO_OPTIONS,
   type WhoOption,
 } from '@/lib/onboarding';
+import { shareInvite } from '@/lib/shareInvite';
 import { trackStep } from '@/lib/steps';
 import type { SpaceRow } from '@/lib/supabase/database.types';
 import { useBucketStore } from '@/store/useBucketStore';
@@ -215,8 +215,7 @@ export default function WelcomeScreen() {
 
   const invite = async () => {
     if (!space) return;
-    trackStep('invite_sent', 'welcome');
-    await Share.share({ message: inviteMessage(space) }).catch(() => {});
+    await shareInvite(space, 'welcome');
     setInvited(true);
   };
 
@@ -232,6 +231,29 @@ export default function WelcomeScreen() {
               '가고 싶은 곳과 해보고 싶은 것을 모으고,\n다녀온 뒤 사진과 후기를 남기는 앱이에요.'
             }
           />
+          {/* 초대받고 새로 설치한 사람이 아래 선택지를 먼저 고르고 헤매지 않게, 맨 위에 눈에 띄게 둔다 */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="초대를 받았어요"
+            onPress={() => {
+              awaitingJoin.current = true;
+              router.push('/space/join');
+            }}
+            className="flex-row items-center gap-3 rounded-2xl border border-primary/30 px-4 py-3 bg-accent active:opacity-70"
+          >
+            <Text size={24}>🎟️</Text>
+            <View className="flex-1 gap-0.5">
+              <Text weight="700" size={15}>
+                초대를 받았어요
+              </Text>
+              <Text size={13} className="text-muted-foreground">
+                받은 초대 코드로 바로 들어가요
+              </Text>
+            </View>
+            <Text weight="600" size={14} className="text-primary">
+              들어가기
+            </Text>
+          </Pressable>
           <View className="gap-3">
             {WHO_OPTIONS.map((option) => (
               <Pressable
@@ -254,13 +276,6 @@ export default function WelcomeScreen() {
             ))}
           </View>
           <View className="gap-4 pt-2">
-            <TextLink
-              label="초대를 받았어요 (초대 코드 넣기)"
-              onPress={() => {
-                awaitingJoin.current = true;
-                router.push('/space/join');
-              }}
-            />
             <TextLink
               label="다른 폰에서 쓰던 계정 불러오기"
               onPress={() => {

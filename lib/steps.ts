@@ -18,10 +18,12 @@ export type AppStep =
   /** '직접 해보기'를 열었다 / 끝까지 해서 담았다 */
   | 'guided_opened'
   | 'guided_done'
-  /** 초대 링크를 보냈다 (detail: welcome·home) */
+  /** 초대 글을 보냈다 (detail: 어디서 보냈는지 welcome·home·space) */
   | 'invite_sent'
   /** 초대받아 들어온 사람에게 시작 화면이 떴다 */
   | 'joined_shown'
+  /** 초대 코드로 공간에 들어왔다 (detail: 처음 켠 사람 new, 전부터 쓰던 사람 existing) */
+  | 'joined'
   /** 처음으로 '오늘 뭐 하지'를 뽑았다 */
   | 'first_pick'
   /** 처음으로 기록을 남겼다 */
@@ -39,7 +41,7 @@ export type AppStep =
   | 'icon_changed'
   /** 폰 캘린더에 바로 넣기를 눌렀다 */
   | 'calendar_added'
-  /** 초대 링크를 눌러 앱이 바로 열렸다 */
+  /** 초대 링크로 앱이 열렸다 (detail: 링크가 바로 앱을 열면 link, 초대 웹 페이지의 '앱에서 열기'면 web) */
   | 'invite_link_open'
   /** 스토어 별점 창을 띄웠다 */
   | 'review_asked';

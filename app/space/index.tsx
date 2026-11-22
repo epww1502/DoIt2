@@ -1,12 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Share,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { showAlert } from '@/lib/dialog';
@@ -28,7 +22,7 @@ import { SpaceMembers } from '@/components/space/SpaceMembers';
 import { confirmLeaveSpace } from '@/components/space/spaceFlow';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { deletePhoto } from '@/lib/bucket/photo';
-import { inviteMessage } from '@/lib/inviteLink';
+import { shareInvite } from '@/lib/shareInvite';
 import { resetInviteCode } from '@/lib/supabase/account';
 import { useBucketStore } from '@/store/useBucketStore';
 import {
@@ -186,7 +180,7 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
       ]
     );
 
-  const share = () => Share.share({ message: inviteMessage(space) });
+  const share = () => shareInvite(space, 'space');
 
   const confirmLeave = () => confirmLeaveSpace(space, () => router.back());
 

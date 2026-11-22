@@ -10,6 +10,7 @@ import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { readCopiedText } from '@/lib/clipboard';
 import { cleanInviteCode } from '@/lib/inviteLink';
 import { inviteCodeFromText } from '@/lib/onboarding';
+import { trackStep } from '@/lib/steps';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
@@ -50,6 +51,7 @@ export default function JoinSpaceScreen() {
     const firstTime = !useSettingsStore.getState().welcomed;
     try {
       const space = await joinSpace(code);
+      trackStep('joined', firstTime ? 'new' : 'existing');
       await enterSpace(space.id, space.name);
       // 초대 링크로 앱을 처음 켠 사람: 돌아갈 시작 화면이 없으니 들어온 사람의 첫 화면으로 보낸다
       // (시작 화면에서 '초대를 받았어요'로 온 사람은 뒤로 가면 그 화면이 이어서 보여준다)
