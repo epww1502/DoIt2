@@ -16,6 +16,7 @@ import {
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { EmptyState } from '@/components/bucket/EmptyState';
 import { FieldLabel } from '@/components/bucket/FieldLabel';
+import { OtherSpaces } from '@/components/space/OtherSpaces';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
 import { SpaceIconPicker } from '@/components/space/SpaceIconPicker';
 import { SpaceMembers } from '@/components/space/SpaceMembers';
@@ -280,6 +281,9 @@ function SpaceManage({ spaceId }: { spaceId: string }) {
               onPhoto={choosePhoto}
             />
           </View>
+
+          {/* 고치던 것이 있으면 다른 공간으로 넘어가다 잃지 않게, 저장한 뒤에 보여준다 */}
+          {!changed ? <OtherSpaces currentId={spaceId} /> : null}
 
           <Button
             label={personal ? '이 공간 지우기' : '이 공간에서 나가기'}
