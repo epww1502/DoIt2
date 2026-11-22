@@ -143,14 +143,8 @@ export function SpaceSync() {
           if (itemId) useBucketStore.getState().bumpCommentCount(itemId, 1);
         }
       )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'item_comments' },
-        (payload) => {
-          const itemId = (payload.old as { item_id?: string }).item_id;
-          if (itemId) useBucketStore.getState().bumpCommentCount(itemId, -1);
-        }
-      )
+      // 댓글 지우기는 여기서 세지 않는다: 지우기 이벤트에는 댓글 id만 와서 어느 항목인지 알 수 없다.
+      // 항목 화면(useItemSocial)이 줄이고, 그 화면이 닫혀 있으면 다음에 목록을 받을 때 맞춰진다
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'item_reviews' },

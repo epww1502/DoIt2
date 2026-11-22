@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { noteFailure } from '@/lib/connection';
 import { notifySpace } from '@/lib/push';
@@ -21,6 +21,7 @@ import {
   type ReactionEmoji,
 } from '@/lib/supabase/social';
 import { useLoad } from '@/hooks/useLoad';
+import { useBucketStore } from '@/store/useBucketStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
 type Social = {
@@ -54,6 +55,12 @@ export function useItemSocial(itemId: string, spaceId: string | null) {
     setLoadedFor(state.data);
     setData(state.data);
   }
+
+  // 실시간 이벤트에서 지금 보이는 댓글을 보려고 따로 들고 있는다
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   useEffect(() => {
     if (!spaceId) return;
@@ -101,6 +108,10 @@ export function useItemSocial(itemId: string, spaceId: string | null) {
         { event: 'DELETE', schema: 'public', table: 'item_comments' },
         (payload) => {
           const id = (payload.old as { id?: string }).id;
+          // 다른 사람이 지운 댓글이면 목록의 댓글 수도 줄인다 (내가 지운 것은 지울 때 이미 줄였다)
+          if (dataRef.current?.comments.some((c) => c.id === id)) {
+            useBucketStore.getState().bumpCommentCount(itemId, -1);
+          }
           setData((d) =>
             d ? { ...d, comments: d.comments.filter((c) => c.id !== id) } : d
           );
@@ -287,11 +298,20 @@ export function useItemSocial(itemId: string, spaceId: string | null) {
   const removeComment = async (id: string) => {
     if (!data) return;
     const before = data;
-    setData({ ...data, comments: data.comments.filter((c) => c.id !== id) });
+    const next = {
+      ...data,
+      comments: data.comments.filter((c) => c.id !== id),
+    };
+    // 지우기 이벤트가 왔을 때 또 줄이지 않게, 화면 값보다 먼저 맞춰 둔다
+    dataRef.current = next;
+    setData(next);
+    const removed = next.comments.length < data.comments.length;
+    if (removed) useBucketStore.getState().bumpCommentCount(itemId, -1);
     try {
       await deleteComment(id);
     } catch (e) {
       noteFailure(e);
+      if (removed) useBucketStore.getState().bumpCommentCount(itemId, 1);
       setData(before);
       throw e;
     }

@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Chip, Text } from '@/components/atoms';
+import { Button, Chip, Text, TextField } from '@/components/atoms';
 import { BottomBar } from '@/components/bucket/BottomBar';
 import { GuidedAdd } from '@/components/bucket/GuidedAdd';
 import { SpaceAvatar } from '@/components/space/SpaceAvatar';
 import { newTodoId } from '@/lib/bucket/types';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { hapticSelect, hapticSuccess } from '@/lib/haptics';
+import { saveNicknameQuietly } from '@/lib/nickname';
 import {
   type GuidedItem,
   JOINED_STARTERS,
@@ -75,6 +77,37 @@ function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
 }
 
 /**
+ * 같이 쓰는 사람에게 보일 이름을 적는 칸. 정하지 않으면 댓글·반응·누가 담았는지가 모두 '익명'으로 보여서,
+ * 같이 쓰기 시작하는 순간(초대받아 들어왔을 때, 초대를 보낼 때)에 한 번 물어본다. 비워 둬도 된다.
+ */
+function NicknameField({
+  value,
+  onChangeText,
+}: {
+  value: string;
+  onChangeText: (text: string) => void;
+}) {
+  return (
+    <View className="w-full gap-2 pt-2">
+      <Text weight="600" size={14}>
+        같이 쓰는 사람에게 보일 이름
+      </Text>
+      <TextField
+        value={value}
+        onChangeText={onChangeText}
+        placeholder="예: 민지 (비워두면 '익명')"
+        maxLength={20}
+        autoCorrect={false}
+        returnKeyType="done"
+      />
+      <Text size={12} className="text-muted-foreground">
+        나중에 프로필에서 바꿀 수 있어요
+      </Text>
+    </View>
+  );
+}
+
+/**
  * 처음 켰을 때의 시작 화면. 설명을 넘겨 보게 하는 대신, 물어보면서 실제로 만들어 준다:
  * 누구와 쓸지 → 해보고 싶은 것 고르기 → (함께 쓰면) 초대하기.
  * '공간'이라는 말은 쓰지 않는다. 함께 쓰는 선택지를 고르면 공간을 대신 만들어 준다.
@@ -93,6 +126,15 @@ export default function WelcomeScreen() {
   const [busy, setBusy] = useState(false);
   /** 만들어 준 공간 (초대 단계에서 쓴다) */
   const [space, setSpace] = useState<SpaceRow | null>(null);
+  /** 같이 쓰는 사람에게 보일 이름 (들어온 화면·초대 단계에서 적는다) */
+  const [nickname, setNicknameText] = useState('');
+  // 끝낼 때(finish) 저장하려고 지금 값을 따로 들고 있는다
+  const nicknameRef = useRef('');
+  const setNickname = (text: string) => {
+    nicknameRef.current = text;
+    setNicknameText(text);
+  };
+  const keyboardHeight = useKeyboardHeight();
   /** 초대 글을 한 번이라도 보냈는지 */
   const [invited, setInvited] = useState(false);
   /** 함께 쓰려 했지만 서버에 연결하지 못해 이 폰에만 담았는지 */
@@ -107,6 +149,7 @@ export default function WelcomeScreen() {
   }, [cameJoined]);
 
   const finish = () => {
+    void saveNicknameQuietly(nicknameRef.current);
     const settings = useSettingsStore.getState();
     settings.setWelcomed(true);
     settings.setGuided(true);
@@ -215,6 +258,8 @@ export default function WelcomeScreen() {
 
   const invite = async () => {
     if (!space) return;
+    // 초대받은 사람이 들어왔을 때 바로 이름이 보이게, 보내기 전에 저장해 둔다
+    void saveNicknameQuietly(nicknameRef.current);
     await shareInvite(space, 'welcome');
     setInvited(true);
   };
@@ -288,8 +333,11 @@ export default function WelcomeScreen() {
       ) : null}
 
       {step === 'joined' ? (
-        <View className="flex-1">
-          <ScrollView contentContainerClassName="items-center gap-5 px-5 pb-8 pt-12">
+        <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
+          <ScrollView
+            contentContainerClassName="items-center gap-5 px-5 pb-8 pt-12"
+            keyboardShouldPersistTaps="handled"
+          >
             {joinedSpace ? (
               <SpaceAvatar emoji={joinedSpace.emoji} size={88} />
             ) : (
@@ -310,6 +358,7 @@ export default function WelcomeScreen() {
             <Text size={13} className="text-center text-muted-foreground">
               내가 담은 것도 같이 쓰는 사람들에게 바로 보여요
             </Text>
+            <NicknameField value={nickname} onChangeText={setNickname} />
           </ScrollView>
           <BottomBar>
             <View className="gap-3">
@@ -399,8 +448,11 @@ export default function WelcomeScreen() {
       ) : null}
 
       {step === 'invite' ? (
-        <View className="flex-1">
-          <ScrollView contentContainerClassName="items-center gap-5 px-5 pb-8 pt-12">
+        <View className="flex-1" style={{ paddingBottom: keyboardHeight }}>
+          <ScrollView
+            contentContainerClassName="items-center gap-5 px-5 pb-8 pt-12"
+            keyboardShouldPersistTaps="handled"
+          >
             {space ? (
               <>
                 <SpaceAvatar emoji={space.emoji} size={88} />
@@ -415,6 +467,7 @@ export default function WelcomeScreen() {
                 <Text size={13} className="text-center text-muted-foreground">
                   이름과 아이콘은 나중에 바꿀 수 있어요
                 </Text>
+                <NicknameField value={nickname} onChangeText={setNickname} />
               </>
             ) : (
               <>

@@ -372,3 +372,22 @@ export const useSpaceStore = create<SpaceState>((set, get) => {
 export function useSpace(spaceId: string | null) {
   return useSpaceStore((s) => s.spaces.find((sp) => sp.id === spaceId) ?? null);
 }
+
+/**
+ * 로그인과 공간 목록 받기가 끝날 때까지 기다린다 (끝났거나 실패했으면 바로). 너무 오래 걸리면 그냥 넘어간다.
+ * 앱을 막 켠 직후에는 공간 목록이 비어 있고 로그인도 안 돼 있어서, 그때 판단하면 틀린다.
+ */
+export function spacesSettled(timeoutMs = 8000) {
+  if (useSpaceStore.getState().status !== 'loading') return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      unsubscribe();
+      resolve();
+    };
+    const timer = setTimeout(done, timeoutMs);
+    const unsubscribe = useSpaceStore.subscribe((state) => {
+      if (state.status !== 'loading') done();
+    });
+  });
+}
