@@ -59,6 +59,7 @@ import {
   type AuthoredPhoto,
 } from '@/lib/bucket/reviews';
 import { showErrorAlert } from '@/lib/errors';
+import { cancelNewRecord, noteNewRecord } from '@/lib/storeReview';
 import { showAlert } from '@/lib/dialog';
 import { hapticSelect } from '@/lib/haptics';
 import { cn } from '@/lib/utils';
@@ -279,6 +280,8 @@ export default function RecordFormScreen() {
         coverPath: inSpace ? coverPath : null,
         photoUri: null,
       };
+      // 수정이 아니라 새 기록이면 첫 화면에 알린다 (첫 기록 세기, 별점 요청)
+      if (!saved) noteNewRecord();
       if (inSpace) {
         // 기록에는 예전에 함께 붙어 있던 사진만 남기고, 내 사진은 내 평가에
         await recordDone(
@@ -291,6 +294,7 @@ export default function RecordFormScreen() {
       }
       router.back();
     } catch (e) {
+      cancelNewRecord();
       showErrorAlert('저장하지 못했어요', e, save);
     } finally {
       setSaving(false);
