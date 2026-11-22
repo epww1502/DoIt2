@@ -191,6 +191,30 @@ export default function SettingsScreen() {
           </CardContent>
         </Card>
 
+        <Card className="rounded-2xl">
+          <CardContent className="p-5">
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/help')}
+              className="flex-row items-center gap-3 active:opacity-70"
+            >
+              <View className="flex-1 gap-0.5">
+                <Text weight="600" size={16}>
+                  도움말
+                </Text>
+                <Text variant="muted" size={12}>
+                  자주 묻는 질문과 문의하기
+                </Text>
+              </View>
+              <Icon
+                as={ChevronRight}
+                size={18}
+                className="text-muted-foreground"
+              />
+            </Pressable>
+          </CardContent>
+        </Card>
+
         <Text variant="muted" size={12} className="mt-4 text-center">
           DoIt2 · 두잇투 v{installedVersion()}
         </Text>
