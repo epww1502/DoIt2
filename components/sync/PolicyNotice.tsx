@@ -7,7 +7,7 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
 /** 지금 방침의 시행일. 방침을 바꾸면 이 날짜와 아래 문구를 바꾼다 (바꾸면 한 번 더 알린다) */
-const POLICY_DATE = '2026-11-17';
+const POLICY_DATE = '2026-11-22';
 const POLICY_URL = 'https://doit2app.github.io/privacy.html';
 
 /**
@@ -35,7 +35,7 @@ export function PolicyNotice() {
       if (!existing) return;
       showAlert(
         '개인정보처리방침이 바뀌었어요',
-        '앱 오류를 더 잘 고치려고 오류 기록 서비스(Sentry)를 쓰기 시작했어요. 오류가 나면 오류 내용과 기기·앱 버전, 계정 id가 전달돼요. 닉네임, 항목, 직접 쓴 글은 보내지 않아요. 2026년 11월 17일부터 적용돼요.',
+        '앱 안에서 문의를 보낼 수 있게 됐어요 (설정 > 도움말 > 문의하기). 문의를 보내면 적은 내용과 기기·앱 버전이 저장되고, 답장받을 연락처는 적었을 때만 저장돼요. 문의에 답하는 데에만 써요. 2026년 11월 22일부터 적용돼요.',
         [
           {
             text: '자세히 보기',
