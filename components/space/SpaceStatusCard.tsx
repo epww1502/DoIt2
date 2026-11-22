@@ -9,7 +9,12 @@ import { useSpace, useSpaceStore } from '@/store/useSpaceStore';
 import { SpaceAvatar } from './SpaceAvatar';
 import { PERSONAL } from './SpaceSwitcher';
 
-/** 설정 탭: 지금 공간 요약. 누르면 내 공간 전체 관리(공간이 없으면 새 공간 만들기)로 */
+/**
+ * 설정 탭: 지금 공간 요약. 누르면 그 공간의 관리 화면(초대·멤버·이름)으로 간다.
+ * 내 공간 전체(순서 바꾸기·나가기·새로 만들기)는 아래의 '전체 보기' 줄로 따로 간다.
+ * 카드가 한 공간을 보여 주는데 전체 목록이 열리면 어긋나 보여서 나눴다.
+ * 지금 '나만 보기'면 볼 공간이 없으니 카드가 전체 목록(공간이 없으면 새 공간 만들기)으로 간다.
+ */
 export function SpaceStatusCard() {
   const status = useSpaceStore((s) => s.status);
   const spaceCount = useSpaceStore((s) => s.spaces.length);
@@ -33,7 +38,7 @@ export function SpaceStatusCard() {
 
   const current = space ?? PERSONAL;
 
-  return (
+  const card = (
     <Pressable
       accessibilityRole="button"
       // 연결에 실패했으면 눌러서 다시 연결한다
@@ -41,6 +46,10 @@ export function SpaceStatusCard() {
       onPress={() => {
         if (status === 'error') {
           void useSpaceStore.getState().init();
+          return;
+        }
+        if (space) {
+          router.push({ pathname: '/space', params: { id: space.id } });
           return;
         }
         router.push(spaceCount > 0 ? '/space/list' : '/space/new');
@@ -66,5 +75,29 @@ export function SpaceStatusCard() {
         <Icon as={RefreshCw} size={18} className="text-primary" />
       ) : null}
     </Pressable>
+  );
+
+  // 지금 공간을 보고 있을 때만 전체 보기 줄을 따로 둔다 (아니면 카드가 이미 전체 목록으로 간다)
+  if (status !== 'ready' || !space) return card;
+  return (
+    <View className="gap-2">
+      {card}
+      <Pressable
+        accessibilityRole="button"
+        hitSlop={6}
+        onPress={() => router.push('/space/list')}
+        className="flex-row items-center justify-between px-4 py-1 active:opacity-60"
+      >
+        <Text size={13} className="text-muted-foreground">
+          {`내 공간 ${spaceCount}개`}
+        </Text>
+        <View className="flex-row items-center gap-0.5">
+          <Text weight="600" size={13} className="text-primary">
+            전체 보기
+          </Text>
+          <Icon as={ChevronRight} size={16} className="text-primary" />
+        </View>
+      </Pressable>
+    </View>
   );
 }
