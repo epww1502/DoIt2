@@ -12,7 +12,7 @@ import { cleanInviteCode } from '@/lib/inviteLink';
 import { inviteCodeFromText } from '@/lib/onboarding';
 import { trackStep } from '@/lib/steps';
 import { useSettingsStore } from '@/store/useSettingsStore';
-import { useSpaceStore } from '@/store/useSpaceStore';
+import { spacesSettled, useSpaceStore } from '@/store/useSpaceStore';
 
 const CODE_LENGTH = 6;
 
@@ -50,6 +50,17 @@ export default function JoinSpaceScreen() {
     // 들어가는 순간 '처음 켠 사람' 표시가 꺼지므로 그 전에 읽어 둔다
     const firstTime = !useSettingsStore.getState().welcomed;
     try {
+      // 초대 링크로 앱을 처음 켜면 코드가 채워져 있어 바로 누를 수 있는데, 로그인이 아직 안 끝났을 수 있다
+      await spacesSettled();
+      if (!useSpaceStore.getState().userId) {
+        // 로그인에 실패해 있었으면 한 번 더 해 본다
+        await useSpaceStore.getState().init();
+      }
+      if (!useSpaceStore.getState().userId) {
+        throw new Error(
+          '서버에 연결하지 못했어요. 인터넷을 확인하고 다시 눌러주세요.'
+        );
+      }
       const space = await joinSpace(code);
       trackStep('joined', firstTime ? 'new' : 'existing');
       await enterSpace(space.id, space.name);

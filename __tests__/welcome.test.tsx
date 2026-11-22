@@ -32,6 +32,11 @@ jest.mock('@/components/atoms', () => {
       el(jest.requireActual('react-native').TextInput, props),
   };
 });
+const mockSaveNickname = jest.fn<Promise<void>, [string]>(async () => {});
+jest.mock('@/lib/nickname', () => ({
+  saveNicknameQuietly: (name: string) => mockSaveNickname(name),
+}));
+jest.mock('@/hooks/useKeyboardHeight', () => ({ useKeyboardHeight: () => 0 }));
 jest.mock('@/lib/haptics', () => ({
   hapticSelect: jest.fn(),
   hapticSuccess: jest.fn(),

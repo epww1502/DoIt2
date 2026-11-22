@@ -4,11 +4,14 @@ import { useEffect } from 'react';
 import { onNotificationOpen, registerForPush, type PushData } from '@/lib/push';
 import { useBucketStore } from '@/store/useBucketStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
-import { useSpaceStore } from '@/store/useSpaceStore';
+import { spacesSettled, useSpaceStore } from '@/store/useSpaceStore';
 
 /** 알림을 누르면 그 공간으로 바꾸고 (하나면) 그 항목을 연다 */
 export async function openFromNotification(data: PushData) {
   const { spaceId, itemId } = data;
+  // 꺼져 있던 앱을 알림으로 켰으면 공간 목록을 아직 못 받았다. 그대로 판단하면 공간을 바꾸지 않고
+  // 항목 화면만 열어서, 다른 공간의 항목은 '찾을 수 없어요'가 된다
+  if (spaceId) await spacesSettled();
   if (
     spaceId &&
     useSpaceStore.getState().spaces.some((s) => s.id === spaceId)

@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { deletePhoto } from '@/lib/bucket/photo';
+import { mergeUploadedItem } from '@/lib/bucket/uploadMerge';
 import {
   DEFAULT_SETTING,
   itemPhotos,
@@ -358,8 +359,17 @@ export const useBucketStore = create<BucketState>()(
             continue;
           }
           // 오프라인일 때 고른 사진을 지금 올린다. 인터넷 문제로 못 올리면 다음에 다시
-          const next = await withUploadedItem(item, spaceId, true);
-          if (next !== item) patchIn(spaceId, next);
+          const uploaded = await withUploadedItem(item, spaceId, true);
+          let next = uploaded;
+          if (uploaded !== item) {
+            // 올리는 사이 이 항목을 또 고쳤으면 그 수정을 살리고 사진 경로만 붙인다
+            next = mergeUploadedItem(
+              findIn(spaceId, entry.itemId) ?? item,
+              item,
+              uploaded
+            );
+            patchIn(spaceId, next);
+          }
           ready.push({ entry, item: next });
         }
         // 지금 폰에 없는 항목(공간 캐시가 지워짐 등)은 올릴 수 없다
@@ -431,13 +441,26 @@ export const useBucketStore = create<BucketState>()(
               const photos = reviewPhotos(mine);
               const uploaded = await uploadPhotos(photos, spaceId, true);
               if (uploaded !== photos) {
+                const before = mine;
                 mine = { ...mine, photos: uploaded };
-                patchIn(spaceId, {
-                  ...item,
-                  reviews: (item.reviews ?? []).map((r) =>
-                    r.userId === userId ? mine! : r
-                  ),
-                });
+                // 사진을 올리는 사이 소감·별점을 고쳤을 수 있다. 지금 평가에 사진 경로만 붙인다
+                // (사진까지 바꿨으면 폰 것은 그대로 두고, 그 변경을 올릴 때 다시 맞춘다)
+                const latest = findIn(spaceId, item.id);
+                const latestMine = latest ? myReview(latest, userId) : null;
+                if (
+                  latest &&
+                  latestMine &&
+                  latestMine.photos === before.photos
+                ) {
+                  const merged = { ...latestMine, photos: uploaded };
+                  mine = merged;
+                  patchIn(spaceId, {
+                    ...latest,
+                    reviews: (latest.reviews ?? []).map((r) =>
+                      r.userId === userId ? merged : r
+                    ),
+                  });
+                }
               }
             }
             if (mine) {
