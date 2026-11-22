@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { noteFailure } from '@/lib/connection';
 import { notifySpace } from '@/lib/push';
+import { openChannel } from '@/lib/supabase/channel';
 import { supabase } from '@/lib/supabase/client';
 import type {
   CommentReactionRow,
@@ -56,8 +57,7 @@ export function useItemSocial(itemId: string, spaceId: string | null) {
 
   useEffect(() => {
     if (!spaceId) return;
-    const channel = supabase
-      .channel(`item-social-${itemId}`)
+    const channel = openChannel(`item-social-${itemId}`)
       .on(
         'postgres_changes',
         {

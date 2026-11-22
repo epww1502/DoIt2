@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
+import { openChannel } from '@/lib/supabase/channel';
 import { supabase } from '@/lib/supabase/client';
 import type { NotificationRow } from '@/lib/supabase/database.types';
 import { useInboxStore } from '@/store/useInboxStore';
@@ -20,8 +21,7 @@ export function InboxSync() {
     inbox.clear();
     void inbox.load();
 
-    const channel = supabase
-      .channel(`inbox-${userId}`)
+    const channel = openChannel(`inbox-${userId}`)
       .on(
         'postgres_changes',
         {

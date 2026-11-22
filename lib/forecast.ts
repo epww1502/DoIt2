@@ -4,7 +4,7 @@
  */
 import dayjs from 'dayjs';
 
-import { describe } from '@/lib/weather';
+import { describe, fetchOpenMeteo } from '@/lib/weather';
 
 /** 예보가 있는 날 수 (오늘 포함) */
 export const FORECAST_DAYS = 16;
@@ -87,9 +87,7 @@ export async function fetchForecast(
     start_date: from,
     end_date: to,
   });
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-  if (!res.ok) throw new Error(`weather ${res.status}`);
-  const days = parseForecast((await res.json()) as ForecastResponse);
+  const days = parseForecast(await fetchOpenMeteo<ForecastResponse>(params));
   cache.set(key, { at: Date.now(), days });
   return days;
 }

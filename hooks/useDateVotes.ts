@@ -4,6 +4,7 @@ import { create } from 'zustand';
 
 import { noteFailure } from '@/lib/connection';
 import { notifySpace } from '@/lib/push';
+import { openChannel } from '@/lib/supabase/channel';
 import { supabase } from '@/lib/supabase/client';
 import type { ItemDateVoteRow } from '@/lib/supabase/database.types';
 import { useSpaceStore } from '@/store/useSpaceStore';
@@ -43,8 +44,7 @@ function watch(spaceId: string) {
   const rowsOf = () => useVotesStore.getState().bySpace[spaceId] ?? EMPTY;
   const setRows = (rows: ItemDateVoteRow[]) =>
     useVotesStore.getState().setRows(spaceId, rows);
-  const channel = supabase
-    .channel(`date-votes:${spaceId}`)
+  const channel = openChannel(`date-votes:${spaceId}`)
     .on(
       'postgres_changes',
       {
