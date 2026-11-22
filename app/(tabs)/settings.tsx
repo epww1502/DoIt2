@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Check, ChevronRight } from 'lucide-react-native';
+import { Check, ChevronRight, ShieldCheck } from 'lucide-react-native';
 import {
   DevSettings,
   Linking,
@@ -78,7 +78,11 @@ export default function SettingsScreen() {
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      <ScreenHeader title="설정" subtitle="공간과 화면을 바꿀 수 있어요" />
+      <ScreenHeader
+        title="설정"
+        subtitle="공간과 화면을 바꿀 수 있어요"
+        right={<AdminButton />}
+      />
       <ScrollView
         contentContainerClassName="gap-4 px-5 pt-3"
         contentContainerStyle={{ paddingBottom: tabBarSpace + 24 }}
@@ -216,8 +220,6 @@ export default function SettingsScreen() {
           </CardContent>
         </Card>
 
-        <AdminRow />
-
         <Text variant="muted" size={12} className="mt-4 text-center">
           DoIt2 · 두잇투 v{installedVersion()}
         </Text>
@@ -226,8 +228,11 @@ export default function SettingsScreen() {
   );
 }
 
-/** 관리자 계정에만 보이는 줄. 관리자인지는 서버가 알려준다 (들어갈 때는 PIN을 따로 묻는다) */
-function AdminRow() {
+/**
+ * 제목 줄 오른쪽의 작은 방패 아이콘: 관리자 모드로 들어간다. 관리자 계정에만 보인다.
+ * 눈에 띄지 않게 글자 없이 흐린 아이콘으로 둔다. 관리자인지는 서버가 알려주고, 들어갈 때는 PIN을 따로 묻는다.
+ */
+function AdminButton() {
   const userId = useSpaceStore((s) => s.userId);
   const [admin, setAdmin] = useState(false);
   useEffect(() => {
@@ -243,25 +248,15 @@ function AdminRow() {
   if (!admin || !userId) return null;
 
   return (
-    <Card className="rounded-2xl border-primary/40">
-      <CardContent className="p-5">
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push('/admin')}
-          className="flex-row items-center gap-3 active:opacity-70"
-        >
-          <View className="flex-1 gap-0.5">
-            <Text weight="600" size={16}>
-              관리자 모드
-            </Text>
-            <Text variant="muted" size={12}>
-              사용자·공간 현황과 받은 문의를 봐요
-            </Text>
-          </View>
-          <Icon as={ChevronRight} size={18} className="text-muted-foreground" />
-        </Pressable>
-      </CardContent>
-    </Card>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="관리자 모드"
+      hitSlop={10}
+      onPress={() => router.push('/admin')}
+      className="h-9 w-9 items-center justify-center active:opacity-60"
+    >
+      <Icon as={ShieldCheck} size={20} className="text-muted-foreground" />
+    </Pressable>
   );
 }
 
