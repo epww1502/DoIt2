@@ -1,17 +1,24 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
+import { isNetworkError } from '@/lib/connection';
 import { reportError } from '@/lib/errorReport';
-import { fetchTodayWeather, type TodayWeather } from '@/lib/weather';
+import {
+  fetchTodayWeather,
+  type LatLng,
+  type TodayWeather,
+} from '@/lib/weather';
 
 /** 이 시간 안에 잡힌 위치면 다시 찾지 않고 쓴다 */
 const LAST_POSITION_MAX_AGE_MS = 30 * 60 * 1000;
 /** 앱으로 돌아왔을 때 날씨를 받은 지 이만큼 지났으면 새로 받는다 */
 const WEATHER_STALE_MS = 30 * 60 * 1000;
-/** 위치 찾기·날씨 받기가 각각 이보다 오래 걸리면 실패로 본다 ('확인하고 있어요'에 멈춰 있지 않게) */
+/** 위치 찾기가 이보다 오래 걸리면 실패로 본다 ('확인하고 있어요'에 멈춰 있지 않게) */
 const LOCATION_TIMEOUT_MS = 10000;
-const WEATHER_TIMEOUT_MS = 10000;
+/** 마지막으로 날씨를 본 동네 (이 폰에만 둔다, ≈1km 단위) */
+const SAVED_POSITION_KEY = 'doit2-weather-position';
 
 function withTimeout<T>(promise: Promise<T>, ms: number) {
   return Promise.race([
@@ -29,20 +36,46 @@ export type WeatherState =
   | { status: 'error'; reason: 'location' | 'weather' }
   | { status: 'ready'; weather: TodayWeather };
 
+/** 찾은 위치를 동네 단위로 줄여 적어 둔다 (다음에 위치를 못 찾을 때 쓴다) */
+function remember(coords: LatLng): LatLng {
+  const position = {
+    latitude: Number(coords.latitude.toFixed(2)),
+    longitude: Number(coords.longitude.toFixed(2)),
+  };
+  void AsyncStorage.setItem(SAVED_POSITION_KEY, JSON.stringify(position)).catch(
+    () => {}
+  );
+  return position;
+}
+
+async function readSavedPosition(): Promise<LatLng | null> {
+  try {
+    const raw = await AsyncStorage.getItem(SAVED_POSITION_KEY);
+    const saved = raw ? (JSON.parse(raw) as Partial<LatLng>) : null;
+    return typeof saved?.latitude === 'number' &&
+      typeof saved.longitude === 'number'
+      ? { latitude: saved.latitude, longitude: saved.longitude }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * 날씨에 쓸 대략적인 내 위치. 못 찾으면 null.
- * 최근에 잡힌 위치 → 새로 찾기 → (그것도 안 되면) 오래됐더라도 마지막으로 잡힌 위치 순서로 본다.
- * 실내이거나 위치 서비스가 막 켜진 안드로이드 폰은 새로 찾기가 오래 걸리거나 실패하는데,
+ * 최근에 잡힌 위치 → 새로 찾기 → 오래됐더라도 폰이 마지막으로 잡은 위치 → 지난번에 날씨를 본 동네 순서로 본다.
+ * 실내이거나 위치 서비스가 막 켜진 폰은 새로 찾기가 오래 걸리거나 실패하는데,
  * 날씨는 어제 있던 동네 기준이어도 거의 같아서 오래된 위치라도 쓰는 편이 낫다.
  */
-async function findPosition() {
+async function findPosition(): Promise<LatLng | null> {
+  let failure: unknown;
   try {
     const recent = await Location.getLastKnownPositionAsync({
       maxAge: LAST_POSITION_MAX_AGE_MS,
     });
-    if (recent) return recent;
+    if (recent) return remember(recent.coords);
     // 안드로이드의 Low(저전력)는 기지국만 써서 위치가 아예 안 잡히는 폰이 있다. Balanced는 와이파이도 써서 금방 잡힌다
-    return await withTimeout(
+    const current = await withTimeout(
       Location.getCurrentPositionAsync({
         accuracy:
           Platform.OS === 'android'
@@ -51,10 +84,17 @@ async function findPosition() {
       }),
       LOCATION_TIMEOUT_MS
     );
+    return remember(current.coords);
   } catch (e) {
-    void reportError('alert', e, '오늘 날씨: 위치 찾기');
-    return Location.getLastKnownPositionAsync().catch(() => null);
+    failure = e;
   }
+  const last = await Location.getLastKnownPositionAsync().catch(() => null);
+  if (last) return remember(last.coords);
+  const saved = await readSavedPosition();
+  if (saved) return saved;
+  // 대신 쓸 위치도 없어서 화면에 '못 찾았어요'가 뜰 때만 남긴다
+  void reportError('alert', failure, '오늘 날씨: 위치 찾기');
+  return null;
 }
 
 /** 위치 권한 → 현재 위치 → 오늘 날씨 */
@@ -72,13 +112,16 @@ async function loadWeather(): Promise<WeatherState> {
   if (!position) return { status: 'error', reason: 'location' };
 
   try {
-    const weather = await withTimeout(
-      fetchTodayWeather(position.coords.latitude, position.coords.longitude),
-      WEATHER_TIMEOUT_MS
+    // 오래 걸리면 fetchTodayWeather가 스스로 끊고 한 번 더 물어본다
+    const weather = await fetchTodayWeather(
+      position.latitude,
+      position.longitude
     );
     return { status: 'ready', weather };
   } catch (e) {
-    void reportError('alert', e, '오늘 날씨: 날씨 받기');
+    // 인터넷 문제는 너무 흔하고 앱 잘못이 아니라서 남기지 않는다
+    if (!isNetworkError(e))
+      void reportError('alert', e, '오늘 날씨: 날씨 받기');
     return { status: 'error', reason: 'weather' };
   }
 }

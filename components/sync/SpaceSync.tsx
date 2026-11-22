@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
+import { openChannel } from '@/lib/supabase/channel';
 import { supabase } from '@/lib/supabase/client';
 import type {
   BucketItemRow,
@@ -66,8 +67,7 @@ export function SpaceSync() {
         .refreshSpaces()
         .catch(() => {});
 
-    const channel = supabase
-      .channel(`space-${spaceId}`)
+    const channel = openChannel(`space-${spaceId}`)
       .on(
         'postgres_changes',
         {

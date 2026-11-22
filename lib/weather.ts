@@ -65,6 +65,38 @@ export function weatherKey({ latitude, longitude }: LatLng) {
   return `${latitude.toFixed(2)},${longitude.toFixed(2)}`;
 }
 
+/** 한 번 물어볼 때 기다리는 시간. 넘으면 끊고 한 번 더 물어본다 */
+const ATTEMPT_TIMEOUT_MS = 6000;
+
+/** 서버가 답은 했지만 거절한 것 (다시 물어봐도 같다) */
+class WeatherHttpError extends Error {}
+
+async function requestOnce<T>(url: string): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ATTEMPT_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new WeatherHttpError(`weather ${res.status}`);
+    return (await res.json()) as T;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Open-Meteo 예보를 받는다. 연결이 끊기거나 오래 걸리면 한 번 더 물어본다.
+ * 앱으로 막 돌아왔을 때 끊어진 연결을 다시 쓰다가 실패하는 일이 잦은데(특히 안드로이드), 다시 물으면 대개 된다.
+ */
+export async function fetchOpenMeteo<T>(params: URLSearchParams): Promise<T> {
+  const url = `https://api.open-meteo.com/v1/forecast?${params}`;
+  try {
+    return await requestOnce<T>(url);
+  } catch (e) {
+    if (e instanceof WeatherHttpError) throw e;
+    return requestOnce<T>(url);
+  }
+}
+
 /** 한 곳의 오늘 날씨 */
 export async function fetchTodayWeather(
   latitude: number,
@@ -87,10 +119,10 @@ export async function fetchTodayWeatherMany(
     timezone: 'auto',
     forecast_days: '1',
   });
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-  if (!res.ok) throw new Error(`weather ${res.status}`);
   // 한 곳이면 객체, 여러 곳이면 배열로 온다
-  const data = (await res.json()) as OpenMeteoResponse | OpenMeteoResponse[];
+  const data = await fetchOpenMeteo<OpenMeteoResponse | OpenMeteoResponse[]>(
+    params
+  );
   return (Array.isArray(data) ? data : [data]).map(toTodayWeather);
 }
 

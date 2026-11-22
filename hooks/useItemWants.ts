@@ -4,6 +4,7 @@ import { create } from 'zustand';
 
 import { noteFailure } from '@/lib/connection';
 import { notifySpace } from '@/lib/push';
+import { openChannel } from '@/lib/supabase/channel';
 import { supabase } from '@/lib/supabase/client';
 import type { ItemWantRow } from '@/lib/supabase/database.types';
 import { useSpaceStore } from '@/store/useSpaceStore';
@@ -41,8 +42,7 @@ function watch(spaceId: string) {
   const rowsOf = () => useWantsStore.getState().bySpace[spaceId] ?? EMPTY;
   const setRows = (rows: ItemWantRow[]) =>
     useWantsStore.getState().setRows(spaceId, rows);
-  const channel = supabase
-    .channel(`wants:${spaceId}`)
+  const channel = openChannel(`wants:${spaceId}`)
     .on(
       'postgres_changes',
       {
