@@ -172,6 +172,26 @@ function AdminHome({ controls }: { controls: AdminControls }) {
             />
           </Pressable>
 
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/admin-logs')}
+            className="flex-row items-center gap-3 rounded-2xl px-4 py-3 bg-accent active:opacity-70"
+          >
+            <View className="flex-1 gap-0.5">
+              <Text weight="600" size={15}>
+                로그
+              </Text>
+              <Text size={12} className="text-muted-foreground">
+                앱 오류, 많이 쓴 기능, AI 호출
+              </Text>
+            </View>
+            <Icon
+              as={ChevronRight}
+              size={18}
+              className="text-muted-foreground"
+            />
+          </Pressable>
+
           <Segmented<Tab>
             options={[
               { value: 'spaces', label: `공간 ${state.data.spaces.length}` },

@@ -709,6 +709,7 @@ export type Database = {
     Functions: {
       admin_dashboard: { Args: never; Returns: Json };
       admin_lock: { Args: never; Returns: undefined };
+      admin_logs: { Args: { days?: number }; Returns: Json };
       admin_set_pin: {
         Args: { new_pin: string; old_pin?: string };
         Returns: Json;

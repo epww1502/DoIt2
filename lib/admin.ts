@@ -133,3 +133,165 @@ export async function fetchAdminDashboard(): Promise<AdminDashboard> {
   if (error) throw error;
   return data as unknown as AdminDashboard;
 }
+
+/** 관리자 모드 > 로그 */
+export type AdminErrorGroup = {
+  kind: string;
+  title: string;
+  count: number;
+  users: number;
+  last_at: string;
+  /** 이 오류가 난 기기·버전들 (예: 'android 0.3.0, ios 0.3.0') */
+  versions: string;
+};
+
+export type AdminErrorRow = {
+  id: number;
+  occurred_at: string;
+  kind: string;
+  platform: string;
+  app_version: string | null;
+  update_id: string | null;
+  title: string | null;
+  message: string;
+  stack: string | null;
+  user_id: string | null;
+  nickname: string | null;
+};
+
+export type AdminStepGroup = { step: string; events: number; users: number };
+
+export type AdminStepRow = {
+  created_at: string;
+  step: string;
+  detail: string | null;
+  platform: string | null;
+  app_version: string | null;
+  user_id: string;
+  nickname: string | null;
+};
+
+export type AdminAiRow = {
+  created_at: string;
+  action: string;
+  outcome: string;
+  model: string | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  ms: number | null;
+  user_id: string;
+  nickname: string | null;
+};
+
+export type AdminLogs = {
+  days: number;
+  errors: {
+    total: number;
+    users: number;
+    groups: AdminErrorGroup[];
+    recent: AdminErrorRow[];
+  };
+  steps: {
+    groups: AdminStepGroup[];
+    daily: { day: string; events: number; users: number }[];
+    recent: AdminStepRow[];
+  };
+  ai: {
+    summary: {
+      calls: number;
+      ok: number;
+      failed: number;
+      limited: number;
+      users: number;
+      input_tokens: number;
+      output_tokens: number;
+      avg_ms: number;
+      est_usd: number;
+    };
+    recent: AdminAiRow[];
+  };
+};
+
+/** 오류·기능 사용·AI 호출의 요약과 최근 기록 (days일 동안). 관리자가 아니면 서버가 거절해서 던진다 */
+export async function fetchAdminLogs(days: number): Promise<AdminLogs> {
+  const { data, error } = await supabase.rpc('admin_logs', { days });
+  if (error) throw error;
+  return data as unknown as AdminLogs;
+}
+
+/** 기능 사용 기록(app_steps)의 이름을 사람이 읽는 말로. 모르는 이름은 그대로 */
+const STEP_LABELS: Record<string, string> = {
+  welcome_shown: '시작 화면 열림',
+  who_chosen: '누구와 쓸지 고름',
+  items_added: '시작 화면에서 담음',
+  guided_opened: '직접 해보기 열림',
+  guided_done: '직접 해보기로 담음',
+  invite_sent: '초대 보냄',
+  joined_shown: '초대받은 시작 화면',
+  joined: '초대로 공간에 들어옴',
+  first_pick: '처음 뽑기',
+  first_record: '처음 기록',
+  tip_tapped: '첫 화면 안내 누름',
+  share_in: '공유로 담기',
+  widget_open: '위젯으로 열기',
+  quick_action: '아이콘 꾹 누르기 메뉴',
+  icon_changed: '앱 아이콘 바꿈',
+  calendar_added: '캘린더에 넣음',
+  invite_link_open: '초대 링크로 열림',
+  review_asked: '별점 요청 띄움',
+  faq_opened: '도움말 질문 펼침',
+  faq_step: '도움말에서 화면으로 감',
+  faq_contact: '도움말에서 문의하기 누름',
+  inquiry_sent: '문의 보냄',
+};
+
+export const stepLabel = (step: string) => STEP_LABELS[step] ?? step;
+
+const AI_ACTION_LABELS: Record<string, string> = {
+  suggest: 'AI 추천',
+  classify: '분류',
+  fill: '채우기',
+  parse: '말하듯 담기',
+  split: '나누기',
+  usage: '남은 횟수',
+};
+
+export const aiActionLabel = (action: string) =>
+  AI_ACTION_LABELS[action] ?? action;
+
+const AI_OUTCOME_LABELS: Record<string, string> = {
+  ok: '성공',
+  failed: '실패',
+  limit_user: '한도(사람)',
+  limit_global: '한도(전체)',
+};
+
+export const aiOutcomeLabel = (outcome: string) =>
+  AI_OUTCOME_LABELS[outcome] ?? outcome;
+
+const ERROR_KIND_LABELS: Record<string, string> = {
+  crash: '앱 꺼짐',
+  screen: '화면 오류',
+  alert: '오류 안내',
+};
+
+export const errorKindLabel = (kind: string) => ERROR_KIND_LABELS[kind] ?? kind;
+
+/** 로그 줄에 쓸 사람 이름: 닉네임, 없으면 계정 id 앞 4자리 */
+export const whoLabel = (userId: string | null, nickname: string | null) =>
+  nickname?.trim() ||
+  (userId ? `이름 없음 · ${userId.slice(0, 4)}` : '알 수 없음');
+
+/** 오류 한 건을 복사해 붙여 넣기 좋게 (원인 찾을 때) */
+export function errorReportText(row: AdminErrorRow) {
+  return [
+    `[${errorKindLabel(row.kind)}] ${row.title ?? ''}`.trim(),
+    `${row.occurred_at} · ${row.platform} ${row.app_version ?? '?'}${row.update_id ? ` · update ${row.update_id}` : ''}`,
+    row.user_id ? `user ${row.user_id}` : null,
+    '',
+    row.message,
+    row.stack ? `\n${row.stack}` : null,
+  ]
+    .filter((line) => line !== null)
+    .join('\n');
+}
