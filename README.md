@@ -34,6 +34,7 @@ Expo SDK 58 · Expo Router · NativeWind v4 · Zustand · Supabase · Jest
 | `supabase/functions/`             | Edge Function 6개 (카카오 검색 프록시, 링크 미리보기, 알림, AI, 계정 코드, 계정 삭제)      |
 | `site/`                           | 소개 사이트, 초대 링크·돌아보기 공유·고잇투 일정 담기 페이지, 개인정보처리방침 (정적 HTML) |
 | `__tests__/`                      | Jest 테스트 30개 파일                                                                      |
+| `docs/PLAN.md`                    | 기획서 (화면, 기능, 규칙과 한도, 운영)                                                     |
 | `docs/RELEASE.md`                 | 버전 관리와 출시 절차                                                                      |
 
 ## 설계에서 신경 쓴 것
