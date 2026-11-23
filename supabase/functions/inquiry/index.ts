@@ -37,8 +37,12 @@ function json(body: unknown, status = 200) {
 const text = (value: unknown, max: number) =>
   typeof value === 'string' ? value.trim().slice(0, max) : '';
 
-/** 관리자들의 폰에 알린다. 실패해도 문의는 이미 저장됐으니 조용히 넘어간다 */
-async function notifyAdmins(message: string) {
+/**
+ * 관리자들의 폰에 알린다. 실패해도 문의는 이미 저장됐으니 조용히 넘어간다.
+ * 문의 내용은 넣지 않는다: 잠금 화면에 PIN 없이 보이고 푸시 서버(Expo·Apple·Google)도 거치기 때문이다.
+ * 내용은 관리자 모드(PIN)를 연 뒤 앱 안에서만 본다.
+ */
+async function notifyAdmins() {
   const { data: admins } = await admin.from('app_admins').select('user_id');
   const ids = (admins ?? []).map((a) => a.user_id);
   if (!ids.length) return;
@@ -48,11 +52,10 @@ async function notifyAdmins(message: string) {
     .in('user_id', ids);
   if (!tokens?.length) return;
 
-  const oneLine = message.replace(/\s+/g, ' ');
   const messages = tokens.map((t) => ({
     to: t.token,
     title: '새 문의가 왔어요',
-    body: oneLine.length > 80 ? `${oneLine.slice(0, 80)}…` : oneLine,
+    body: '관리자 모드에서 확인해 주세요',
     sound: 'default',
     channelId: 'default',
     // 누르면 문의 목록으로
@@ -112,8 +115,6 @@ Deno.serve(async (req) => {
     return json({ error: 'server' }, 500);
   }
 
-  await notifyAdmins(message).catch((e) =>
-    console.error('inquiry push failed', e)
-  );
+  await notifyAdmins().catch((e) => console.error('inquiry push failed', e));
   return json({ ok: true });
 });
