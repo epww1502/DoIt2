@@ -1,13 +1,17 @@
 /**
  * 공유로 담기 (새 빌드부터): 다른 앱에서 '공유 → DoIt2'로 넘어온 글·링크를 담기 화면에 채울 모양으로 바꾼다.
  * 지도 앱 공유 글(이름 + 주소 + 링크)은 담기 화면이 원래 하던 대로 장소까지 찾아 채운다.
+ * 사진을 공유하면 (0.3.1 빌드부터) 담기 화면의 사진 칸에 넣는다 (최대 MAX_ITEM_PHOTOS장).
  */
 import { parseMapShare } from '@/lib/bucket/mapShare';
+import { MAX_ITEM_PHOTOS } from '@/lib/bucket/types';
 
 export type SharedContent = {
   text?: string | null;
   webUrl?: string | null;
   meta?: { title?: string | null } | null;
+  /** 공유받은 파일 (사진만 쓴다) */
+  files?: { path: string; mimeType?: string | null }[] | null;
 };
 
 export type SharedPrefill = {
@@ -18,6 +22,8 @@ export type SharedPrefill = {
   /** 링크로 붙일 주소와 그 제목 */
   url: string | null;
   linkTitle: string | null;
+  /** 공유받은 사진 파일 경로 (없으면 빈 목록) */
+  photos: string[];
 };
 
 const TITLE_MAX = 40;
@@ -35,10 +41,18 @@ export function sharedPrefill(content: SharedContent): SharedPrefill | null {
   const url =
     (content.webUrl ?? '').trim() || (text.match(URL_PATTERN)?.[0] ?? '');
   const pageTitle = (content.meta?.title ?? '').trim();
-  if (!text && !url) return null;
+  const photos = (content.files ?? [])
+    .filter((file) => (file.mimeType ?? '').startsWith('image/') && file.path)
+    .slice(0, MAX_ITEM_PHOTOS)
+    .map((file) => file.path);
+  if (!text && !url) {
+    return photos.length > 0
+      ? { mapText: null, title: '', url: null, linkTitle: null, photos }
+      : null;
+  }
 
   if (text && parseMapShare(text)) {
-    return { mapText: text, title: '', url: null, linkTitle: null };
+    return { mapText: text, title: '', url: null, linkTitle: null, photos };
   }
   // 글에서 링크를 뺀 첫 줄, 없으면 페이지 제목
   const plain = firstLine(text.replace(URL_PATTERN, ' '));
@@ -48,6 +62,7 @@ export function sharedPrefill(content: SharedContent): SharedPrefill | null {
     title,
     url: url || null,
     linkTitle: url ? pageTitle || plain || null : null,
+    photos,
   };
 }
 
@@ -59,6 +74,9 @@ export function sharedParams(prefill: SharedPrefill) {
     ...(prefill.url ? { sharedUrl: prefill.url.slice(0, 600) } : {}),
     ...(prefill.linkTitle
       ? { sharedLinkTitle: prefill.linkTitle.slice(0, 80) }
+      : {}),
+    ...(prefill.photos.length > 0
+      ? { sharedPhotos: JSON.stringify(prefill.photos) }
       : {}),
   };
 }

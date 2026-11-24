@@ -212,12 +212,24 @@
           "iosActivationRules": {
             "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
             "NSExtensionActivationSupportsWebPageWithMaxCount": 1,
-            "NSExtensionActivationSupportsText": true
+            "NSExtensionActivationSupportsText": true,
+            "NSExtensionActivationSupportsImageWithMaxCount": 3
           },
-          "androidIntentFilters": ["text/*"]
+          "androidIntentFilters": ["text/*", "image/*"],
+          "androidMultiIntentFilters": ["image/*"]
         }
       ],
       "./plugins/withWidgetAutoRefresh",
+      "expo-background-task",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
       [
         "expo-widgets",
         {

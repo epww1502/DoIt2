@@ -60,9 +60,28 @@ export async function pickPhotos(limit: number): Promise<string[]> {
 }
 
 /** 고른 사진을 줄여서 앱 문서 폴더로 복사하고 그 uri를 돌려준다 */
-async function saveAsset(asset: ImagePicker.ImagePickerAsset) {
+function saveAsset(asset: ImagePicker.ImagePickerAsset) {
+  return savePhotoFile(asset.uri, asset.width, asset.height);
+}
+
+/**
+ * 다른 앱에서 공유로 넘어온 사진 파일을 앱 문서 폴더로 줄여 복사한다 (0.3.1 빌드부터).
+ * 크기를 모르면 한 번 열어서 잰다. 경로에 file://이 없으면 붙인다.
+ */
+export async function saveSharedPhoto(
+  path: string,
+  width?: number | null,
+  height?: number | null
+) {
+  const uri = path.includes('://') ? path : `file://${path}`;
+  if (width && height) return savePhotoFile(uri, width, height);
+  const probe = await ImageManipulator.manipulate(uri).renderAsync();
+  return savePhotoFile(uri, probe.width, probe.height);
+}
+
+async function savePhotoFile(uri: string, width: number, height: number) {
   // 저장 공간·데이터를 아끼려고 긴 쪽 1080px, JPEG 0.7로 줄인다 (장당 수 MB → 100KB 안팎)
-  const resized = await shrinkPhoto(asset.uri, asset.width, asset.height);
+  const resized = await shrinkPhoto(uri, width, height);
 
   const folder = new Directory(Paths.document, PHOTO_DIR);
   folder.create({ idempotent: true, intermediates: true });
@@ -72,7 +91,7 @@ async function saveAsset(asset: ImagePicker.ImagePickerAsset) {
   const source = new File(resized);
   await source.copy(target, { overwrite: true });
   // 줄이면서 만든 임시 파일은 지운다
-  if (resized !== asset.uri) deletePhoto(resized);
+  if (resized !== uri) deletePhoto(resized);
   return target.uri;
 }
 

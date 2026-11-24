@@ -18,9 +18,25 @@ const withSentryUpload = (plugins = []) =>
     const name = Array.isArray(plugin) ? plugin[0] : plugin;
     if (name !== SENTRY_PLUGIN) return plugin;
     const options = Array.isArray(plugin) ? (plugin[1] ?? {}) : {};
+    const upload = sentryUploadReady();
     return [
       SENTRY_PLUGIN,
-      { ...options, disableAutoUpload: !sentryUploadReady() },
+      {
+        ...options,
+        disableAutoUpload: !upload,
+        // 안드로이드 빌드는 코드를 줄이고 이름을 바꾼다(expo-build-properties의 minify).
+        // 그 대응표를 같이 올려야 Sentry에서 네이티브 오류 위치를 읽을 수 있다. 토큰이 있을 때만 켠다
+        ...(upload
+          ? {
+              experimental_android: {
+                enableAndroidGradlePlugin: true,
+                includeProguardMapping: true,
+                autoUploadProguardMapping: true,
+                uploadNativeSymbols: false,
+              },
+            }
+          : {}),
+      },
     ];
   });
 
