@@ -128,6 +128,18 @@
         }
       ],
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Face ID로 잠긴 화면을 열려면 Face ID 사용 권한이 필요해요."
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Face ID로 잠긴 화면을 열려면 Face ID 사용 권한이 필요해요."
+        }
+      ],
+      [
         "@sentry/react-native/expo",
         {
           "url": "https://sentry.io/",

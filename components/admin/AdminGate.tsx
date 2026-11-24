@@ -1,5 +1,11 @@
 import { router } from 'expo-router';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,6 +22,16 @@ import {
   setAdminPin,
   unlockAdmin,
 } from '@/lib/admin';
+import {
+  biometricLabel,
+  biometricOfferDeclined,
+  biometricUnlockEnabled,
+  declineBiometricOffer,
+  disableBiometricUnlock,
+  enableBiometricUnlock,
+  readSavedPin,
+} from '@/lib/adminBiometric';
+import { showAlert } from '@/lib/dialog';
 
 export type AdminControls = {
   /** 바로 잠그고 나간다 */
@@ -24,7 +40,15 @@ export type AdminControls = {
   changePin: () => void;
   /** 서버가 거절했을 때(15분이 지남) 다시 확인해서 PIN을 묻게 한다 */
   recheck: () => void;
+  /** 이 폰에서 생체 인증을 쓸 수 있을 때만: Face ID·지문으로 열기 켜고 끄기 */
+  biometric: {
+    label: string;
+    enabled: boolean;
+    toggle: () => void;
+  } | null;
 };
+
+type PinMode = 'unlock' | 'set' | 'change';
 
 const digits = (text: string) =>
   text.replace(/[^0-9]/g, '').slice(0, ADMIN_PIN_LENGTH);
@@ -60,9 +84,13 @@ function PinField({
 function PinForm({
   mode,
   onDone,
+  biometric,
 }: {
-  mode: 'unlock' | 'set' | 'change';
-  onDone: () => void;
+  mode: PinMode;
+  /** 서버가 맞다고 한 PIN (생체 인증으로 열었으면 null: 다시 저장할 필요가 없다) */
+  onDone: (pin: string | null) => void;
+  /** 생체 인증으로 열기를 켜 두었으면 그 이름 ('Face ID' 등) */
+  biometric?: string | null;
 }) {
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
@@ -89,7 +117,7 @@ function PinForm({
           ? await unlockAdmin(current)
           : await setAdminPin(next, mode === 'change' ? current : undefined);
       if (result.ok) {
-        onDone();
+        onDone(mode === 'unlock' ? current : next);
         return;
       }
       setError(pinFailureMessage(result));
@@ -100,6 +128,48 @@ function PinForm({
       setBusy(false);
     }
   };
+
+  // 생체 인증으로 저장해 둔 PIN을 꺼내 서버에 보낸다. 틀리면(다른 폰에서 PIN을 바꿈) 끄고 PIN을 묻는다
+  const tryBiometric = useCallback(async () => {
+    if (!biometric) return;
+    setError(null);
+    const saved = await readSavedPin();
+    if ('cancelled' in saved) return;
+    if ('lost' in saved) {
+      setError(
+        `${biometric} 정보가 바뀌어서 ${biometric}로 열기가 꺼졌어요. PIN을 넣어주세요.`
+      );
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await unlockAdmin(saved.pin);
+      if (result.ok) {
+        onDone(null);
+        return;
+      }
+      if (result.reason === 'wrong') {
+        await disableBiometricUnlock();
+        setError(
+          `저장해 둔 PIN이 맞지 않아서 ${biometric}로 열기를 껐어요. PIN을 넣어주세요.`
+        );
+      } else {
+        setError(pinFailureMessage(result));
+      }
+    } catch {
+      setError('서버에 연결하지 못했어요. 다시 해주세요.');
+    } finally {
+      setBusy(false);
+    }
+  }, [biometric, onDone]);
+
+  // 화면을 열면 한 번 바로 묻는다
+  const asked = useRef(false);
+  useEffect(() => {
+    if (mode !== 'unlock' || !biometric || asked.current) return;
+    asked.current = true;
+    void tryBiometric();
+  }, [mode, biometric, tryBiometric]);
 
   return (
     <View className="gap-5">
@@ -151,6 +221,14 @@ function PinForm({
         disabled={busy || !ready}
         onPress={() => void submit()}
       />
+      {mode === 'unlock' && biometric ? (
+        <Button
+          label={`${biometric}로 열기`}
+          variant="outline"
+          disabled={busy}
+          onPress={() => void tryBiometric()}
+        />
+      ) : null}
     </View>
   );
 }
@@ -169,6 +247,61 @@ export function AdminGate({
   const keyboardHeight = useKeyboardHeight();
   const [status, setStatus] = useState<AdminStatus | null>(null);
   const [changing, setChanging] = useState(false);
+  /** 이 폰의 생체 인증 이름 (못 쓰면 null) */
+  const [bioLabel, setBioLabel] = useState<string | null>(null);
+  const [bioEnabled, setBioEnabled] = useState(false);
+  /** 관리자 화면에서 '켜기'를 눌러 잠갔음: 다음에 PIN이 맞으면 바로 켠다 */
+  const [enableAfterPin, setEnableAfterPin] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void Promise.all([biometricLabel(), biometricUnlockEnabled()]).then(
+      ([label, enabled]) => {
+        if (!alive) return;
+        setBioLabel(label);
+        setBioEnabled(label !== null && enabled);
+      }
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const enable = useCallback(async (pin: string) => {
+    const saved = await enableBiometricUnlock(pin);
+    setBioEnabled(saved);
+    return saved;
+  }, []);
+
+  /** PIN이 맞았을 때: 생체 인증으로 열기를 켜거나(물어보고), 바꾼 PIN으로 다시 저장한다 */
+  const afterPin = useCallback(
+    async (pin: string, mode: PinMode) => {
+      if (!bioLabel) return;
+      if (mode === 'change') {
+        if (bioEnabled) await enable(pin);
+        return;
+      }
+      if (enableAfterPin) {
+        setEnableAfterPin(false);
+        await enable(pin);
+        return;
+      }
+      if (bioEnabled || (await biometricOfferDeclined())) return;
+      showAlert(
+        `다음부터 ${bioLabel}로 열까요?`,
+        `PIN을 이 폰에 ${bioLabel}를 걸어 저장해 두고, 열 때 ${bioLabel}가 맞으면 그 PIN으로 열어요. 관리자 화면 아래에서 언제든 끌 수 있어요.`,
+        [
+          { text: '켜기', onPress: () => void enable(pin) },
+          {
+            text: '나중에',
+            style: 'cancel',
+            onPress: () => void declineBiometricOffer(),
+          },
+        ]
+      );
+    },
+    [bioLabel, bioEnabled, enable, enableAfterPin]
+  );
 
   const recheck = useCallback(() => {
     setStatus(null);
@@ -194,10 +327,32 @@ export function AdminGate({
           },
           changePin: () => setChanging(true),
           recheck,
+          biometric: bioLabel
+            ? {
+                label: bioLabel,
+                enabled: bioEnabled,
+                toggle: () => {
+                  if (bioEnabled) {
+                    void disableBiometricUnlock();
+                    setBioEnabled(false);
+                    return;
+                  }
+                  // 켜려면 PIN이 필요하다: 잠그고 PIN을 한 번 넣게 한다
+                  setEnableAfterPin(true);
+                  void lockAdmin().finally(recheck);
+                },
+              }
+            : null,
         })}
       </>
     );
   }
+
+  const mode: PinMode = changing
+    ? 'change'
+    : status?.pin_set
+      ? 'unlock'
+      : 'set';
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
@@ -222,9 +377,11 @@ export function AdminGate({
             keyboardShouldPersistTaps="handled"
           >
             <PinForm
-              key={changing ? 'change' : status.pin_set ? 'unlock' : 'set'}
-              mode={changing ? 'change' : status.pin_set ? 'unlock' : 'set'}
-              onDone={() => {
+              key={`${mode}-${bioEnabled}`}
+              mode={mode}
+              biometric={bioEnabled && !enableAfterPin ? bioLabel : null}
+              onDone={(pin) => {
+                if (pin) void afterPin(pin, mode);
                 setChanging(false);
                 recheck();
               }}

@@ -228,6 +228,14 @@ function AdminHome({ controls }: { controls: AdminControls }) {
               size="md"
               onPress={controls.changePin}
             />
+            {controls.biometric ? (
+              <Button
+                label={`${controls.biometric.label}로 열기 ${controls.biometric.enabled ? '끄기' : '켜기'}`}
+                variant="ghost"
+                size="md"
+                onPress={controls.biometric.toggle}
+              />
+            ) : null}
             <Text size={12} className="text-center text-muted-foreground">
               열어 두면 15분 뒤에 저절로 잠겨요
             </Text>

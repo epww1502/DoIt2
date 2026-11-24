@@ -92,6 +92,22 @@ export async function currentIconChoice(): Promise<IconChoice> {
   return choiceFromIconName(await AppIcon.getIcon?.());
 }
 
+/**
+ * 안드로이드에서 홈 화면에 켜져 있는 앱 아이콘 수 (0.3.1 빌드부터). 2 이상이면 옛 버전에서 아이콘이 늘어난 것이다.
+ * 아이폰이거나 이 기능이 없는 빌드면 null.
+ */
+export async function enabledIconCount(): Promise<number | null> {
+  const native = requireOptionalNativeModule<{
+    enabledIconCount?: () => Promise<number>;
+  }>('ExpoAppIcon');
+  if (!native?.enabledIconCount) return null;
+  try {
+    return await native.enabledIconCount();
+  } catch {
+    return null;
+  }
+}
+
 /** 홈 화면 아이콘을 바꾼다. 안드로이드는 바꾼 뒤 앱이 닫힌다 */
 export async function applyIconChoice(choice: IconChoice) {
   const AppIcon = await import('expo-quick-actions/icon');
