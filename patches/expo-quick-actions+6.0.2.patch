@@ -1,0 +1,59 @@
+diff --git a/node_modules/expo-quick-actions/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt b/node_modules/expo-quick-actions/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt
+index 4db980e..da4e734 100644
+--- a/node_modules/expo-quick-actions/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt
++++ b/node_modules/expo-quick-actions/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt
+@@ -23,28 +23,20 @@ class ExpoAppIconModule : Module() {
+ 
+     Function("setIcon") { iconName: String? ->
+       val mainActivityAlias = context.packageName + MAIN_ACTIVITY_ALIAS
+-      val currentIcon = if (SharedObject.icon.isNotEmpty()) SharedObject.icon else mainActivityAlias
++      val newIcon = if (iconName == null) mainActivityAlias else mainActivityAlias + ICON_PREFIX + iconName
+ 
++      // DoIt2 패치: 지금 켜진 아이콘을 메모리(SharedObject.icon)로만 알면, 앱을 다시 켠 뒤에는
++      // 기본 아이콘으로 잘못 알고 진짜 켜진 아이콘을 끄지 않아 앱 아이콘이 하나씩 늘어난다.
++      // 그래서 등록된 아이콘을 모두 보고, 고른 것만 켜고 나머지는 모두 끈다 (이미 늘어난 것도 정리된다).
+       try {
+-      if (iconName == null) {
+-        disableIcon(currentIcon)
+-        enableIcon(mainActivityAlias)
+-        SharedObject.icon = ""
+-        return@Function null
+-      } else {
+-        val newIcon = mainActivityAlias + ICON_PREFIX + iconName
+-        SharedObject.packageName = context.packageName
+-        SharedObject.pm = packageManager
+-
+         enableIcon(newIcon)
+-        disableIcon(currentIcon)
+-        SharedObject.classesToKill.add(currentIcon)
+-        SharedObject.icon = newIcon
+-
++        iconAliases(mainActivityAlias).filter { it != newIcon }.forEach { disableIcon(it) }
++        // 여기서 바로 바꿨으니 백그라운드로 갈 때 다시 바꾸는 일(ExpoAppIconReactActivityLifecycleListener)은 하지 않는다
++        SharedObject.classesToKill.clear()
++        SharedObject.icon = ""
+         return@Function iconName
+-      }
+       } catch (e: Exception) {
+-      return@Function false
++        return@Function false
+       }
+     }
+ 
+@@ -77,6 +69,16 @@ class ExpoAppIconModule : Module() {
+     )
+   }
+ 
++  /** 기본 아이콘(MainActivity)과 등록된 아이콘 별칭 전부 (꺼진 것 포함) */
++  private fun iconAliases(mainActivityAlias: String): List<String> {
++    val activities = packageManager.getPackageInfo(
++      context.packageName,
++      PackageManager.GET_ACTIVITIES or PackageManager.GET_DISABLED_COMPONENTS
++    ).activities ?: return listOf(mainActivityAlias)
++    return activities.map { it.name }
++      .filter { it == mainActivityAlias || it.startsWith(mainActivityAlias + ICON_PREFIX) }
++  }
++
+   private fun findEnabledAlias(): String? {
+     return try {
+       val activities = packageManager.getPackageInfo(context.packageName, PackageManager.GET_ACTIVITIES).activities
