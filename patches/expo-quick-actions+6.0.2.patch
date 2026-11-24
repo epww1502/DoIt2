@@ -1,5 +1,5 @@
 diff --git a/node_modules/expo-quick-actions/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt b/node_modules/expo-quick-actions/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt
-index 4db980e..da4e734 100644
+index 4db980e..2161f1b 100644
 --- a/node_modules/expo-quick-actions/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt
 +++ b/node_modules/expo-quick-actions/android/src/main/java/expo/modules.quickactions/ExpoAppIconModule.kt
 @@ -23,28 +23,20 @@ class ExpoAppIconModule : Module() {
@@ -40,7 +40,27 @@ index 4db980e..da4e734 100644
        }
      }
  
-@@ -77,6 +69,16 @@ class ExpoAppIconModule : Module() {
+@@ -53,6 +45,19 @@ class ExpoAppIconModule : Module() {
+       val iconSuffix = currentIcon.substringAfter(MAIN_ACTIVITY_ALIAS, "Default")
+       return@AsyncFunction if (iconSuffix.isBlank()) "Default" else iconSuffix.removePrefix(ICON_PREFIX)
+     }
++
++    // DoIt2 패치: 홈 화면에 켜져 있는 앱 아이콘 수. 옛 버전(0.3.0)에서 아이콘이 늘어난 사람을 찾아 안내하려고 쓴다
++    AsyncFunction("enabledIconCount") {
++      val mainActivityAlias = context.packageName + MAIN_ACTIVITY_ALIAS
++      return@AsyncFunction iconAliases(mainActivityAlias).count { alias ->
++        when (packageManager.getComponentEnabledSetting(ComponentName(context.packageName, alias))) {
++          PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
++          // 따로 정한 적 없으면 매니페스트대로: 기본 아이콘만 켜져 있고 다른 아이콘은 꺼져 있다
++          PackageManager.COMPONENT_ENABLED_STATE_DEFAULT -> alias == mainActivityAlias
++          else -> false
++        }
++      }
++    }
+   }
+ 
+   private val context: Context
+@@ -77,6 +82,16 @@ class ExpoAppIconModule : Module() {
      )
    }
  

@@ -13,6 +13,7 @@ import {
   canPickTextColor,
   currentIconChoice,
   DEFAULT_ICON,
+  enabledIconCount,
   type IconBackground,
   type IconChoice,
   iconName,
@@ -65,6 +66,19 @@ export default function AppIconScreen() {
   /** 지금 홈 화면에 걸려 있는 아이콘 */
   const [applied, setApplied] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  /** 안드로이드에서 켜져 있는 앱 아이콘 수 (옛 버전에서 늘어났으면 2 이상) */
+  const [iconCount, setIconCount] = useState<number | null>(null);
+  const duplicated = iconCount !== null && iconCount > 1;
+
+  useEffect(() => {
+    let alive = true;
+    void enabledIconCount().then((count) => {
+      if (alive) setIconCount(count);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,7 +100,8 @@ export default function AppIconScreen() {
   };
 
   const name = iconName(choice);
-  const changed = name !== applied;
+  // 아이콘이 여러 개로 늘어나 있으면 같은 아이콘을 다시 골라도 정리된다
+  const changed = name !== applied || duplicated;
 
   const apply = async () => {
     setBusy(true);
@@ -178,6 +193,11 @@ export default function AppIconScreen() {
           </View>
         ) : null}
 
+        {duplicated ? (
+          <Text size={13} className="text-primary">
+            {`지금 홈 화면에 DoIt2가 ${iconCount}개 켜져 있어요. 아무 아이콘이나 한 번 바꾸면(지금 아이콘 그대로도 돼요) 하나만 남아요.`}
+          </Text>
+        ) : null}
         <Text variant="muted" size={12}>
           {Platform.OS === 'android'
             ? '아이콘을 바꾸면 앱이 한 번 닫혀요. 홈 화면에 반영되기까지 몇 초 걸릴 수 있어요.'
@@ -189,9 +209,11 @@ export default function AppIconScreen() {
           label={
             busy
               ? '바꾸는 중…'
-              : changed
-                ? '이 아이콘으로 바꾸기'
-                : '지금 아이콘이에요'
+              : name === applied && duplicated
+                ? '이 아이콘 하나만 남기기'
+                : changed
+                  ? '이 아이콘으로 바꾸기'
+                  : '지금 아이콘이에요'
           }
           disabled={busy || !changed}
           onPress={() => void apply()}

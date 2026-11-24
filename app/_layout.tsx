@@ -23,6 +23,7 @@ import { UpdateReadyBanner } from '@/components/sync/UpdateReadyBanner';
 import { PushSync } from '@/components/sync/PushSync';
 import { ReminderSync } from '@/components/sync/ReminderSync';
 import { SpaceSync } from '@/components/sync/SpaceSync';
+import { IconCleanupNotice } from '@/components/sync/IconCleanupNotice';
 import { PolicyNotice } from '@/components/sync/PolicyNotice';
 import { VersionGate } from '@/components/sync/VersionGate';
 import { hexToRgbTriple } from '@/constants/palettes';
@@ -130,6 +131,8 @@ function RootLayoutInner() {
       <QuickActionsSync />
       {/* 개인정보처리방침이 바뀐 것을 한 번 알린다 */}
       <PolicyNotice />
+      {/* 옛 버전에서 앱 아이콘이 여러 개로 늘어난 사람에게 한 번 알린다 (안드로이드, 새 빌드부터) */}
+      <IconCleanupNotice />
       <View className="flex-1 bg-background" style={themeVars}>
         {/* 오프라인 안내 띠: 화면 위를 차지해서 아래 화면을 밀어 내린다 */}
         <OfflineBanner />
