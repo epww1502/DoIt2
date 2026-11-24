@@ -130,7 +130,9 @@
       [
         "@sentry/react-native/expo",
         {
-          "disableAutoUpload": true
+          "url": "https://sentry.io/",
+          "organization": "youngjoolee",
+          "project": "doit2"
         }
       ],
       [
