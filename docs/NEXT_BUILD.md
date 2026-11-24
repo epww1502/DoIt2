@@ -53,8 +53,7 @@ OTA로는 못 넣고 새 빌드가 있어야 하는 것들을 여기에 모은�
 - **스토어의 개인정보 신고 고치기** (직접): Sentry 때문에 수집하는 데이터가 늘었다.
   App Store Connect '앱이 수집하는 개인정보'에 진단 데이터(충돌·오류 기록)와 식별자(계정 id),
   Play Console '데이터 보안'에 앱 진단 정보(비정상 종료 로그)를 더한다.
-- Sentry 소스맵: 지금은 올리지 않아서 오류 위치가 줄여진 코드 기준으로 보인다. 읽기 쉽게 하려면
-  Sentry 인증 토큰을 EAS 빌드 환경에 `SENTRY_AUTH_TOKEN`으로 넣고 플러그인의 `disableAutoUpload`를 뺀다.
+- Sentry 소스맵: 0.3.1부터 올린다 (아래 '다음 빌드 (0.3.1)' 참고).
 - **업데이트 강제**: 버전을 올리면 모두 새 버전으로 올리게 한다. 서버 `app_versions` 표의 `min_version`을 새 버전으로 바꾸면
   그보다 낮은 앱은 켤 때 업데이트 화면이 뜨고 스토어로 보낸다. **반드시 그 스토어에서 새 버전을 내려받을 수 있게 된 뒤에** 바꾼다
   (먼저 바꾸면 업데이트 화면에 갇힌다). 폰 종류마다 줄이 따로라서 심사가 끝난 쪽부터 바꾼다.
@@ -74,6 +73,29 @@ OTA로는 못 넣고 새 빌드가 있어야 하는 것들을 여기에 모은�
   라이브러리가 지금 켜진 아이콘을 메모리로만 알아서, 앱을 다시 켠 뒤 바꾸면 옛 아이콘을 끄지 않았다.
   고른 것만 켜고 등록된 나머지는 모두 끄게 했다. 이미 늘어난 사람도 아이콘을 한 번 더 바꾸면 하나만 남는다.
   패치는 네이티브 코드라 0.3.0 빌드에는 OTA로 안 간다 (main에 있어도 0.3.0 앱에는 영향 없음).
+- Sentry 소스맵 올리기: 오류 위치가 줄여진 코드 대신 원래 파일·줄로 보이게 한다.
+  - 스토어 빌드: 조직·프로젝트 이름(`youngjoolee` / `doit2`)은 `app.json`의 Sentry 플러그인에 있고, EAS 환경 변수 `SENTRY_AUTH_TOKEN`이 있으면 빌드 중에 저절로 올린다 (`app.config.js`). 토큰이 없으면 올리기를 꺼서 빌드는 그대로 된다.
+  - OTA: `npm run update`가 플랫폼마다 `eas update` 뒤에 `npm run sourcemaps`로 `dist`의 소스맵을 올린다. 못 올려도 OTA는 그대로 나간다.
+  - 번들에 디버그 ID를 넣으려고 `metro.config.js`를 `getSentryExpoConfig`로 바꿨다 (이건 OTA에도 바로 들어간다).
+  - 토큰: Sentry의 Settings → Organization Tokens에서 만든 조직 토큰을 EAS production 환경에 `SENTRY_AUTH_TOKEN`(sensitive)으로 넣었다 (2026-11-24).
+    바꿀 때는 아래를 실행하고 값을 물으면 새 토큰만 붙여 넣는다. `secret`으로 넣으면 이 PC에서 OTA 뒤에 올릴 때 읽지 못한다.
+
+    ```powershell
+    npx.cmd eas-cli env:create --name SENTRY_AUTH_TOKEN --environment production --visibility sensitive --force
+    ```
+
+    EAS에 `SENTRY_ORG`, `SENTRY_PROJECT`를 넣으면 `app.json` 값보다 먼저 쓰인다. 넣는다면 이름만 넣는다 (토큰을 넣지 않는다).
+
+### 0.3.1 빌드 전후 점검 (2026-11-24)
+
+- 빌드 전: App Store Connect API 키(`28L5QSV5H7`)가 지난번에 401이었으니 새 키로 바꿔 둔다.
+- 심사 전: 새 기능 스크린샷(위젯, 공유로 담기)을 넣는다.
+- 새 빌드에서 직접 눌러 볼 것: 0.3.0 이후 사용 기록이 공유로 담기·꾹 누르기 메뉴·캘린더 넣기는 0건, 위젯으로 열기는 1건이었다.
+  고장인지 안 쓰는 건지 모르니 한 번씩 확인한다.
+- 초대 링크 바로 열기(App Links/Universal Links): 링크로 연 기록이 웹 페이지를 거친 것(`web`) 1건뿐이다.
+  안드로이드는 `assetlinks.json`의 지문 중 하나가 Play Console '앱 서명 키'의 SHA-256과 같은지 본다.
+- 빌드가 스토어에 올라간 뒤: **안드로이드만** `min_version`을 `0.3.1`로 올린다 (아이콘 중복은 안드로이드에만 있다).
+  이미 아이콘이 늘어난 사람은 아이콘을 한 번 더 바꾸면 하나만 남는다.
 
 ## 0.3.0을 낸 기록 (2026-11-17)
 
