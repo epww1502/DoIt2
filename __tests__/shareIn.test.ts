@@ -13,6 +13,7 @@ describe('공유로 담기', () => {
       title: '성수동 파스타 맛집',
       url: 'https://www.instagram.com/p/abc/',
       linkTitle: '성수동 파스타 맛집',
+      photos: [],
     });
   });
 
@@ -38,7 +39,46 @@ describe('공유로 담기', () => {
     expect(sharedParams(prefill!)).toEqual({ sharedMap: text });
   });
 
+  it('사진만 오면 사진만 넘긴다 (사진이 아닌 파일은 빼고 3장까지)', () => {
+    const photo = (n: number) => ({
+      path: `file:///p${n}.jpg`,
+      mimeType: 'image/jpeg',
+    });
+    const prefill = sharedPrefill({
+      files: [
+        photo(1),
+        { path: 'file:///a.pdf', mimeType: 'application/pdf' },
+        photo(2),
+        photo(3),
+        photo(4),
+      ],
+    });
+    expect(prefill?.title).toBe('');
+    expect(prefill?.photos).toEqual([
+      'file:///p1.jpg',
+      'file:///p2.jpg',
+      'file:///p3.jpg',
+    ]);
+    expect(sharedParams(prefill!)).toEqual({
+      sharedPhotos: JSON.stringify(prefill!.photos),
+    });
+  });
+
+  it('글과 사진이 같이 오면 둘 다 채운다', () => {
+    const prefill = sharedPrefill({
+      text: '여기 예쁘다',
+      files: [{ path: 'file:///p.jpg', mimeType: 'image/png' }],
+    });
+    expect(prefill?.title).toBe('여기 예쁘다');
+    expect(prefill?.photos).toEqual(['file:///p.jpg']);
+  });
+
   it('쓸 게 없으면 아무것도 하지 않는다', () => {
+    expect(
+      sharedPrefill({
+        files: [{ path: 'file:///a.pdf', mimeType: 'application/pdf' }],
+      })
+    ).toBeNull();
     expect(sharedPrefill({})).toBeNull();
     expect(sharedPrefill({ text: '   ', webUrl: null })).toBeNull();
   });

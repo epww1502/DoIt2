@@ -23,7 +23,11 @@ import { LinksField } from '@/components/bucket/LinksField';
 import { MAX_TODOS, TodoListField } from '@/components/bucket/TodoListField';
 import { PlaceField } from '@/components/bucket/PlaceField';
 import { useKeyboardAwareForm } from '@/hooks/useKeyboardHeight';
-import { deletePhoto } from '@/lib/bucket/photo';
+import {
+  deletePhoto,
+  saveSharedPhoto,
+  showPhotoLoadError,
+} from '@/lib/bucket/photo';
 import {
   CATEGORIES_BY_KIND,
   DEFAULT_SETTING,
@@ -31,6 +35,7 @@ import {
   itemTodos,
   KIND_META,
   newTodoId,
+  MAX_ITEM_PHOTOS,
   MAX_LINKS,
   SETTING_META,
   type BucketKind,
@@ -87,17 +92,38 @@ const SETTING_OPTIONS: { value: BucketSetting; label: string }[] = [
   },
 ];
 
+/** 공유로 넘어온 사진 경로들 (주소에 JSON 배열로 실려 온다). 이상하면 빈 목록 */
+function sharedPhotoPaths(param: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(param);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((p): p is string => typeof p === 'string' && p.length > 0)
+      .slice(0, MAX_ITEM_PHOTOS);
+  } catch {
+    return [];
+  }
+}
+
 /** 버킷리스트 담기. ?id= 가 있으면 수정 */
 export default function BucketFormScreen() {
   // shared…: 다른 앱에서 '공유 → DoIt2'로 넘어온 것 (components/sync/ShareInSync.tsx)
-  const { id, sharedMap, sharedTitle, sharedUrl, sharedLinkTitle } =
-    useLocalSearchParams<{
-      id?: string;
-      sharedMap?: string;
-      sharedTitle?: string;
-      sharedUrl?: string;
-      sharedLinkTitle?: string;
-    }>();
+  const {
+    id,
+    sharedMap,
+    sharedTitle,
+    sharedUrl,
+    sharedLinkTitle,
+    sharedPhotos,
+  } = useLocalSearchParams<{
+    id?: string;
+    sharedMap?: string;
+    sharedTitle?: string;
+    sharedUrl?: string;
+    sharedLinkTitle?: string;
+    /** 공유받은 사진 파일 경로들 (JSON 배열) */
+    sharedPhotos?: string;
+  }>();
   const { keyboardHeight, scrollRef, onScroll, ensureFocusedVisible } =
     useKeyboardAwareForm();
   const editing = useBucketItem(id);
@@ -269,8 +295,34 @@ export default function BucketFormScreen() {
   const meta = KIND_META[kind];
   const categories = CATEGORIES_BY_KIND[kind];
   // 고른 사진을 받는 중이면 저장을 막는다 (받기 전에 저장하면 사진이 빠진다)
-  const [photosLoading, setPhotosLoading] = useState(false);
+  // 공유로 사진이 넘어왔으면 받는 동안도 막는다
+  const [photosLoading, setPhotosLoading] = useState(
+    () => Boolean(sharedPhotos) && !editing
+  );
   const canSave = title.trim().length > 0 && !photosLoading;
+
+  // 공유로 넘어온 사진을 앱 폴더로 줄여 복사해서 사진 칸에 넣는다 (한 번만)
+  const sharedPhotosTaken = useRef(false);
+  useEffect(() => {
+    if (!sharedPhotos || editing || sharedPhotosTaken.current) return;
+    sharedPhotosTaken.current = true;
+    void (async () => {
+      const saved: RecordPhoto[] = [];
+      const paths = sharedPhotoPaths(sharedPhotos);
+      for (const path of paths) {
+        try {
+          saved.push({ uri: await saveSharedPhoto(path), path: null });
+        } catch {
+          // 못 읽은 사진은 빼고 나머지만 넣는다
+        }
+      }
+      if (saved.length < paths.length) showPhotoLoadError();
+      if (saved.length > 0) {
+        setPhotos((now) => [...now, ...saved].slice(0, MAX_ITEM_PHOTOS));
+      }
+      setPhotosLoading(false);
+    })();
+  }, [sharedPhotos, editing]);
 
   /** 카테고리를 바꾸면 실내/실외도 그 카테고리 기본값으로 맞춘다 (직접 바꿀 수 있음) */
   const changeCategory = (next: CategoryKey) => {
